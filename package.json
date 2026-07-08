@@ -1,0 +1,20 @@
+{
+  "name": "chord-builder",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+    "scripts": {
+    "debug": "concurrently \"tsc -w --noEmit\" \"esbuild src/main.ts --bundle --outfile=docs/main.js --sourcemap --watch\" \"node scripts/watchStatic.cjs\"",
+    "copy:static": "node scripts/copyStatic.cjs",
+    "build": "npm run copy:static && esbuild src/main.ts --bundle --outfile=docs/main.js --minify",
+    "build:pathfinder-tester": "npm run copy:static && esbuild src/pathfinderTester.ts --bundle --outfile=docs/pathfinderTester.js --minify"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@types/p5": "^1.7.7",
+    "typescript": "^6.0.3"
+  }
+}
