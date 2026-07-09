@@ -31,7 +31,7 @@ body {
 	border-radius: 8px;
 	padding: 12px;
 	background: #ffffff;
-	min-width: 280px;
+	min-width: var(--progression-panel-width, 280px);
 }
 
 .chord-panel__section {
@@ -70,10 +70,17 @@ body {
 	padding-bottom: 8px;
 }
 
+.progression-editor {
+	--progression-panel-width: 280px;
+	--progression-panel-min-height: 172px;
+	--progression-gap: 12px;
+	--progression-shift: calc(var(--progression-panel-width) + var(--progression-gap));
+}
+
 .progression-editor__row {
 	display: flex;
 	align-items: stretch;
-	gap: 12px;
+	gap: var(--progression-gap);
 	width: max-content;
 }
 
@@ -87,22 +94,33 @@ body {
 	height: 100%;
 }
 
-.progression-editor__item--delete-shift {
-	margin-left: var(--progression-shift, 0);
+@keyframes progression-editor-delete {
+	from { margin-left: var(--progression-shift); }
+	to { margin-left: 0; }
 }
 
-.progression-editor__item--delete-shift.progression-editor__item--delete-shift-active {
-	margin-left: 0;
-	transition: margin-left 0.5s ease;
+@keyframes progression-editor-insert {
+	from { margin-right: calc(-1 * var(--progression-shift)); }
+	to { margin-right: 0; }
 }
 
-.progression-editor__item--insert-push {
-	margin-right: calc(-1 * var(--progression-shift, 0px));
+.progression-editor__slot--delete-shift {
+	margin-left: var(--progression-shift);
+	animation: progression-editor-delete 0.5s ease forwards;
 }
 
-.progression-editor__item--insert-push.progression-editor__item--insert-push-active {
-	margin-right: 0;
-	transition: margin-right 0.5s ease;
+.progression-editor__slot--insert-push {
+	margin-right: calc(-1 * var(--progression-shift));
+	animation: progression-editor-insert 0.5s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.progression-editor__slot--delete-shift,
+	.progression-editor__slot--insert-push {
+		animation: none;
+		margin-left: 0;
+		margin-right: 0;
+	}
 }
 
 .progression-editor__panel-actions {
@@ -112,9 +130,16 @@ body {
 }
 
 .progression-editor__add-panel {
+	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	min-width: 280px;
+	min-width: var(--progression-panel-width);
+	min-height: var(--progression-panel-min-height);
+}
+
+.progression-editor__add-item {
+	min-width: var(--progression-panel-width);
 }
 
 .progression-editor__add-button {

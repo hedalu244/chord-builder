@@ -1,5 +1,5 @@
 import { BasicChord } from "./basics/basicChord";
-import { ChordVariant } from "./basics/variantChord";
+import { ChordVariant } from "./basics/chordVariant";
 
 type FullChordInfo = {
     readonly chord: BasicChord;
