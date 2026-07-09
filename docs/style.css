@@ -1,0 +1,122 @@
+body {
+	margin: 0;
+	font-family: "Segoe UI", sans-serif;
+	background: #f5f7fa;
+	color: #1f2933;
+}
+
+.debug-app {
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.debug-app__title {
+	margin: 0;
+	font-size: 24px;
+}
+
+.debug-app__info {
+	margin: 0;
+	font-size: 13px;
+	color: #52606d;
+}
+
+.chord-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border: 1px solid #d0d7de;
+	border-radius: 8px;
+	padding: 12px;
+	background: #ffffff;
+	min-width: 280px;
+}
+
+.chord-panel__section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.chord-panel__section-title {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+}
+
+.chord-panel__field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12px;
+}
+
+.chord-panel__field-label {
+	font-weight: 600;
+}
+
+.chord-panel__control {
+	padding: 6px;
+	border: 1px solid #bcccdc;
+	border-radius: 4px;
+	background: #ffffff;
+	font-size: 14px;
+}
+
+.progression-editor__scroll-area {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-bottom: 8px;
+}
+
+.progression-editor__row {
+	display: flex;
+	align-items: stretch;
+	gap: 12px;
+	width: max-content;
+}
+
+.progression-editor__slot {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.progression-editor__panel {
+	height: 100%;
+}
+
+.progression-editor__item--delete-shift {
+	margin-left: var(--progression-shift, 0);
+}
+
+.progression-editor__item--delete-shift.progression-editor__item--delete-shift-active {
+	margin-left: 0;
+	transition: margin-left 0.5s ease;
+}
+
+.progression-editor__item--insert-push {
+	margin-right: calc(-1 * var(--progression-shift, 0px));
+}
+
+.progression-editor__item--insert-push.progression-editor__item--insert-push-active {
+	margin-right: 0;
+	transition: margin-right 0.5s ease;
+}
+
+.progression-editor__panel-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.progression-editor__add-panel {
+	justify-content: center;
+	align-items: center;
+	min-width: 280px;
+}
+
+.progression-editor__add-button {
+	width: 100%;
+}
