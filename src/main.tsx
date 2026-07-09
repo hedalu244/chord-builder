@@ -7,25 +7,13 @@ import { FullChordInfo } from "./basics/fullChordInfo";
 function createDebugChordData(): FullChordInfo[] {
 	return [
 		{
-			chord: { root: new PitchClass(0), quality: "major" },
-			variant: {
-				name: "major7",
-				intervals: Interval.map([0, 4, 7, 11])
-			}
+			chord: { root: new PitchClass(0), qualityId: "major7" },
 		},
 		{
-			chord: { root: new PitchClass(9), quality: "minor" },
-			variant: {
-				name: "minor7",
-				intervals: Interval.map([0, 3, 7, 10])
-			}
+			chord: { root: new PitchClass(9), qualityId: "minor7" },
 		},
 		{
-			chord: { root: new PitchClass(7), quality: "major" },
-			variant: {
-				name: "dominant7",
-				intervals: Interval.map([0, 4, 7, 10])
-			}
+			chord: { root: new PitchClass(7), qualityId: "dominant7" },
 		}
 	];
 }

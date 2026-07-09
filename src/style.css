@@ -27,11 +27,6 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	border: 1px solid #d0d7de;
-	border-radius: 8px;
-	padding: 12px;
-	background: #ffffff;
-	min-width: var(--progression-panel-width, 280px);
 }
 
 .chord-panel__section {
@@ -41,8 +36,9 @@ body {
 }
 
 .chord-panel__section-title {
-	margin: 0 0 8px 0;
-	font-size: 14px;
+	text-align: center;
+	margin: 20px 0;
+	font-size: 30px;
 }
 
 .chord-panel__field {
@@ -50,6 +46,15 @@ body {
 	flex-direction: column;
 	gap: 4px;
 	font-size: 12px;
+}
+
+.chord-panel__field-row {
+	display: flex;
+	gap: 8px;
+}
+
+.chord-panel__field--half {
+	flex: 1 1 0;
 }
 
 .chord-panel__field-label {
@@ -71,8 +76,8 @@ body {
 }
 
 .progression-editor {
-	--progression-panel-width: 280px;
-	--progression-panel-min-height: 172px;
+	--progression-panel-width: 200px;
+	--progression-panel-min-height: 400px;
 	--progression-gap: 12px;
 	--progression-shift: calc(var(--progression-panel-width) + var(--progression-gap));
 }
@@ -91,6 +96,14 @@ body {
 }
 
 .progression-editor__panel {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border: 1px solid #d0d7de;
+	border-radius: 8px;
+	padding: 12px;
+	background: #ffffff;
+	min-width: var(--progression-panel-width);
 	height: 100%;
 }
 
@@ -130,11 +143,8 @@ body {
 }
 
 .progression-editor__add-panel {
-	display: flex;
-	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	min-width: var(--progression-panel-width);
 	min-height: var(--progression-panel-min-height);
 }
 

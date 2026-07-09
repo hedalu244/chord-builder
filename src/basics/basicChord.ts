@@ -1,8 +1,13 @@
 import { PitchClass } from "./pitch";
-
-export type BasicChordQuality = "major" | "minor";
+import { ChordQualityId, findChordQuality } from "./chordQuality";
 
 export type BasicChord = {
     readonly root: PitchClass;
-    readonly quality: BasicChordQuality;
+    readonly qualityId: ChordQualityId;
 };
+
+export function getPitchClasses(chord: BasicChord): PitchClass[] {
+    const quality = findChordQuality(chord.qualityId);
+    const intervals = quality.intervals;
+    return intervals.map(interval => chord.root.add(interval));
+}

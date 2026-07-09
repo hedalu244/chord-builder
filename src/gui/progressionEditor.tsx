@@ -142,7 +142,6 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 					{progression.map((item, index) => (
 						<div key={item.id} className={getSlotClassName(index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
 							<div className="progression-editor__panel">
-								<ChordPanel value={item.chordInfo} onChange={nextValue => handleChordChange(index, nextValue)} />
 								<div className="progression-editor__panel-actions">
 									<button
 										type="button"
@@ -166,11 +165,12 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 										Delete
 									</button>
 								</div>
+								<ChordPanel value={item.chordInfo} onChange={nextValue => handleChordChange(index, nextValue)} />
 							</div>
 						</div>
 					))}
 					<div className={getSlotClassName(progression.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
-						<div className="chord-panel progression-editor__panel progression-editor__add-panel">
+						<div className="progression-editor__panel progression-editor__add-panel">
 							<button
 								type="button"
 								className={createActionButtonClassNames("progression-editor__add-button")}

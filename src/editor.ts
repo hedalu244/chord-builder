@@ -1,4 +1,4 @@
-import { copyChordInfo, copyProgression, createDefaultChordInfo, FullChordInfo, isSameChordInfo } from "./basics/fullChordInfo";
+import { copyChordInfo, createDefaultChordInfo, FullChordInfo, isSameChordInfo } from "./basics/fullChordInfo";
 
 export type InsertTrigger = "add" | "insertBefore" | "insertAfter";
 
@@ -20,6 +20,10 @@ export function createInsertedChordInfo(_context: InsertContext): FullChordInfo 
 
 export function toChordInfos(items: readonly ProgressionItem[]): FullChordInfo[] {
 	return items.map(item => copyChordInfo(item.chordInfo));
+}
+
+export function copyProgression(progression: readonly FullChordInfo[]): FullChordInfo[] {
+    return progression.map(copyChordInfo);
 }
 
 export function replaceChordAtIndex(
