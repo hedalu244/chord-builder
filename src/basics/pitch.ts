@@ -37,7 +37,7 @@ export class Interval {
     invert(): Interval { return new Interval(-this.value); }
     
     toString(): string {
-        const names = ["Unison", "m2", "M2", "m3", "M3", "P4", "TT", "P5", "m6", "M6", "m7", "M7"];
+        const names = ["P1", "m2", "M2", "m3", "M3", "P4", "TT", "P5", "m6", "M6", "m7", "M7"];
         return names[this.value];
     }
 

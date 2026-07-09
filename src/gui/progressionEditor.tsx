@@ -1,5 +1,6 @@
 import { AnimationEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ChordPanel } from "./chordPanel";
+import { NexusPanel, DummyNexusPanel } from "./nexusPanel";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import {
 	createProgressionItems,
@@ -141,6 +142,11 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 				<div className="progression-editor__row">
 					{progression.map((item, index) => (
 						<div key={item.id} className={getSlotClassName(index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
+							{index > 0 ? (
+								<NexusPanel formerChord={progression[index - 1].chordInfo.chord} latterChord={item.chordInfo.chord} />
+							) : (
+								<DummyNexusPanel />
+							)}
 							<div className="progression-editor__panel">
 								<div className="progression-editor__panel-actions">
 									<button
@@ -170,6 +176,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 						</div>
 					))}
 					<div className={getSlotClassName(progression.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
+						<DummyNexusPanel />
 						<div className="progression-editor__panel progression-editor__add-panel">
 							<button
 								type="button"

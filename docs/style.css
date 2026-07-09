@@ -69,6 +69,36 @@ body {
 	font-size: 14px;
 }
 
+.nexus-panel {
+	display: flex;
+	flex-direction: column;
+	height: 80px;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+
+	gap: 2px;
+	padding: 8px;
+	border-radius: 6px;
+	background: #ffffff;
+	border: 1px solid #d0d7de;
+	transform: translateX(-50%); /* またがるように表示する */
+}
+
+.nexus-panel--dummy {
+	background: transparent;
+	border: 0;
+}
+
+.nexus-panel__degree {
+	font-size: 20px;
+	font-weight: 600;
+}
+
+.nexus-panel__key {
+	font-size: 16px;
+}
+
 .progression-editor__scroll-area {
 	overflow-x: auto;
 	overflow-y: hidden;
