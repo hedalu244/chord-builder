@@ -18,6 +18,6 @@ export class FullChordInfo {
 		if (this.qualityId === undefined) {
 			return this.chord.toString();
 		}
-		return `${this.chord.root.toString()}${findChordQuality(this.qualityId).notation}`;
+		return `${findChordQuality(this.qualityId).getNotation(this.chord.root)}`;
 	}
 }

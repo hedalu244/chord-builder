@@ -1,4 +1,4 @@
-import { Degree, PitchClass } from "./pitch";
+import { Degree, Interval, PitchClass } from "./pitch";
 
 export type Mode = "M" | "m";
 
@@ -35,6 +35,15 @@ export class BasicChord {
         const root = new PitchClass(PitchClass.parse(match[1]).value);
         const mode = match[2] === "m" ? "m" : "M";
         return new BasicChord(root, mode);
+    }
+
+    getChordTones(): PitchClass[] {
+        switch (this.mode) {
+            case "M":
+                return Interval.map([0, 4, 7]).map(interval => this.root.add(interval));
+            case "m":
+                return Interval.map([0, 3, 7]).map(interval => this.root.add(interval));
+        }
     }
 }
 

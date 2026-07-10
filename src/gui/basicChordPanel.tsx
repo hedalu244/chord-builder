@@ -1,4 +1,5 @@
 import { BasicChord } from "../basics/basicChord";
+import { ChordTones } from "./chordTones";
 
 type BasicChordPanelProps = {
 	readonly value: BasicChord;
@@ -12,6 +13,7 @@ export function BasicChordPanel(props: BasicChordPanelProps) {
 		<div className="basic-chord-panel">
 			<span className="basic-chord-panel__label">Basic Chord</span>
 			<h4 className="basic-chord-panel__name">{value.toString()}</h4>
+			<ChordTones tones={value.getChordTones()} />
 			<button type="button" className="basic-chord-panel__change-button" onClick={onChangeChord}>
 				Change
 			</button>

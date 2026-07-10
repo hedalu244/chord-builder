@@ -1,19 +1,36 @@
-import { Interval } from "./pitch";
+import { Interval, PitchClass } from "./pitch";
 import { Mode } from "./basicChord";
 
-export type ChordQuality = {
-    readonly id: string, // 一意なID
-    readonly notation: string,
-    readonly mode: Mode,
-    readonly intervals: readonly Interval[], // もとのルートからの相対的な音程の配列
-};
+export class ChordQuality {
+    readonly id: string; // 一意なID
+    private readonly notation: string;
+    readonly mode: Mode;
+    readonly intervals: readonly Interval[]; // もとのルートからの相対的な音程の配列
+    constructor(id: string, notation: string, mode: Mode, intervals: readonly Interval[]) {
+        this.id = id;
+        this.notation = notation;
+        this.mode = mode;
+        this.intervals = intervals;
+    }
 
-export type ChordQualityId = "major7" | "minor7" | "dominant7";
+    getChordTones(root: PitchClass): PitchClass[] {
+        return this.intervals.map(interval => root.add(interval));
+    }
+
+    getNotation(root: PitchClass): string {
+        return root.add(this.intervals[0]).toString() + this.notation;
+    }
+}
+
+export type ChordQualityId = "major7" | "minor7" | "dominant7" | "b9omit1" | "9omit1" | "major6";
 export const chordQualities: readonly ChordQuality[] = [
-    { id: "major7", notation: "M7", mode: "M", intervals: Interval.map([0, 4, 7, 11]) },
-    { id: "dominant7", notation: "7", mode: "M", intervals: Interval.map([0, 4, 7, 10]) },
+    new ChordQuality("minor7", "m7", "m", Interval.map([0, 3, 7, 10])),
 
-    { id: "minor7", notation: "m7", mode: "m", intervals: Interval.map([0, 3, 7, 10]) },
+    new ChordQuality("major7", "M7", "M", Interval.map([0, 4, 7, 11])),
+    new ChordQuality("major6", "6", "M", Interval.map([0, 4, 7, 9])),
+    new ChordQuality("dominant7", "7", "M", Interval.map([0, 4, 7, 10])),
+    new ChordQuality("b9omit1", "dim7", "M", Interval.map([4, 7, 10, 1])),
+    new ChordQuality("9omit1", "m7-5", "M", Interval.map([4, 7, 10, 2])),
 ];
 
 export function findChordQuality(id: ChordQualityId): ChordQuality {
