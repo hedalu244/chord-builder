@@ -6,14 +6,12 @@ type NexusPanelProps = {
 	readonly latterChord: BasicChord;
 };
 
-function formatKnownNexus(formerChord: BasicChord, latterChord: BasicChord): { degree: string; key: string } {
+export function formatKnownNexus(formerChord: BasicChord, latterChord: BasicChord): { degree: string; key: string } {
 	const matches = findMatchingNexus(formerChord, latterChord);
 	const primary = matches[0];
 	if (primary) {
-		const former = primary.nexus.formerChordDegree;
-		const latter = primary.nexus.latterChordDegree;
 		return {
-			degree: `${former.degree.toString()} → ${latter.degree.toString()}`,
+			degree: `${primary.nexus.toString()}`,
 			key: `in key=${primary.key.toString()}`
 		};
 	}

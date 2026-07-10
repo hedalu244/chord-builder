@@ -1,10 +1,14 @@
 import { AnimationEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ChordPanel } from "./chordPanel";
+import { InsertChordModal } from "./insertChordModal";
 import { NexusPanel, DummyNexusPanel } from "./nexusPanel";
+import { BasicChord } from "../basics/basicChord";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import {
 	createProgressionItems,
-	insertChordAtIndex,
+	getInsertContext,
+	InsertContext,
+	insertChordInfoAtIndex,
 	InsertTrigger,
 	ProgressionItem,
 	removeChordAtIndex,
@@ -25,10 +29,18 @@ type ShiftAnimationState = {
 	readonly targetIndex: number;
 } | null;
 
+type PendingInsert = {
+	readonly index: number;
+	readonly context: InsertContext;
+} | null;
+
 type ProgressionEditorModel = {
 	readonly progression: readonly ProgressionItem[];
 	readonly shiftAnimation: ShiftAnimationState;
+	readonly pendingInsert: PendingInsert;
 	readonly handleInsert: (index: number, trigger: InsertTrigger) => void;
+	readonly handleConfirmInsert: (chord: BasicChord) => void;
+	readonly handleCancelInsert: () => void;
 	readonly handleDelete: (index: number) => void;
 	readonly handleChordChange: (index: number, nextChordInfo: FullChordInfo) => void;
 	readonly handleSlotAnimationEnd: (event: AnimationEvent<HTMLDivElement>) => void;
@@ -54,14 +66,21 @@ function useProgressionEditorModel(
 		createProgressionItems(value, createId)
 	);
 	const [shiftAnimation, setShiftAnimation] = useState<ShiftAnimationState>(null);
+	const [pendingInsert, setPendingInsert] = useState<PendingInsert>(null);
 
 	useEffect(() => {
 		setProgression(current => syncProgressionItems(current, value, createId));
 	}, [value]);
 
 	const handleInsert = (index: number, trigger: InsertTrigger): void => {
+		setPendingInsert({ index, context: getInsertContext(progression, index, trigger) });
+	};
+
+	const handleConfirmInsert = (chord: BasicChord): void => {
+		if (!pendingInsert) return;
+		const { index } = pendingInsert;
 		setProgression(current => {
-			const next = insertChordAtIndex(current, index, trigger, createId);
+			const next = insertChordInfoAtIndex(current, index, new FullChordInfo(chord), createId);
 			onChange?.(toChordInfos(next));
 			return next;
 		});
@@ -69,6 +88,11 @@ function useProgressionEditorModel(
 			kind: "insert-push",
 			targetIndex: index
 		});
+		setPendingInsert(null);
+	};
+
+	const handleCancelInsert = (): void => {
+		setPendingInsert(null);
 	};
 
 	const handleDelete = (index: number): void => {
@@ -102,7 +126,10 @@ function useProgressionEditorModel(
 	return {
 		progression,
 		shiftAnimation,
+		pendingInsert,
 		handleInsert,
+		handleConfirmInsert,
+		handleCancelInsert,
 		handleDelete,
 		handleChordChange,
 		handleSlotAnimationEnd
@@ -114,7 +141,10 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	const {
 		progression,
 		shiftAnimation,
+		pendingInsert,
 		handleInsert,
+		handleConfirmInsert,
+		handleCancelInsert,
 		handleDelete,
 		handleChordChange,
 		handleSlotAnimationEnd
@@ -189,6 +219,13 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 					</div>
 				</div>
 			</div>
+			{pendingInsert && (
+				<InsertChordModal
+					context={pendingInsert.context}
+					onConfirm={handleConfirmInsert}
+					onCancel={handleCancelInsert}
+				/>
+			)}
 		</div>
 	);
 }

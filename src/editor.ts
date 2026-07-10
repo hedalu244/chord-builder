@@ -1,6 +1,7 @@
 import { FullChordInfo } from "./basics/fullChordInfo";
 
 export type InsertTrigger = "add" | "insertBefore" | "insertAfter";
+export type InsertMethod = "formerNexus" | "latterNexus" | "direct";
 
 export type InsertContext = {
 	readonly previousChord: FullChordInfo | null;
@@ -13,9 +14,8 @@ export type ProgressionItem = {
 	readonly chordInfo: FullChordInfo;
 };
 
-export function createInsertedChordInfo(_context: InsertContext): FullChordInfo {
-    // todo 実装
-	return FullChordInfo.createDefault();
+export function defaultInsertMethod(trigger: InsertTrigger): InsertMethod {
+	return trigger === "insertBefore" ? "latterNexus" : "formerNexus";
 }
 
 export function toChordInfos(items: readonly ProgressionItem[]): FullChordInfo[] {
@@ -42,26 +42,35 @@ export function replaceChordAtIndex(
 	});
 }
 
-export function insertChordAtIndex(
+export function getInsertContext(
 	progression: readonly ProgressionItem[],
 	index: number,
-	trigger: InsertTrigger,
+	trigger: InsertTrigger
+): InsertContext {
+	if (index < 0 || index > progression.length) {
+		throw new Error(`insert index out of range: ${index}`);
+	}
+
+	return {
+		previousChord: index === 0 ? null : progression[index - 1].chordInfo,
+		nextChord: index === progression.length ? null : progression[index].chordInfo,
+		trigger
+	};
+}
+
+export function insertChordInfoAtIndex(
+	progression: readonly ProgressionItem[],
+	index: number,
+	chordInfo: FullChordInfo,
 	createId: () => number
 ): ProgressionItem[] {
 	if (index < 0 || index > progression.length) {
 		throw new Error(`insert index out of range: ${index}`);
 	}
 
-	const previousChord = index === 0 ? null : progression[index - 1].chordInfo;
-	const nextChord = index === progression.length ? null : progression[index].chordInfo;
-	const insertedChord = createInsertedChordInfo({
-		previousChord,
-		nextChord,
-		trigger
-	});
 	const insertedItem: ProgressionItem = {
 		id: createId(),
-		chordInfo: insertedChord
+		chordInfo
 	};
 
 	return [

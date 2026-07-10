@@ -4,7 +4,7 @@ import { PitchClass } from "../basics/pitch";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import { BasicChord } from "../basics/basicChord";
 
-const pitchClassOptions = Array.from({ length: 12 }, (_, index) => {
+export const pitchClassOptions = Array.from({ length: 12 }, (_, index) => {
 	const pitchClass = new PitchClass(index);
 	return {
 		value: index,

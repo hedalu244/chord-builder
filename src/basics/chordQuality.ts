@@ -25,3 +25,7 @@ export function findChordQuality(id: ChordQualityId): ChordQuality {
     return quality;
 }
 
+export function findQualitiesByMode(mode: Mode): readonly ChordQuality[] {
+    return chordQualities.filter(quality => quality.mode === mode);
+}
+

@@ -27,7 +27,7 @@ export function calcRelativeNexus(former: BasicChord, latter: BasicChord): Relat
     return new RelativeNexus(formerQuality.mode, latterQuality.mode, rootMotion);
 }
 
-class DegreeNexus {
+export class DegreeNexus {
     readonly relativeNexus: RelativeNexus;
     private _formerRootDegree: Degree;
 
@@ -52,12 +52,41 @@ class DegreeNexus {
     get latterChordDegree(): ChordDegree {
         return new ChordDegree(this.latterRootDegree, this.relativeNexus.latterMode);
     }
+
+    // 接続元の絶対ルートから、この接続に従った接続先の絶対ルートを求める
+    resolveLatterRoot(formerRoot: PitchClass): PitchClass {
+        return formerRoot.add(this.relativeNexus.rootMotion);
+    }
+    // 接続先の絶対ルートから、この接続に従った接続元の絶対ルートを求める
+    resolveFormerRoot(latterRoot: PitchClass): PitchClass {
+        return latterRoot.sub(this.relativeNexus.rootMotion);
+    }
+
+    // 接続元の絶対ルートが、この接続における接続元のdegreeとなるようなキーを求める
+    resolveKeyFromFormerRoot(formerRoot: PitchClass): PitchClass {
+        return formerRoot.getKey(this.formerRootDegree);
+    }
+    // 接続先の絶対ルートが、この接続における接続先のdegreeとなるようなキーを求める
+    resolveKeyFromLatterRoot(latterRoot: PitchClass): PitchClass {
+        return latterRoot.getKey(this.latterRootDegree);
+    }
+
+    toString(): string {
+        return `${this.formerChordDegree.toString()} → ${this.latterChordDegree.toString()}`;
+    }
 }
 
-const KnownNexi: readonly DegreeNexus[] = [
+export const KnownNexi: readonly DegreeNexus[] = [
     new DegreeNexus(new ChordDegree(new Degree(7), "major"), new ChordDegree(new Degree(0), "major")), // V-I
     new DegreeNexus(new ChordDegree(new Degree(2), "minor"), new ChordDegree(new Degree(5), "major")), // ii-V
 ];
+
+export function findNexiByFormerMode(mode: Mode): readonly DegreeNexus[] {
+    return KnownNexi.filter(nexus => nexus.relativeNexus.formerMode === mode);
+}
+export function findNexiByLatterMode(mode: Mode): readonly DegreeNexus[] {
+    return KnownNexi.filter(nexus => nexus.relativeNexus.latterMode === mode);
+}
 
 // V-I in key=A みたいな情報
 type NexusMatchResult = {
