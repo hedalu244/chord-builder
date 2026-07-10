@@ -4,6 +4,9 @@ import { PitchClass } from "./basics/pitch";
 import { ProgressionEditor } from "./gui/progressionEditor";
 import { FullChordInfo } from "./basics/fullChordInfo";
 import { BasicChord } from "./basics/basicChord";
+import { colorSchemeClassName } from "./gui/colorSchemeSelect";
+import { ColorSchemeProvider, useColorScheme } from "./gui/colorSchemeContext";
+import { ColorSchemeSelect } from "./gui/colorSchemeSelect";
 
 function createInitialProgression(): FullChordInfo[] {
 	return [
@@ -15,10 +18,14 @@ function createInitialProgression(): FullChordInfo[] {
 
 function App() {
 	const [progression, setProgression] = useState<readonly FullChordInfo[]>(() => createInitialProgression());
+	const { colorScheme } = useColorScheme();
 
 	return (
-		<main className="app">
-			<h2 className="app__title">Chord Progression Editor</h2>
+		<main className={`app ${colorSchemeClassName(colorScheme)}`}>
+			<div className="app__header">
+				<h2 className="app__title">Chord Progression Editor</h2>
+				<ColorSchemeSelect />
+			</div>
 			<ProgressionEditor
 				value={progression}
 				onChange={setProgression}
@@ -31,4 +38,8 @@ const mountNode = document.createElement("div");
 mountNode.className = "app-root";
 document.body.appendChild(mountNode);
 
-createRoot(mountNode).render(<App />);
+createRoot(mountNode).render(
+	<ColorSchemeProvider>
+		<App />
+	</ColorSchemeProvider>
+);

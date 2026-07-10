@@ -13,6 +13,25 @@ type ToneRowProps = {
 	readonly onToggle?: (value: number) => void;
 };
 
+// 構成音を表すセル(locked/active)にのみ、そのPitchClassの色を割り当てる。空セルは無色のまま
+function toneCellColorStyle(value: number, locked: boolean, active: boolean) {
+	if (!locked && !active) return undefined;
+	if (locked) {
+		return {
+			background: `var(--pc-${value}-basic)`,
+			borderColor: `var(--pc-${value}-basic)`,
+			color: `var(--color-surface)`,
+		};
+	}
+	if (active) {
+		return {
+			background: `var(--pc-${value}-light)`,
+			borderColor: `var(--pc-${value}-dark)`,
+			color: `var(--pc-${value}-dark)`,
+		};
+	}
+}
+
 function ToneRow(props: ToneRowProps) {
 	const { root, activeValues, lockedValues, onToggle } = props;
 	return (
@@ -25,14 +44,15 @@ function ToneRow(props: ToneRowProps) {
 				if (locked) classNames.push("chord-scale-modal__tone-cell--locked");
 				else if (active) classNames.push("chord-scale-modal__tone-cell--active");
 				const label = root.add(interval).toString();
+				const style = toneCellColorStyle(value, locked, active);
 
 				if (!onToggle) {
 					return (
-						<span key={value} className={classNames.join(" ")}>{active ? label : ""}</span>
+						<span key={value} className={classNames.join(" ")} style={style}>{active ? label : ""}</span>
 					);
 				}
 				return (
-					<label key={value} className={classNames.join(" ")}>
+					<label key={value} className={classNames.join(" ")} style={style}>
 						<input type="checkbox" checked={active} disabled={locked} onChange={() => onToggle(value)} />
 						<span>{label}</span>
 					</label>

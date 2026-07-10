@@ -4,6 +4,7 @@ import { DegreeNexus, findNexiByFormerMode, findNexiByLatterMode } from "../basi
 import { PitchClass } from "../basics/pitch";
 import { ChordEditContext, ChordEditMethod, defaultChordEditMethod } from "../editor";
 import { SearchedNexusBlock, DescribedNexusBlock } from "./nexusBlock";
+import { ChordTones } from "./chordTones";
 
 function methodButtonClassName(active: boolean): string {
 	return active ? "basic-chord-modal__method-button basic-chord-modal__method-button--active" : "basic-chord-modal__method-button";
@@ -86,7 +87,8 @@ export function BasicChordModal(props: BasicChordModalProps) {
 					)}
 
 					<button type="button" className={`${methodButtonClassName(method === "direct")} basic-chord-modal__method-button--center`} onClick={() => setMethod("direct")}>
-						{chord.toString()}
+						<span>{chord.toString()}</span>
+						<ChordTones tones={chord.getChordTones()} />
 					</button>
 
 					{nextChord ? (
@@ -123,8 +125,8 @@ export function BasicChordModal(props: BasicChordModalProps) {
 					)}
 					{method === "direct" && (
 						<div className="basic-chord-modal__direct-grid">
-							{PitchClass.all.map(root => (
-								allModes.map(mode => {
+							{allModes.map(mode => (
+								PitchClass.all.map(root => {
 									const candidate = new BasicChord(root, mode);
 									return (
 										<button
@@ -133,7 +135,8 @@ export function BasicChordModal(props: BasicChordModalProps) {
 											className={directButtonClassName(chord.root.equals(root) && chord.mode === mode)}
 											onClick={() => setChord(candidate)}
 										>
-											{candidate.toString()}
+											<span>{candidate.toString()}</span>
+											<ChordTones tones={candidate.getChordTones()} />
 										</button>
 									);
 								})

@@ -20,6 +20,143 @@
 
 	/* 選択中/アクティブ状態の枠線の太さ */
 	--border-width-active: 2px;
+
+	/* 構成音の配色: 色相はカラースキームクラス(.color-scheme-*)側でPitchClassごとに定義するが、
+	   明度・彩度の段階(light/basic/darkの3段階)はスキーム間で共通のトークンとしてここで定義する */
+	--pc-chroma-light: 0.045;
+	--pc-chroma-basic: 0.12;
+	--pc-chroma-dark: 0.16;
+	--pc-lightness-light: 93%;
+	--pc-lightness-basic: 72%;
+	--pc-lightness-dark: 42%;
+}
+
+/* ==========================================================================
+   構成音の配色 (Pitch Class Colors)
+   PitchClass.value (0-11) ごとに --pc-{n}-light / -basic / -dark を定義する。
+   3つのクラスはいずれも中身がCSS変数の定義のみで、アプリルート(.app)に
+   このうちどれか1つを付与することで、構成音を表示する側(chord-tones,
+   chord-scale-modal)の配色がまとめて切り替わる。
+   ========================================================================== */
+
+/* ① クロマチック順: PitchClass.value の順に色相を等間隔配置 (30deg刻み) */
+.color-scheme-chromatic {
+	--pc-0-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
+	--pc-0-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
+	--pc-0-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
+	--pc-1-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 30deg);
+	--pc-1-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 30deg);
+	--pc-1-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 30deg);
+	--pc-2-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 60deg);
+	--pc-2-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 60deg);
+	--pc-2-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 60deg);
+	--pc-3-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 90deg);
+	--pc-3-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 90deg);
+	--pc-3-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 90deg);
+	--pc-4-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
+	--pc-4-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
+	--pc-4-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
+	--pc-5-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 150deg);
+	--pc-5-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 150deg);
+	--pc-5-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 150deg);
+	--pc-6-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 180deg);
+	--pc-6-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 180deg);
+	--pc-6-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 180deg);
+	--pc-7-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 210deg);
+	--pc-7-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 210deg);
+	--pc-7-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 210deg);
+	--pc-8-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
+	--pc-8-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
+	--pc-8-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
+	--pc-9-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 270deg);
+	--pc-9-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 270deg);
+	--pc-9-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 270deg);
+	--pc-10-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 300deg);
+	--pc-10-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 300deg);
+	--pc-10-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 300deg);
+	--pc-11-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 330deg);
+	--pc-11-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 330deg);
+	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 330deg);
+}
+
+/* ② 五度圏順: (PitchClass.value * 7) % 12 の順に色相を等間隔配置 */
+.color-scheme-fifths {
+	--pc-0-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
+	--pc-0-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
+	--pc-0-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
+	--pc-1-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 210deg);
+	--pc-1-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 210deg);
+	--pc-1-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 210deg);
+	--pc-2-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 60deg);
+	--pc-2-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 60deg);
+	--pc-2-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 60deg);
+	--pc-3-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 270deg);
+	--pc-3-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 270deg);
+	--pc-3-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 270deg);
+	--pc-4-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
+	--pc-4-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
+	--pc-4-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
+	--pc-5-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 330deg);
+	--pc-5-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 330deg);
+	--pc-5-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 330deg);
+	--pc-6-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 180deg);
+	--pc-6-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 180deg);
+	--pc-6-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 180deg);
+	--pc-7-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 30deg);
+	--pc-7-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 30deg);
+	--pc-7-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 30deg);
+	--pc-8-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
+	--pc-8-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
+	--pc-8-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
+	--pc-9-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 90deg);
+	--pc-9-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 90deg);
+	--pc-9-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 90deg);
+	--pc-10-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 300deg);
+	--pc-10-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 300deg);
+	--pc-10-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 300deg);
+	--pc-11-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 150deg);
+	--pc-11-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 150deg);
+	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 150deg);
+}
+
+/* ③ Axis System: PitchClass.value % 3 に応じて色相を割り当て(3系統のAxisを塗り分け) */
+.color-scheme-axisSystem {
+	--pc-0-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
+	--pc-0-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
+	--pc-0-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
+	--pc-1-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
+	--pc-1-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
+	--pc-1-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
+	--pc-2-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
+	--pc-2-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
+	--pc-2-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
+	--pc-3-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
+	--pc-3-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
+	--pc-3-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
+	--pc-4-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
+	--pc-4-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
+	--pc-4-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
+	--pc-5-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
+	--pc-5-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
+	--pc-5-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
+	--pc-6-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
+	--pc-6-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
+	--pc-6-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
+	--pc-7-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
+	--pc-7-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
+	--pc-7-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
+	--pc-8-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
+	--pc-8-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
+	--pc-8-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
+	--pc-9-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
+	--pc-9-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
+	--pc-9-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
+	--pc-10-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
+	--pc-10-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
+	--pc-10-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
+	--pc-11-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
+	--pc-11-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
+	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
 }
 
 html {
@@ -55,6 +192,30 @@ button {
 .app__title {
 	margin: 0;
 	font-size: 24px;
+}
+
+.app__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.color-scheme-select {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--color-muted);
+}
+
+.color-scheme-select__control {
+	padding: 4px 6px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	font-size: 13px;
 }
 
 .progression-editor__scroll-area {
@@ -241,11 +402,11 @@ button {
 }
 
 .chord-tones__tone {
-	padding: 2px 6px;
+	/* background/border-color/color はPitchClassごとにJS側でインラインstyleとして設定される
+	   (var(--pc-{n}-light) 等を参照するため、ここでは太さ・形状のみを定義する) */
+	padding: 2px 4px;
 	border: 1px solid var(--color-border);
 	border-radius: 10px;
-	background: var(--color-highlight);
-	color: var(--color-muted);
 	font-size: 12px;
 }
 
@@ -482,9 +643,11 @@ button {
 
 .basic-chord-modal__direct-button {
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	padding: 8px 2px;
+	gap: 2px;
+	padding: 6px 2px;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-control);
 	background: var(--color-surface);
@@ -538,17 +701,14 @@ button {
 	pointer-events: none;
 }
 
+/* background/border-color/color はPitchClassごとにJS側でインラインstyleとして設定される
+   (var(--pc-{n}-light) 等を参照するため、ここでは文字の太さ・枠線の太さのみを定義する) */
 .chord-scale-modal__tone-cell--active {
-	border-color: var(--color-ink);
-	background: var(--color-highlight);
 	font-weight: 600;
 }
 
 .chord-scale-modal__tone-cell--locked {
-	border-color: var(--color-ink);
 	border-width: var(--border-width-active);
-	background: var(--color-ink);
-	color: var(--color-surface);
 	font-weight: 600;
 }
 
