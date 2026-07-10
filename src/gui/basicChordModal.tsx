@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BasicChord, Mode } from "../basics/basicChord";
-import { DegreeNexus, findNexiByFormerMode, findNexiByLatterMode } from "../basics/nexus";
+import { calcRelativeNexus, DegreeNexus, findNexiByFormerMode, findNexiByLatterMode } from "../basics/nexus";
 import { PitchClass } from "../basics/pitch";
 import { ChordEditContext, ChordEditMethod, defaultChordEditMethod } from "../editor";
 import { formatKnownNexus } from "./nexusPanel";
@@ -21,34 +21,56 @@ function nexusButtonClassName(active: boolean): string {
 	return active ? "basic-chord-modal__nexus-button basic-chord-modal__nexus-button--active" : "basic-chord-modal__nexus-button";
 }
 
+// 探索によりKnownNexiとの一致を検出して表示する。一致しない場合はrelativeのみのフォールバック表示になる。
 function NexusDisplay(props: { readonly formerChord: BasicChord; readonly latterChord: BasicChord }) {
 	const { relative, degree, key } = formatKnownNexus(props.formerChord, props.latterChord);
 	return (
 		<>
-			<div className="basic-chord-modal__flank-relative">{relative}</div>
-			<div className="basic-chord-modal__flank-degree">{degree}</div>
-			<div className="basic-chord-modal__flank-key">{key}</div>
+			<div className="basic-chord-modal__nexus-relative">{relative}</div>
+			<div className="basic-chord-modal__nexus-degree">{degree}</div>
+			<div className="basic-chord-modal__nexus-key">{key}</div>
 		</>
 	);
 }
 
+function nexusChordClassName(emphasized: boolean): string {
+	return emphasized ? "basic-chord-modal__nexus-chord" : "basic-chord-modal__nexus-chord basic-chord-modal__nexus-chord--muted";
+}
+
 type NexusCandidateListProps = {
 	readonly candidates: readonly DegreeNexus[];
-	readonly resolveKey: (nexus: DegreeNexus) => PitchClass;
+	readonly anchorChord: BasicChord;
+	readonly anchorRole: "former" | "latter";
 	readonly selected: DegreeNexus | null;
 	readonly onSelect: (nexus: DegreeNexus) => void;
 };
 
+// ボタンごとに固有のnexusが分かっているので、探索ではなく直接、former/latter/relative/degree/keyを求める。
 function NexusCandidateList(props: NexusCandidateListProps) {
-	const { candidates, resolveKey, selected, onSelect } = props;
+	const { candidates, anchorChord, anchorRole, selected, onSelect } = props;
 	return (
 		<div className="basic-chord-modal__nexus-list">
-			{candidates.map((nexus, index) => (
-				<button type="button" key={index} className={nexusButtonClassName(nexus === selected)} onClick={() => onSelect(nexus)}>
-					<div className="basic-chord-modal__nexus-degree">{nexus.toString()}</div>
-					<div className="basic-chord-modal__nexus-key">{`in key=${resolveKey(nexus).toString()}`}</div>
-				</button>
-			))}
+			{candidates.map((nexus, index) => {
+				const formerChord = anchorRole === "former" ? anchorChord : nexus.resolveFormerChord(anchorChord);
+				const latterChord = anchorRole === "latter" ? anchorChord : nexus.resolveLatterChord(anchorChord);
+				const key = anchorRole === "former"
+					? nexus.resolveKeyFromFormerRoot(anchorChord.root)
+					: nexus.resolveKeyFromLatterRoot(anchorChord.root);
+				const relative = calcRelativeNexus(formerChord, latterChord).toString();
+
+				return (
+					<button type="button" key={index} className={nexusButtonClassName(nexus === selected)} onClick={() => onSelect(nexus)}>
+						<div className="basic-chord-modal__nexus-chords">
+							<span className={nexusChordClassName(anchorRole !== "former")}>{formerChord.toString()}</span>
+							<span className="basic-chord-modal__nexus-arrow">→</span>
+							<span className={nexusChordClassName(anchorRole !== "latter")}>{latterChord.toString()}</span>
+						</div>
+						<div className="basic-chord-modal__nexus-relative">{relative}</div>
+						<div className="basic-chord-modal__nexus-degree">{nexus.toString()}</div>
+						<div className="basic-chord-modal__nexus-key">{`in key=${key.toString()}`}</div>
+					</button>
+				);
+			})}
 		</div>
 	);
 }
@@ -72,12 +94,12 @@ export function BasicChordModal(props: BasicChordModalProps) {
 
 	const selectFromFormer = (nexus: DegreeNexus): void => {
 		if (!previousChord) return;
-		setChord(new BasicChord(nexus.resolveLatterRoot(previousChord.root), nexus.relativeNexus.latterMode));
+		setChord(nexus.resolveLatterChord(previousChord));
 		setSelectedNexusA(nexus);
 	};
 	const selectFromLatter = (nexus: DegreeNexus): void => {
 		if (!nextChord) return;
-		setChord(new BasicChord(nexus.resolveFormerRoot(nextChord.root), nexus.relativeNexus.formerMode));
+		setChord(nexus.resolveFormerChord(nextChord));
 		setSelectedNexusB(nexus);
 	};
 
@@ -85,28 +107,33 @@ export function BasicChordModal(props: BasicChordModalProps) {
 		<div className="basic-chord-modal__backdrop">
 			<div className="basic-chord-modal">
 				<div className="basic-chord-modal__flank-row">
-					{context.previousChord && <div className="basic-chord-modal__context-chord">{context.previousChord.toString()}</div>}
 					<button type="button" className={flankClassName(method === "formerNexus")} onClick={() => setMethod("formerNexus")}>
-						{previousChord
-							? <NexusDisplay formerChord={previousChord} latterChord={chord} />
-							: <span className="basic-chord-modal__flank-placeholder">–</span>}
+						{context.previousChord && previousChord ? (
+							<>
+								<div className="basic-chord-modal__flank-neighbor">{`${context.previousChord.toString()}→`}</div>
+								<NexusDisplay formerChord={previousChord} latterChord={chord} />
+							</>
+						) : <span className="basic-chord-modal__flank-placeholder">–</span>}
 					</button>
 					<button type="button" className={`${flankClassName(method === "direct")} basic-chord-modal__flank--center`} onClick={() => setMethod("direct")}>
 						{chord.toString()}
 					</button>
 					<button type="button" className={flankClassName(method === "latterNexus")} onClick={() => setMethod("latterNexus")}>
-						{nextChord
-							? <NexusDisplay formerChord={chord} latterChord={nextChord} />
-							: <span className="basic-chord-modal__flank-placeholder">–</span>}
+						{context.nextChord && nextChord ? (
+							<>
+								<div className="basic-chord-modal__flank-neighbor">{`→${context.nextChord.toString()}`}</div>
+								<NexusDisplay formerChord={chord} latterChord={nextChord} />
+							</>
+						) : <span className="basic-chord-modal__flank-placeholder">–</span>}
 					</button>
-					{context.nextChord && <div className="basic-chord-modal__context-chord">{context.nextChord.toString()}</div>}
 				</div>
 
 				{method === "formerNexus" && (
 					previousChord ? (
 						<NexusCandidateList
 							candidates={findNexiByFormerMode(previousChord.mode)}
-							resolveKey={nexus => nexus.resolveKeyFromFormerRoot(previousChord.root)}
+							anchorChord={previousChord}
+							anchorRole="former"
 							selected={selectedNexusA}
 							onSelect={selectFromFormer}
 						/>
@@ -116,7 +143,8 @@ export function BasicChordModal(props: BasicChordModalProps) {
 					nextChord ? (
 						<NexusCandidateList
 							candidates={findNexiByLatterMode(nextChord.mode)}
-							resolveKey={nexus => nexus.resolveKeyFromLatterRoot(nextChord.root)}
+							anchorChord={nextChord}
+							anchorRole="latter"
 							selected={selectedNexusB}
 							onSelect={selectFromLatter}
 						/>

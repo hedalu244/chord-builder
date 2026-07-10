@@ -205,8 +205,8 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-	width: 360px;
-	padding: 16px;
+	width: 560px;
+	padding: 20px;
 	border-radius: 8px;
 	background: #ffffff;
 	box-shadow: 0 8px 24px rgba(31, 41, 51, 0.25);
@@ -243,30 +243,9 @@ body {
 	background: #eef2f6;
 }
 
-.basic-chord-modal__context-chord {
-	flex: 0 0 auto;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 8px 6px;
-	font-size: 14px;
-	font-weight: 600;
-	color: #52606d;
-}
-
-.basic-chord-modal__flank-relative {
-	font-size: 9px;
+.basic-chord-modal__flank-neighbor {
+	font-size: 18px;
 	color: #9aa5b1;
-}
-
-.basic-chord-modal__flank-degree {
-	font-size: 14px;
-	font-weight: 600;
-}
-
-.basic-chord-modal__flank-key {
-	font-size: 11px;
-	color: #52606d;
 }
 
 .basic-chord-modal__flank-placeholder {
@@ -275,18 +254,20 @@ body {
 
 .basic-chord-modal__nexus-list {
 	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	max-height: 160px;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 8px;
+	max-height: 320px;
 	overflow-y: auto;
 }
 
 .basic-chord-modal__nexus-button {
 	display: flex;
-	justify-content: space-between;
-	align-items: baseline;
-	gap: 8px;
-	padding: 6px;
+	flex: 0 0 160px;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 8px;
 	border: 1px solid #bcccdc;
 	border-radius: 4px;
 	background: #ffffff;
@@ -299,14 +280,38 @@ body {
 	background: #eef2f6;
 }
 
-.basic-chord-modal__nexus-degree {
-	font-size: 14px;
+.basic-chord-modal__nexus-chords {
+	font-size: 16px;
 	font-weight: 600;
 }
 
+.basic-chord-modal__nexus-chord--muted {
+	font-weight: 400;
+	color: #9aa5b1;
+}
+
+.basic-chord-modal__nexus-arrow {
+	font-weight: 400;
+	color: #9aa5b1;
+	margin: 0 2px;
+}
+
+.basic-chord-modal__nexus-relative {
+	font-size: 9px;
+	color: #9aa5b1;
+	text-align: center;
+}
+
+.basic-chord-modal__nexus-degree {
+	font-size: 14px;
+	font-weight: 600;
+	text-align: center;
+}
+
 .basic-chord-modal__nexus-key {
-	font-size: 12px;
+	font-size: 11px;
 	color: #52606d;
+	text-align: center;
 }
 
 .basic-chord-modal__hint {

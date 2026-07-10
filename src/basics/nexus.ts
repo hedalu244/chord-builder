@@ -63,6 +63,15 @@ export class DegreeNexus {
         return latterRoot.sub(this.relativeNexus.rootMotion);
     }
 
+    // 接続元のコードから、この接続に従った接続先のコードを求める
+    resolveLatterChord(formerChord: BasicChord): BasicChord {
+        return new BasicChord(this.resolveLatterRoot(formerChord.root), this.relativeNexus.latterMode);
+    }
+    // 接続先のコードから、この接続に従った接続元のコードを求める
+    resolveFormerChord(latterChord: BasicChord): BasicChord {
+        return new BasicChord(this.resolveFormerRoot(latterChord.root), this.relativeNexus.formerMode);
+    }
+
     // 接続元の絶対ルートが、この接続における接続元のdegreeとなるようなキーを求める
     resolveKeyFromFormerRoot(formerRoot: PitchClass): PitchClass {
         return formerRoot.getKey(this.formerRootDegree);
