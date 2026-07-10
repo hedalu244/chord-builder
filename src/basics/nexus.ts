@@ -1,7 +1,7 @@
 import { BasicChord, Mode, ChordDegree } from "./basicChord";
 import { Degree, Interval, PitchClass } from "./pitch";
 
-class RelativeNexus {
+export class RelativeNexus {
     readonly formerMode: Mode;
     readonly latterMode: Mode;
     readonly rootMotion: Interval; // FormerChordのルートからLatterChordのルートまでの相対的な音程
@@ -54,31 +54,24 @@ export class DegreeNexus {
         return new ChordDegree(this.latterRootDegree, this.relativeNexus.latterMode);
     }
 
-    // 接続元の絶対ルートから、この接続に従った接続先の絶対ルートを求める
-    resolveLatterRoot(formerRoot: PitchClass): PitchClass {
-        return formerRoot.add(this.relativeNexus.rootMotion);
-    }
-    // 接続先の絶対ルートから、この接続に従った接続元の絶対ルートを求める
-    resolveFormerRoot(latterRoot: PitchClass): PitchClass {
-        return latterRoot.sub(this.relativeNexus.rootMotion);
-    }
-
     // 接続元のコードから、この接続に従った接続先のコードを求める
     resolveLatterChord(formerChord: BasicChord): BasicChord {
-        return new BasicChord(this.resolveLatterRoot(formerChord.root), this.relativeNexus.latterMode);
+        const latterRoot = formerChord.root.add(this.relativeNexus.rootMotion);
+        return new BasicChord(latterRoot, this.relativeNexus.latterMode);
     }
     // 接続先のコードから、この接続に従った接続元のコードを求める
     resolveFormerChord(latterChord: BasicChord): BasicChord {
-        return new BasicChord(this.resolveFormerRoot(latterChord.root), this.relativeNexus.formerMode);
+        const formerRoot = latterChord.root.sub(this.relativeNexus.rootMotion);
+        return new BasicChord(formerRoot, this.relativeNexus.formerMode);
     }
 
     // 接続元の絶対ルートが、この接続における接続元のdegreeとなるようなキーを求める
-    resolveKeyFromFormerRoot(formerRoot: PitchClass): PitchClass {
-        return formerRoot.getKey(this.formerRootDegree);
+    resolveKeyFromFormer(formerChord: BasicChord): PitchClass {
+        return formerChord.root.getKey(this.formerRootDegree);
     }
     // 接続先の絶対ルートが、この接続における接続先のdegreeとなるようなキーを求める
-    resolveKeyFromLatterRoot(latterRoot: PitchClass): PitchClass {
-        return latterRoot.getKey(this.latterRootDegree);
+    resolveKeyFromLatter(latterChord: BasicChord): PitchClass {
+        return latterChord.root.getKey(this.latterRootDegree);
     }
 
     toString(): string {
@@ -137,6 +130,7 @@ type NexusMatchResult = {
     nexus: DegreeNexus;
     key: PitchClass;
 };
+
 export function findMatchingNexus(former: BasicChord, latter: BasicChord): NexusMatchResult[] {
     const matches: NexusMatchResult[] = [];
     for (let keyValue = 0; keyValue < 12; keyValue++) {

@@ -44,17 +44,16 @@ body {
 	border: 0;
 }
 
-.nexus-panel__relative {
+/* nexus-panel(メインの進行表示)ではnexus-blockをより大きく表示する */
+.nexus-panel .nexus-block__relative {
 	font-size: 13px;
-	color: #9aa5b1;
 }
 
-.nexus-panel__degree {
+.nexus-panel .nexus-block__degree {
 	font-size: 20px;
-	font-weight: 600;
 }
 
-.nexus-panel__key {
+.nexus-panel .nexus-block__key {
 	font-size: 16px;
 }
 
@@ -136,6 +135,22 @@ body {
 	border-radius: 4px;
 	background: #ffffff;
 	cursor: pointer;
+}
+
+.chord-tones {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 4px;
+}
+
+.chord-tones__tone {
+	padding: 2px 6px;
+	border: 1px solid #d0d7de;
+	border-radius: 10px;
+	background: #f5f7fa;
+	color: #52606d;
+	font-size: 12px;
 }
 
 .quality-panel__control {
@@ -280,35 +295,35 @@ body {
 	background: #eef2f6;
 }
 
-.basic-chord-modal__nexus-chords {
+.nexus-block__chords {
 	font-size: 16px;
 	font-weight: 600;
 }
 
-.basic-chord-modal__nexus-chord--muted {
+.nexus-block__chord--muted {
 	font-weight: 400;
 	color: #9aa5b1;
 }
 
-.basic-chord-modal__nexus-arrow {
+.nexus-block__arrow {
 	font-weight: 400;
 	color: #9aa5b1;
 	margin: 0 2px;
 }
 
-.basic-chord-modal__nexus-relative {
+.nexus-block__relative {
 	font-size: 9px;
 	color: #9aa5b1;
 	text-align: center;
 }
 
-.basic-chord-modal__nexus-degree {
+.nexus-block__degree {
 	font-size: 14px;
 	font-weight: 600;
 	text-align: center;
 }
 
-.basic-chord-modal__nexus-key {
+.nexus-block__key {
 	font-size: 11px;
 	color: #52606d;
 	text-align: center;
