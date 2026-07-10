@@ -1,6 +1,7 @@
 import { BasicChord } from "./basicChord";
 import { ChordQualityId, findChordQuality } from "./chordQuality";
-import { Interval } from "./pitch";
+import { Interval, PitchClass } from "./pitch";
+import { Scale } from "./scale";
 
 export class FullChordInfo {
 	readonly chord: BasicChord;
@@ -42,5 +43,27 @@ export class FullChordInfo {
 
 	withExtraScaleTones(extraScaleTones: readonly Interval[] | undefined): FullChordInfo {
 		return new FullChordInfo(this.chord, this.qualityId, extraScaleTones);
+	}
+
+	// スケールのルート。basicChordのルートではなく、Quality.getRootで得られるルート
+	getChordRoot(): PitchClass {
+		if (this.qualityId === undefined) {
+			return this.chord.root;
+		}
+		return findChordQuality(this.qualityId).getRoot(this.chord);
+	}
+
+	getChordToneIntervals(): Interval[] {
+		const root = this.getChordRoot();
+		const pitchClasses = this.qualityId === undefined
+			? this.chord.getChordTones()
+			: findChordQuality(this.qualityId).getChordTones(this.chord.root);
+		return pitchClasses.map(pitchClass => pitchClass.delta(root));
+	}
+
+	getScale(): Scale {
+		const chordTones = this.getChordToneIntervals();
+		const extraTones = this.extraScaleTones ?? [];
+		return new Scale([...chordTones, ...extraTones]);
 	}
 }

@@ -1,20 +1,15 @@
-import { findChordQuality } from "./chordQuality";
-import { FullChordInfo } from "./fullChordInfo";
 import { Interval, PitchClass } from "./pitch";
 
-// スケール = ルート + ルートから見た構成音(半音値の集合)
+// スケール = ルートからの構成音(半音値の集合)。ルート自体の情報は持たない
 export class Scale {
-    readonly root: PitchClass;
     readonly tones: readonly Interval[]; // 昇順、重複なし。必ずInterval(0)を含む
 
-    constructor(root: PitchClass, tones: readonly Interval[]) {
-        this.root = root;
+    constructor(tones: readonly Interval[]) {
         const uniqueValues = Array.from(new Set(tones.map(tone => tone.value))).sort((a, b) => a - b);
         this.tones = uniqueValues.map(value => new Interval(value));
     }
 
     equals(other: Scale): boolean {
-        if (!this.root.equals(other.root)) return false;
         if (this.tones.length !== other.tones.length) return false;
         return this.tones.every((tone, i) => tone.equals(other.tones[i]));
     }
@@ -23,35 +18,19 @@ export class Scale {
         return this.tones.some(t => t.equals(tone));
     }
 
-    getPitchClasses(): PitchClass[] {
-        return this.tones.map(tone => this.root.add(tone));
+    // 構成音を指定した数だけシフトしたスケールを返す。シフト後の構成音は昇順にソートされる
+    shift(index: number): Scale {
+        const base = this.tones[index % this.tones.length];
+        return new Scale(this.tones.map(tone => tone.sub(base)));
     }
-}
 
-// --- コード構成音 ---
-
-export function getChordRoot(chordInfo: FullChordInfo): PitchClass {
-    if (chordInfo.qualityId === undefined) {
-        return chordInfo.chord.root;
+    // 自身の構成音がすべてotherに含まれているか
+    isSubsetOf(other: Scale): boolean {
+        return this.tones.every(tone => other.has(tone));
     }
-    return findChordQuality(chordInfo.qualityId).getRoot(chordInfo.chord);
-}
 
-export function getChordToneIntervals(chordInfo: FullChordInfo): Interval[] {
-    const root = getChordRoot(chordInfo);
-    const pitchClasses = chordInfo.qualityId === undefined
-        ? chordInfo.chord.getChordTones()
-        : findChordQuality(chordInfo.qualityId).getChordTones(chordInfo.chord.root);
-    return pitchClasses.map(pitchClass => pitchClass.delta(root));
-}
-
-export function getScale(chordInfo: FullChordInfo): Scale {
-    const root = getChordRoot(chordInfo);
-    const chordTones = getChordToneIntervals(chordInfo);
-    const extraTones = chordInfo.extraScaleTones ?? [];
-    return new Scale(root, [...chordTones, ...extraTones]);
-}
-
-export function isDefaultScale(chordInfo: FullChordInfo): boolean {
-    return (chordInfo.extraScaleTones ?? []).length === 0;
+    // rootを与えて構成音を実際のPitchClassに変換する(rootはこのクラスの状態としては持たない)
+    getPitchClasses(root: PitchClass): PitchClass[] {
+        return this.tones.map(tone => root.add(tone));
+    }
 }

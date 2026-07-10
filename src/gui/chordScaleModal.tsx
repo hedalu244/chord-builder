@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import { Interval, PitchClass } from "../basics/pitch";
-import { getChordRoot, getChordToneIntervals, getScale, Scale } from "../basics/scale";
+import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./scaleAnalysis";
-import { ScaleCandidate, findCandidateScales } from "../basics/knownScale";
+import { KnownScaleInfo, findCandidateScales } from "../basics/knownScale";
 
 const ALL_VALUES = Array.from({ length: 12 }, (_, value) => value);
 
@@ -45,12 +45,13 @@ function ToneRow(props: ToneRowProps) {
 
 type CandidateListProps = {
 	readonly root: PitchClass;
-	readonly candidates: readonly ScaleCandidate[];
+	readonly candidates: readonly KnownScaleInfo[];
+	readonly currentScale: Scale;
 	readonly onSelect: (scale: Scale) => void;
 };
 
 function CandidateList(props: CandidateListProps) {
-	const { root, candidates, onSelect } = props;
+	const { root, candidates, currentScale, onSelect } = props;
 	const rootName = root.toString();
 	if (candidates.length === 0) {
 		return (
@@ -62,15 +63,15 @@ function CandidateList(props: CandidateListProps) {
 
 	return (
 		<div className="chord-scale-modal__candidate-list">
-			{candidates.map(({ info, scale, exact }, index) => {
+			{candidates.map((info, index) => {
 				const classNames = ["chord-scale-modal__candidate-button"];
-				if (exact) classNames.push("chord-scale-modal__candidate-button--exact");
-				const activeValues = new Set(scale.tones.map(tone => tone.value));
+				if (info.scale.equals(currentScale)) classNames.push("chord-scale-modal__candidate-button--exact");
+				const activeValues = new Set(info.scale.tones.map(tone => tone.value));
 				return (
-					<button type="button" key={index} className={classNames.join(" ")} onClick={() => onSelect(scale)}>
+					<button type="button" key={index} className={classNames.join(" ")} onClick={() => onSelect(info.scale)}>
 						<div className="chord-scale-modal__candidate-header">
 							<span className="chord-scale-modal__candidate-name">{rootName} {info.name}</span>
-							<span className="chord-scale-modal__candidate-origin">{info.parentRoot.toString()} {info.parentScaleName} shift {info.shift}</span>
+							<span className="chord-scale-modal__candidate-origin">{root.sub(info.parentRootOffset).toString()} {info.description}</span>
 						</div>
 						<ToneRow root={root} activeValues={activeValues} />
 					</button>
@@ -88,16 +89,16 @@ type ChordScaleModalProps = {
 
 export function ChordScaleModal(props: ChordScaleModalProps) {
 	const { chordInfo, onConfirm, onCancel } = props;
-	const root = getChordRoot(chordInfo);
-	const chordToneIntervals = getChordToneIntervals(chordInfo);
+	const root = chordInfo.getChordRoot();
+	const chordToneIntervals = chordInfo.getChordToneIntervals();
 	const lockedValues = new Set<number>(chordToneIntervals.map(tone => tone.value));
 
 	const [checkedValues, setCheckedValues] = useState<ReadonlySet<number>>(
-		() => new Set(getScale(chordInfo).tones.map(tone => tone.value))
+		() => new Set(chordInfo.getScale().tones.map(tone => tone.value))
 	);
 
-	const currentScale = new Scale(root, Interval.map(Array.from(checkedValues)));
-	const candidates = findCandidateScales(root, currentScale.tones);
+	const currentScale = new Scale(Interval.map(Array.from(checkedValues)));
+	const candidates = findCandidateScales(currentScale);
 
 	const handleToggle = (value: number): void => {
 		if (lockedValues.has(value)) return;
@@ -123,9 +124,9 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 	return (
 		<div className="modal__backdrop">
 			<div className="modal chord-scale-modal">
-				<ScaleAnalysis chordInfo={chordInfo} scale={currentScale} />
+				<ScaleAnalysis chordInfo={chordInfo} root={root} scale={currentScale} />
 				<ToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onToggle={handleToggle} />
-				<CandidateList root={root} candidates={candidates} onSelect={handleSelectCandidate} />
+				<CandidateList root={root} candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />
 				<div className="modal__actions">
 					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>
 					<button type="button" className="modal__confirm-button" onClick={handleConfirm}>OK</button>
