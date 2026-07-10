@@ -4,63 +4,7 @@ import { Interval, PitchClass } from "../basics/pitch";
 import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./scaleAnalysis";
 import { KnownScaleInfo, findCandidateScales } from "../basics/knownScale";
-
-// 12音を半音順に並べた行。direct inputでは操作可能なチェックボックスとして、候補リストでは静的な表示として使う
-type ToneRowProps = {
-	readonly root: PitchClass;
-	readonly activeValues: ReadonlySet<number>;
-	readonly lockedValues?: ReadonlySet<number>;
-	readonly onToggle?: (value: number) => void;
-};
-
-// 構成音を表すセル(locked/active)にのみ、そのPitchClassの色を割り当てる。空セルは無色のまま
-function toneCellColorStyle(value: number, locked: boolean, active: boolean) {
-	if (!locked && !active) return undefined;
-	if (locked) {
-		return {
-			background: `var(--pc-${value}-basic)`,
-			borderColor: `var(--pc-${value}-basic)`,
-			color: `var(--color-surface)`,
-		};
-	}
-	if (active) {
-		return {
-			background: `var(--pc-${value}-light)`,
-			borderColor: `var(--pc-${value}-dark)`,
-			color: `var(--pc-${value}-dark)`,
-		};
-	}
-}
-
-function ToneRow(props: ToneRowProps) {
-	const { root, activeValues, lockedValues, onToggle } = props;
-	return (
-		<div className="chord-scale-modal__tone-row">
-			{Interval.all.map(interval => {
-				const value = interval.value;
-				const locked = lockedValues?.has(value) ?? false;
-				const active = activeValues.has(value);
-				const classNames = ["chord-scale-modal__tone-cell"];
-				if (locked) classNames.push("chord-scale-modal__tone-cell--locked");
-				else if (active) classNames.push("chord-scale-modal__tone-cell--active");
-				const label = root.add(interval).toString();
-				const style = toneCellColorStyle(value, locked, active);
-
-				if (!onToggle) {
-					return (
-						<span key={value} className={classNames.join(" ")} style={style}>{active ? label : ""}</span>
-					);
-				}
-				return (
-					<label key={value} className={classNames.join(" ")} style={style}>
-						<input type="checkbox" checked={active} disabled={locked} onChange={() => onToggle(value)} />
-						<span>{label}</span>
-					</label>
-				);
-			})}
-		</div>
-	);
-}
+import { EditableToneRow, ToneRow } from "./toneRow";
 
 type CandidateListProps = {
 	readonly root: PitchClass;
@@ -85,14 +29,13 @@ function CandidateList(props: CandidateListProps) {
 			{candidates.map((info, index) => {
 				const classNames = ["chord-scale-modal__candidate-button"];
 				if (info.scale.equals(currentScale)) classNames.push("chord-scale-modal__candidate-button--exact");
-				const activeValues = new Set(info.scale.tones.map(tone => tone.value));
 				return (
 					<button type="button" key={index} className={classNames.join(" ")} onClick={() => onSelect(info.scale)}>
 						<div className="chord-scale-modal__candidate-header">
 							<span className="chord-scale-modal__candidate-name">{rootName} {info.name}</span>
 							<span className="chord-scale-modal__candidate-origin">{root.sub(info.parentRootOffset).toString()} {info.description}</span>
 						</div>
-						<ToneRow root={root} activeValues={activeValues} />
+						<ToneRow root={root} tones={info.scale.getPitchClasses(root)} />
 					</button>
 				);
 			})}
@@ -119,16 +62,6 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 	const currentScale = new Scale(Interval.map(Array.from(checkedValues)));
 	const candidates = findCandidateScales(currentScale);
 
-	const handleToggle = (value: number): void => {
-		if (lockedValues.has(value)) return;
-		setCheckedValues(previous => {
-			const next = new Set(previous);
-			if (next.has(value)) next.delete(value);
-			else next.add(value);
-			return next;
-		});
-	};
-
 	const handleSelectCandidate = (scale: Scale): void => {
 		setCheckedValues(new Set(scale.tones.map(tone => tone.value)));
 	};
@@ -144,7 +77,7 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 		<div className="modal__backdrop">
 			<div className="modal chord-scale-modal">
 				<ScaleAnalysis chordInfo={chordInfo} root={root} scale={currentScale} />
-				<ToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onToggle={handleToggle} />
+				<EditableToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onChange={setCheckedValues} />
 				<CandidateList root={root} candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />
 				<div className="modal__actions">
 					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>

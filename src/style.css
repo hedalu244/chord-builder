@@ -410,6 +410,54 @@ button {
 	font-size: 12px;
 }
 
+/* 12音を横並びに表示する汎用UI(toneRow.tsx)。ToneRow(読み取り専用)とEditableToneRow(チェックボックス編集)は
+   見た目を揃えることが重要なため、同じクラスを共有する */
+.tone-row {
+	--tone-cell-width: 40px;
+	--tone-cell-height: 28px;
+
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 3px;
+}
+
+.tone-row__cell {
+	position: relative;
+	box-sizing: border-box;
+	flex: 0 0 var(--tone-cell-width);
+	width: var(--tone-cell-width);
+	height: var(--tone-cell-height);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	font-size: 12px;
+}
+
+/* EditableToneRowの実チェックボックスは視覚的に隠し、labelの見た目だけでON/OFFを表す */
+.tone-row__cell input[type="checkbox"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* background/border-color/color はPitchClassごとにJS側でインラインstyleとして設定される
+   (var(--pc-{n}-light) 等を参照するため、ここでは文字の太さ・枠線の太さのみを定義する) */
+.tone-row__cell--active {
+	font-weight: 600;
+}
+
+.tone-row__cell--locked {
+	border-width: var(--border-width-active);
+	font-weight: 600;
+}
+
 .quality-panel__control {
 	padding: 6px;
 	border: 1px solid var(--color-border);
@@ -667,50 +715,6 @@ button {
 	overflow-y: auto;
 }
 
-.chord-scale-modal__tone-row {
-	--tone-cell-width: 40px;
-	--tone-cell-height: 28px;
-
-	display: flex;
-	flex-direction: row;
-	gap: 3px;
-}
-
-.chord-scale-modal__tone-cell {
-	position: relative;
-	box-sizing: border-box;
-	flex: 0 0 var(--tone-cell-width);
-	width: var(--tone-cell-width);
-	height: var(--tone-cell-height);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	overflow: hidden;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
-	font-size: 12px;
-}
-
-/* direct inputの実チェックボックスは視覚的に隠し、labelの見た目だけでON/OFFを表す */
-.chord-scale-modal__tone-cell input[type="checkbox"] {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	opacity: 0;
-	pointer-events: none;
-}
-
-/* background/border-color/color はPitchClassごとにJS側でインラインstyleとして設定される
-   (var(--pc-{n}-light) 等を参照するため、ここでは文字の太さ・枠線の太さのみを定義する) */
-.chord-scale-modal__tone-cell--active {
-	font-weight: 600;
-}
-
-.chord-scale-modal__tone-cell--locked {
-	border-width: var(--border-width-active);
-	font-weight: 600;
-}
 
 .chord-scale-modal__candidate-list {
 	display: flex;
