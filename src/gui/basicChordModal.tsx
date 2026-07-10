@@ -78,8 +78,8 @@ export function BasicChordModal(props: BasicChordModalProps) {
 	};
 
 	return (
-		<div className="basic-chord-modal__backdrop">
-			<div className="basic-chord-modal">
+		<div className="modal__backdrop">
+			<div className="modal basic-chord-modal">
 				<div className="basic-chord-modal__method-row">
 					{previousChord ? (
 						<button type="button" className={methodButtonClassName(method === "formerNexus")} onClick={() => setMethod("formerNexus")}>
@@ -102,53 +102,55 @@ export function BasicChordModal(props: BasicChordModalProps) {
 					)}
 				</div>
 
-				{method === "formerNexus" && (
-					previousChord && (
-						<NexusCandidateList
-							candidates={findNexiByFormerMode(previousChord.mode)}
-							anchorChord={previousChord}
-							anchorRole="former"
-							selected={selectedFormerNexus}
-							onSelect={selectFromFormer}
-						/>
-					)
-				)}
-				{method === "latterNexus" && (
-					nextChord && (
-						<NexusCandidateList
-							candidates={findNexiByLatterMode(nextChord.mode)}
-							anchorChord={nextChord}
-							anchorRole="latter"
-							selected={selectedLatterNexus}
-							onSelect={selectFromLatter}
-						/>
-					)
-				)}
-				{method === "direct" && (
-					<div className="basic-chord-modal__field-row">
-						<select
-							className="basic-chord-modal__control"
-							value={String(chord.root.value)}
-							onChange={event => setChord(new BasicChord(new PitchClass(Number(event.target.value)), chord.mode))}
-						>
-							{pitchClassOptions.map(option => (
-								<option key={option.value} value={String(option.value)}>{option.label}</option>
-							))}
-						</select>
-						<select
-							className="basic-chord-modal__control"
-							value={chord.mode}
-							onChange={event => setChord(new BasicChord(chord.root, event.target.value as Mode))}
-						>
-							<option value="M">major</option>
-							<option value="m">minor</option>
-						</select>
-					</div>
-				)}
+				<div className="basic-chord-modal__content">
+					{method === "formerNexus" && (
+						previousChord && (
+							<NexusCandidateList
+								candidates={findNexiByFormerMode(previousChord.mode)}
+								anchorChord={previousChord}
+								anchorRole="former"
+								selected={selectedFormerNexus}
+								onSelect={selectFromFormer}
+							/>
+						)
+					)}
+					{method === "latterNexus" && (
+						nextChord && (
+							<NexusCandidateList
+								candidates={findNexiByLatterMode(nextChord.mode)}
+								anchorChord={nextChord}
+								anchorRole="latter"
+								selected={selectedLatterNexus}
+								onSelect={selectFromLatter}
+							/>
+						)
+					)}
+					{method === "direct" && (
+						<div className="basic-chord-modal__field-row">
+							<select
+								className="basic-chord-modal__control"
+								value={String(chord.root.value)}
+								onChange={event => setChord(new BasicChord(new PitchClass(Number(event.target.value)), chord.mode))}
+							>
+								{pitchClassOptions.map(option => (
+									<option key={option.value} value={String(option.value)}>{option.label}</option>
+								))}
+							</select>
+							<select
+								className="basic-chord-modal__control"
+								value={chord.mode}
+								onChange={event => setChord(new BasicChord(chord.root, event.target.value as Mode))}
+							>
+								<option value="M">major</option>
+								<option value="m">minor</option>
+							</select>
+						</div>
+					)}
+				</div>
 
-				<div className="basic-chord-modal__actions">
-					<button type="button" className="basic-chord-modal__cancel-button" onClick={onCancel}>Cancel</button>
-					<button type="button" className="basic-chord-modal__confirm-button" onClick={() => onConfirm(chord)}>OK</button>
+				<div className="modal__actions">
+					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>
+					<button type="button" className="modal__confirm-button" onClick={() => onConfirm(chord)}>OK</button>
 				</div>
 			</div>
 		</div >

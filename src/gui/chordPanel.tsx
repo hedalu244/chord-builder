@@ -2,10 +2,11 @@ import { FullChordInfo } from "../basics/fullChordInfo";
 import { BasicChordPanel } from "./basicChordPanel";
 import { IconButton } from "./iconButton";
 import { QualityPanel } from "./qualityPanel";
+import { ScalePanel } from "./scalePanel";
 
 type ChordPanelProps = {
 	readonly value: FullChordInfo;
-	readonly onQualityChange: (nextValue: FullChordInfo) => void;
+	readonly onChange: (nextValue: FullChordInfo) => void;
 	readonly onInsertBefore: () => void;
 	readonly onInsertAfter: () => void;
 	readonly onChangeChord: () => void;
@@ -13,7 +14,7 @@ type ChordPanelProps = {
 };
 
 export function ChordPanel(props: ChordPanelProps) {
-	const { value, onQualityChange, onInsertBefore, onInsertAfter, onChangeChord, onDelete } = props;
+	const { value, onChange, onInsertBefore, onInsertAfter, onChangeChord, onDelete } = props;
 
 	return (
 		<div className="progression-editor__card chord-panel">
@@ -23,7 +24,8 @@ export function ChordPanel(props: ChordPanelProps) {
 				<IconButton icon="icons/insert-after.svg" label="Insert after" className="chord-panel__insert-after-button" onClick={onInsertAfter} />
 			</div>
 			<BasicChordPanel value={value.chord} onChangeChord={onChangeChord} />
-			<QualityPanel value={value} onChange={onQualityChange} />
+			<QualityPanel value={value} onChange={onChange} />
+			<ScalePanel value={value} onChange={onChange} />
 		</div>
 	);
 }

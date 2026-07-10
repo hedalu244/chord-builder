@@ -112,7 +112,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		});
 	};
 
-	const handleQualityChange = (index: number, nextChordInfo: FullChordInfo): void => {
+	const handleChordInfoChange = (index: number, nextChordInfo: FullChordInfo): void => {
 		setProgression(current => {
 			const next = replaceChordAtIndex(current, index, nextChordInfo);
 			onChange?.(toChordInfos(next));
@@ -155,7 +155,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 								: (<DummyNexusPanel />)}
 							<ChordPanel
 								value={item.chordInfo}
-								onQualityChange={nextValue => handleQualityChange(index, nextValue)}
+								onChange={nextValue => handleChordInfoChange(index, nextValue)}
 								onInsertBefore={() => handleInsert(index, "insertBefore")}
 								onInsertAfter={() => handleInsert(index + 1, "insertAfter")}
 								onChangeChord={() => handleChange(index)}

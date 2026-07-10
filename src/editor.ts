@@ -53,8 +53,11 @@ export function changeChordAtIndex(
 	chord: BasicChord
 ): ProgressionItem[] {
 	const current = progression[index].chordInfo;
-	const qualityId = chord.mode === current.chord.mode ? current.qualityId : undefined;
-	return replaceChordAtIndex(progression, index, new FullChordInfo(chord, qualityId));
+	// モードが変わらなければルートのみの変更としてクオリティ・スケールを維持し、モードが変わればクオリティ変更とみなしてスケールもデフォルトにリセットする
+	const nextChordInfo = chord.mode === current.chord.mode
+		? current.withChord(chord)
+		: new FullChordInfo(chord, undefined);
+	return replaceChordAtIndex(progression, index, nextChordInfo);
 }
 
 export function getInsertContext(

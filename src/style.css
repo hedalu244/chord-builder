@@ -177,7 +177,8 @@ button {
 }
 
 .basic-chord-panel,
-.quality-panel {
+.quality-panel,
+.scale-panel {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -186,7 +187,8 @@ button {
 }
 
 .basic-chord-panel__label,
-.quality-panel__label {
+.quality-panel__label,
+.scale-panel__label {
 	font-size: 12px;
 	font-weight: 600;
 	color: var(--color-muted);
@@ -198,6 +200,36 @@ button {
 	margin: 0;
 	font-size: 30px;
 	font-weight: 600;
+	text-align: center;
+}
+
+.scale-analysis {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.scale-analysis__tension {
+	margin: 0;
+	font-size: 30px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.scale-analysis__tension sup {
+	font-size: 0.5em;
+}
+
+.scale-analysis__name {
+	font-size: 13px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.scale-analysis__origin {
+	font-size: 13px;
+	color: var(--color-muted);
 	text-align: center;
 }
 
@@ -262,6 +294,7 @@ button {
 
 .add-chord-panel {
 	display: flex;
+	flex-grow: 1;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
@@ -288,7 +321,8 @@ button {
 	font-weight: 600;
 }
 
-.basic-chord-modal__backdrop {
+/* モーダル一般に共通する要素(背景・カード・確定/取消ボタン)。個々のモーダルはサイズやコンテンツのみを上書きする */
+.modal__backdrop {
 	position: fixed;
 	inset: 0;
 	display: flex;
@@ -298,15 +332,38 @@ button {
 	z-index: 100;
 }
 
-.basic-chord-modal {
+.modal {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-	width: 560px;
 	padding: 20px;
 	border-radius: var(--radius-card);
 	background: var(--color-surface);
 	box-shadow: 0 8px 24px rgba(var(--color-ink-rgb), 0.25);
+}
+
+.modal__actions {
+	display: flex;
+	justify-content: center;
+	gap: 16px;
+}
+
+.modal__cancel-button,
+.modal__confirm-button {
+	padding: 6px 16px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+}
+
+.modal__confirm-button {
+	background: var(--color-ink);
+	color: var(--color-surface);
+	border-color: var(--color-ink);
+}
+
+.basic-chord-modal {
+	width: 560px;
 }
 
 .basic-chord-modal__method-row {
@@ -344,12 +401,21 @@ button {
 	cursor: default;
 }
 
+/* former/latterNexusの候補リストとdirect入力欄を差し替えても高さが変わらないよう、固定高さのコンテナで揃える */
+.basic-chord-modal__content {
+	height: 320px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
 .basic-chord-modal__nexus-list {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
+	align-content: flex-start;
 	gap: 8px;
-	max-height: 320px;
+	height: 100%;
 	overflow-y: auto;
 }
 
@@ -419,22 +485,113 @@ button {
 	font-size: 14px;
 }
 
-.basic-chord-modal__actions {
-	display: flex;
-	justify-content: center;
-	gap: 16px;
+.chord-scale-modal {
+	align-items: center;
+	max-height: calc(100vh - 64px);
+	overflow-y: auto;
 }
 
-.basic-chord-modal__cancel-button,
-.basic-chord-modal__confirm-button {
-	padding: 6px 16px;
+.chord-scale-modal__tone-row {
+	--tone-cell-width: 40px;
+	--tone-cell-height: 28px;
+
+	display: flex;
+	flex-direction: row;
+	gap: 3px;
+}
+
+.chord-scale-modal__tone-cell {
+	position: relative;
+	box-sizing: border-box;
+	flex: 0 0 var(--tone-cell-width);
+	width: var(--tone-cell-width);
+	height: var(--tone-cell-height);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	font-size: 12px;
+}
+
+/* direct inputの実チェックボックスは視覚的に隠し、labelの見た目だけでON/OFFを表す */
+.chord-scale-modal__tone-cell input[type="checkbox"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.chord-scale-modal__tone-cell--active {
+	border-color: var(--color-ink);
+	background: var(--color-highlight);
+	font-weight: 600;
+}
+
+.chord-scale-modal__tone-cell--locked {
+	border-color: var(--color-ink);
+	border-width: var(--border-width-active);
+	background: var(--color-ink);
+	color: var(--color-surface);
+	font-weight: 600;
+}
+
+.chord-scale-modal__candidate-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+	height: 320px;
+	overflow-y: auto;
+}
+
+.chord-scale-modal__candidate-placeholder {
+	flex: 1 1 auto;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: var(--color-faint);
+	font-size: 13px;
+	text-align: center;
+}
+
+.chord-scale-modal__candidate-button {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	padding: 8px;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-control);
 	background: var(--color-surface);
 }
 
-.basic-chord-modal__confirm-button {
-	background: var(--color-ink);
-	color: var(--color-surface);
+.chord-scale-modal__candidate-button--exact {
 	border-color: var(--color-ink);
+	border-width: var(--border-width-active);
+	background: var(--color-highlight);
 }
+
+.chord-scale-modal__candidate-header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.chord-scale-modal__candidate-name {
+	font-size: 13px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.chord-scale-modal__candidate-origin {
+	font-size: 13px;
+	color: var(--color-muted);
+	text-align: center;
+}
+

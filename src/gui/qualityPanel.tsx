@@ -17,7 +17,7 @@ export function QualityPanel(props: QualityPanelProps) {
 
 	const handleQualityChange = (event: ChangeEvent<HTMLSelectElement>): void => {
 		const nextQualityId = event.target.value === "" ? undefined : event.target.value as ChordQualityId;
-		onChange(new FullChordInfo(value.chord, nextQualityId));
+		onChange(value.withQuality(nextQualityId));
 	};
 
 	return (

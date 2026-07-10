@@ -1,5 +1,5 @@
 import { Interval, PitchClass } from "./pitch";
-import { Mode } from "./basicChord";
+import { BasicChord, Mode } from "./basicChord";
 
 export class ChordQuality {
     readonly id: string; // 一意なID
@@ -17,8 +17,12 @@ export class ChordQuality {
         return this.intervals.map(interval => root.add(interval));
     }
 
-    getNotation(root: PitchClass): string {
-        return root.add(this.intervals[0]).toString() + this.notation;
+    getRoot(basicChord: BasicChord): PitchClass {
+        return basicChord.root.add(this.intervals[0]);
+    }
+
+    getNotation(basicChord: BasicChord): string {
+        return basicChord.root.add(this.intervals[0]).toString() + this.notation;
     }
 }
 
