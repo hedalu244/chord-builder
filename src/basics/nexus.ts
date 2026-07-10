@@ -77,9 +77,43 @@ export class DegreeNexus {
     }
 }
 
+// とりあえずI, IIm, IIIm, IV, V, VIm, の6つの組み合わせを入れてみる
 export const KnownNexi: readonly DegreeNexus[] = [
-    new DegreeNexus(new ChordDegree(new Degree(7), "M"), new ChordDegree(new Degree(0), "M")), // V-I
-    new DegreeNexus(new ChordDegree(new Degree(2), "m"), new ChordDegree(new Degree(5), "M")), // ii-V
+    new DegreeNexus(ChordDegree.parse("I"), ChordDegree.parse("IIm")),
+    new DegreeNexus(ChordDegree.parse("I"), ChordDegree.parse("IIIm")),
+    new DegreeNexus(ChordDegree.parse("I"), ChordDegree.parse("IV")),
+    new DegreeNexus(ChordDegree.parse("I"), ChordDegree.parse("V")),
+    new DegreeNexus(ChordDegree.parse("I"), ChordDegree.parse("VIm")),
+
+    new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("I")),
+    new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("III")),
+    new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("IV")),
+    new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("V")),
+    new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("VIm")),
+
+    new DegreeNexus(ChordDegree.parse("IIIm"), ChordDegree.parse("I")),
+    new DegreeNexus(ChordDegree.parse("IIIm"), ChordDegree.parse("IIm")),
+    new DegreeNexus(ChordDegree.parse("IIIm"), ChordDegree.parse("IV")),
+    new DegreeNexus(ChordDegree.parse("IIIm"), ChordDegree.parse("V")),
+    new DegreeNexus(ChordDegree.parse("IIIm"), ChordDegree.parse("VIm")),
+
+    new DegreeNexus(ChordDegree.parse("IV"), ChordDegree.parse("I")),
+    new DegreeNexus(ChordDegree.parse("IV"), ChordDegree.parse("IIm")),
+    new DegreeNexus(ChordDegree.parse("IV"), ChordDegree.parse("IIIm")),
+    new DegreeNexus(ChordDegree.parse("IV"), ChordDegree.parse("V")),
+    new DegreeNexus(ChordDegree.parse("IV"), ChordDegree.parse("VIm")),
+
+    new DegreeNexus(ChordDegree.parse("V"), ChordDegree.parse("I")),
+    new DegreeNexus(ChordDegree.parse("V"), ChordDegree.parse("IIm")),
+    new DegreeNexus(ChordDegree.parse("V"), ChordDegree.parse("IIIm")),
+    new DegreeNexus(ChordDegree.parse("V"), ChordDegree.parse("IV")),
+    new DegreeNexus(ChordDegree.parse("V"), ChordDegree.parse("VIm")),
+
+    new DegreeNexus(ChordDegree.parse("VIm"), ChordDegree.parse("I")),
+    new DegreeNexus(ChordDegree.parse("VIm"), ChordDegree.parse("IIm")),
+    new DegreeNexus(ChordDegree.parse("VIm"), ChordDegree.parse("IIIm")),
+    new DegreeNexus(ChordDegree.parse("VIm"), ChordDegree.parse("IV")),
+    new DegreeNexus(ChordDegree.parse("VIm"), ChordDegree.parse("V")),
 ];
 
 export function findNexiByFormerMode(mode: Mode): readonly DegreeNexus[] {

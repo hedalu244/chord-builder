@@ -24,6 +24,18 @@ export class BasicChord {
     toString(): string {
         return `${this.root.toString()}${ModeToNotation(this.mode)}`;
     }
+
+    parse(str: string): BasicChord {
+        const regex = /^([A-G][#b]?)([Mm]?)$/;
+        const match = str.match(regex);
+        if (!match) {
+            throw new Error(`Invalid basic chord string: ${str}`);
+        }
+
+        const root = new PitchClass(PitchClass.parse(match[1]).value);
+        const mode = match[2] === "m" ? "m" : "M";
+        return new BasicChord(root, mode);
+    }
 }
 
 export class ChordDegree {
@@ -40,5 +52,17 @@ export class ChordDegree {
 
     toString(): string {
         return `${this.degree.toString()}${ModeToNotation(this.mode)}`;
+    }
+
+    static parse(str: string): ChordDegree {
+        const regex = /^([IV]+)([Mm]?)$/;
+        const match = str.match(regex);
+        if (!match) {
+            throw new Error(`Invalid chord degree string: ${str}`);
+        }
+
+        const degree = Degree.parse(match[1]);
+        const mode = match[2] === "m" ? "m" : "M";
+        return new ChordDegree(degree, mode);
     }
 }
