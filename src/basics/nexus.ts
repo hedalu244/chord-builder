@@ -1,5 +1,4 @@
-import { BasicChord, ChordDegree } from "./basicChord";
-import { findChordQuality, Mode } from "./chordQuality";
+import { BasicChord, Mode, ChordDegree } from "./basicChord";
 import { Degree, Interval, PitchClass } from "./pitch";
 
 class RelativeNexus {
@@ -18,13 +17,15 @@ class RelativeNexus {
             this.latterMode === other.latterMode &&
             this.rootMotion.equals(other.rootMotion);
     }
+
+    toString(): string {
+        return `${this.formerMode} → ${this.rootMotion.toStringRelative()} ${this.latterMode}`;
+    }
 }
 
 export function calcRelativeNexus(former: BasicChord, latter: BasicChord): RelativeNexus {
-    const formerQuality = findChordQuality(former.qualityId);
-    const latterQuality = findChordQuality(latter.qualityId);
     const rootMotion = latter.root.delta(former.root);
-    return new RelativeNexus(formerQuality.mode, latterQuality.mode, rootMotion);
+    return new RelativeNexus(former.mode, latter.mode, rootMotion);
 }
 
 export class DegreeNexus {
@@ -77,8 +78,8 @@ export class DegreeNexus {
 }
 
 export const KnownNexi: readonly DegreeNexus[] = [
-    new DegreeNexus(new ChordDegree(new Degree(7), "major"), new ChordDegree(new Degree(0), "major")), // V-I
-    new DegreeNexus(new ChordDegree(new Degree(2), "minor"), new ChordDegree(new Degree(5), "major")), // ii-V
+    new DegreeNexus(new ChordDegree(new Degree(7), "M"), new ChordDegree(new Degree(0), "M")), // V-I
+    new DegreeNexus(new ChordDegree(new Degree(2), "m"), new ChordDegree(new Degree(5), "M")), // ii-V
 ];
 
 export function findNexiByFormerMode(mode: Mode): readonly DegreeNexus[] {
@@ -97,8 +98,8 @@ export function findMatchingNexus(former: BasicChord, latter: BasicChord): Nexus
     const matches: NexusMatchResult[] = [];
     for (let keyValue = 0; keyValue < 12; keyValue++) {
         const key = new PitchClass(keyValue);
-        const formerDegree = new ChordDegree(former.root.getDegree(key), findChordQuality(former.qualityId).mode);
-        const latterDegree = new ChordDegree(latter.root.getDegree(key), findChordQuality(latter.qualityId).mode);
+        const formerDegree = new ChordDegree(former.root.getDegree(key), former.mode);
+        const latterDegree = new ChordDegree(latter.root.getDegree(key), latter.mode);
 
         const targetNexus = new DegreeNexus(formerDegree, latterDegree);
         const nexus = KnownNexi.filter(nexus => nexus.equals(targetNexus));

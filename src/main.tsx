@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Interval, PitchClass } from "./basics/pitch";
+import { PitchClass } from "./basics/pitch";
 import { ProgressionEditor } from "./gui/progressionEditor";
 import { FullChordInfo } from "./basics/fullChordInfo";
 import { BasicChord } from "./basics/basicChord";
 
 function createDebugChordData(): FullChordInfo[] {
 	return [
-		new FullChordInfo(new BasicChord(new PitchClass(0), "major7")),
-		new FullChordInfo(new BasicChord(new PitchClass(9), "minor7")),
-		new FullChordInfo(new BasicChord(new PitchClass(7), "dominant7"))
+		new FullChordInfo(new BasicChord(new PitchClass(0), "M"), "major7"),
+		new FullChordInfo(new BasicChord(new PitchClass(9), "m"), "minor7"),
+		new FullChordInfo(new BasicChord(new PitchClass(7), "M"), "dominant7")
 	];
 }
 

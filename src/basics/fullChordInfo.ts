@@ -1,24 +1,23 @@
 import { BasicChord } from "./basicChord";
-import { PitchClass } from "./pitch";
+import { ChordQualityId, findChordQuality } from "./chordQuality";
 
 export class FullChordInfo {
 	readonly chord: BasicChord;
+	readonly qualityId: ChordQualityId | undefined;
 
-	constructor(chord: BasicChord) {
+	constructor(chord: BasicChord, qualityId: ChordQualityId | undefined) {
 		this.chord = chord;
+		this.qualityId = qualityId;
 	}
 
 	equals(other: FullChordInfo): boolean {
-		return this.chord.equals(other.chord);
+		return this.chord.equals(other.chord) && this.qualityId === other.qualityId;
 	}
 
-	static createDefault(): FullChordInfo {
-		return new FullChordInfo(
-			new BasicChord(
-				new PitchClass(0),
-				"major7"
-			)
-		);
+	toString(): string {
+		if (this.qualityId === undefined) {
+			return this.chord.toString();
+		}
+		return `${this.chord.root.toString()}${findChordQuality(this.qualityId).notation}`;
 	}
 }
-

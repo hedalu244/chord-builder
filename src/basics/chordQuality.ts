@@ -1,6 +1,5 @@
 import { Interval } from "./pitch";
-
-export type Mode = "major" | "minor";
+import { Mode } from "./basicChord";
 
 export type ChordQuality = {
     readonly id: string, // 一意なID
@@ -11,10 +10,10 @@ export type ChordQuality = {
 
 export type ChordQualityId = "major7" | "minor7" | "dominant7";
 export const chordQualities: readonly ChordQuality[] = [
-    { id: "major7", notation: "M7", mode: "major", intervals: Interval.map([0, 4, 7, 11]) },
-    { id: "dominant7", notation: "7", mode: "major", intervals: Interval.map([0, 4, 7, 10]) },
+    { id: "major7", notation: "M7", mode: "M", intervals: Interval.map([0, 4, 7, 11]) },
+    { id: "dominant7", notation: "7", mode: "M", intervals: Interval.map([0, 4, 7, 10]) },
 
-    { id: "minor7", notation: "m7", mode: "minor", intervals: Interval.map([0, 3, 7, 10]) },
+    { id: "minor7", notation: "m7", mode: "m", intervals: Interval.map([0, 3, 7, 10]) },
 ];
 
 export function findChordQuality(id: ChordQualityId): ChordQuality {

@@ -6,21 +6,19 @@ type NexusPanelProps = {
 	readonly latterChord: BasicChord;
 };
 
-export function formatKnownNexus(formerChord: BasicChord, latterChord: BasicChord): { degree: string; key: string } {
+export function formatKnownNexus(formerChord: BasicChord, latterChord: BasicChord): { relative: string; degree: string; key: string } {
+	const relative = calcRelativeNexus(formerChord, latterChord).toString();
 	const matches = findMatchingNexus(formerChord, latterChord);
 	const primary = matches[0];
 	if (primary) {
 		return {
-			degree: `${primary.nexus.toString()}`,
+			relative,
+			degree: primary.nexus.toString(),
 			key: `in key=${primary.key.toString()}`
 		};
 	}
 
-	const relative = calcRelativeNexus(formerChord, latterChord);
-	return {
-		degree: `${relative.formerMode} → ${relative.latterMode}, ${relative.rootMotion.toStringRelative()}`,
-		key: "unknown nexus"
-	};
+	return { relative, degree: "unknown", key: "-" };
 }
 
 export function NexusPanel(props: NexusPanelProps) {
@@ -29,6 +27,7 @@ export function NexusPanel(props: NexusPanelProps) {
 
 	return (
 		<div className="nexus-panel">
+			<div className="nexus-panel__relative">{nexus.relative}</div>
 			<div className="nexus-panel__degree">{nexus.degree}</div>
 			<div className="nexus-panel__key">{nexus.key}</div>
 		</div>

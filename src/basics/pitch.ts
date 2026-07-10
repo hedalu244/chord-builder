@@ -44,7 +44,7 @@ export class Interval {
     }
     
     toStringRelative(): string {
-        const names = ["P1", "m2 up", "M2 up", "m3 up", "M3 up", "P5 down", "TT", "P5 up", "M3 down", "m3 down", "M2 down", "m2 down"];
+        const names = ["P1", "m2 upper", "M2 upper", "m3 upper", "M3 upper", "P5 lower", "TT", "P5 upper", "M3 lower", "m3 lower", "M2 lower", "m2 lower"];
         return names[this.value];
     }
 

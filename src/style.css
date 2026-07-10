@@ -23,56 +23,10 @@ body {
 	color: #52606d;
 }
 
-.chord-panel {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-}
-
-.chord-panel__section {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.chord-panel__section-title {
-	text-align: center;
-	margin: 20px 0;
-	font-size: 30px;
-}
-
-.chord-panel__field {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	font-size: 12px;
-}
-
-.chord-panel__field-row {
-	display: flex;
-	gap: 8px;
-}
-
-.chord-panel__field--half {
-	flex: 1 1 0;
-}
-
-.chord-panel__field-label {
-	font-weight: 600;
-}
-
-.chord-panel__control {
-	padding: 6px;
-	border: 1px solid #bcccdc;
-	border-radius: 4px;
-	background: #ffffff;
-	font-size: 14px;
-}
-
 .nexus-panel {
 	display: flex;
 	flex-direction: column;
-	height: 80px;
+	min-height: 80px;
 	justify-content: center;
 	align-items: center;
 	text-align: center;
@@ -88,6 +42,11 @@ body {
 .nexus-panel--dummy {
 	background: transparent;
 	border: 0;
+}
+
+.nexus-panel__relative {
+	font-size: 13px;
+	color: #9aa5b1;
 }
 
 .nexus-panel__degree {
@@ -116,7 +75,6 @@ body {
 	display: flex;
 	align-items: stretch;
 	gap: var(--progression-gap);
-	width: max-content;
 }
 
 .progression-editor__slot {
@@ -125,16 +83,67 @@ body {
 	gap: 8px;
 }
 
-.progression-editor__panel {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
+.progression-editor__panel-box {
 	border: 1px solid #d0d7de;
 	border-radius: 8px;
 	padding: 12px;
 	background: #ffffff;
-	min-width: var(--progression-panel-width);
+	width: var(--progression-panel-width);
 	height: 100%;
+}
+
+.chord-panel {
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	gap: 8px;
+}
+
+.chord-panel__controls {
+	display: flex;
+	flex-direction: row;
+	gap: 4px;
+}
+
+.basic-chord-panel,
+.quality-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	flex-basis: 100%;
+}
+
+.basic-chord-panel__label,
+.quality-panel__label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #52606d;
+	text-align: center;
+}
+
+.basic-chord-panel__name,
+.quality-panel__section-title {
+	margin: 0;
+	font-size: 30px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.basic-chord-panel__change-button {
+	padding: 4px 10px;
+	border: 1px solid #bcccdc;
+	border-radius: 4px;
+	background: #ffffff;
+	cursor: pointer;
+}
+
+.quality-panel__control {
+	padding: 6px;
+	border: 1px solid #bcccdc;
+	border-radius: 4px;
+	background: #ffffff;
+	font-size: 14px;
 }
 
 @keyframes progression-editor-delete {
@@ -166,13 +175,9 @@ body {
 	}
 }
 
-.progression-editor__panel-actions {
-	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
-}
-
 .progression-editor__add-panel {
+	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 	min-height: var(--progression-panel-min-height);
@@ -186,7 +191,7 @@ body {
 	width: 100%;
 }
 
-.insert-chord-modal__backdrop {
+.basic-chord-modal__backdrop {
 	position: fixed;
 	inset: 0;
 	display: flex;
@@ -196,7 +201,7 @@ body {
 	z-index: 100;
 }
 
-.insert-chord-modal {
+.basic-chord-modal {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
@@ -207,13 +212,13 @@ body {
 	box-shadow: 0 8px 24px rgba(31, 41, 51, 0.25);
 }
 
-.insert-chord-modal__flank-row {
+.basic-chord-modal__flank-row {
 	display: flex;
 	align-items: stretch;
 	gap: 4px;
 }
 
-.insert-chord-modal__flank {
+.basic-chord-modal__flank {
 	flex: 1 1 0;
 	display: flex;
 	flex-direction: column;
@@ -227,18 +232,18 @@ body {
 	cursor: pointer;
 }
 
-.insert-chord-modal__flank--center {
+.basic-chord-modal__flank--center {
 	font-size: 20px;
 	font-weight: 600;
 }
 
-.insert-chord-modal__flank--active {
+.basic-chord-modal__flank--active {
 	border-color: #1f2933;
 	border-width: 2px;
 	background: #eef2f6;
 }
 
-.insert-chord-modal__context-chord {
+.basic-chord-modal__context-chord {
 	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
@@ -249,21 +254,26 @@ body {
 	color: #52606d;
 }
 
-.insert-chord-modal__flank-degree {
+.basic-chord-modal__flank-relative {
+	font-size: 9px;
+	color: #9aa5b1;
+}
+
+.basic-chord-modal__flank-degree {
 	font-size: 14px;
 	font-weight: 600;
 }
 
-.insert-chord-modal__flank-key {
+.basic-chord-modal__flank-key {
 	font-size: 11px;
 	color: #52606d;
 }
 
-.insert-chord-modal__flank-placeholder {
+.basic-chord-modal__flank-placeholder {
 	color: #9aa5b1;
 }
 
-.insert-chord-modal__nexus-list {
+.basic-chord-modal__nexus-list {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -271,7 +281,7 @@ body {
 	overflow-y: auto;
 }
 
-.insert-chord-modal__nexus-button {
+.basic-chord-modal__nexus-button {
 	display: flex;
 	justify-content: space-between;
 	align-items: baseline;
@@ -283,53 +293,34 @@ body {
 	cursor: pointer;
 }
 
-.insert-chord-modal__nexus-button--active {
+.basic-chord-modal__nexus-button--active {
 	border-color: #1f2933;
 	border-width: 2px;
 	background: #eef2f6;
 }
 
-.insert-chord-modal__nexus-degree {
+.basic-chord-modal__nexus-degree {
 	font-size: 14px;
 	font-weight: 600;
 }
 
-.insert-chord-modal__nexus-key {
+.basic-chord-modal__nexus-key {
 	font-size: 12px;
 	color: #52606d;
 }
 
-.insert-chord-modal__hint {
+.basic-chord-modal__hint {
 	margin: 0;
 	font-size: 13px;
 	color: #52606d;
 }
 
-.insert-chord-modal__divider {
-	width: 100%;
-	border: none;
-	border-top: 1px solid #d0d7de;
-	margin: 0;
-}
-
-.insert-chord-modal__step3 {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	align-items: center;
-}
-
-.insert-chord-modal__chord-name {
-	font-size: 22px;
-	font-weight: 600;
-}
-
-.insert-chord-modal__field-row {
+.basic-chord-modal__field-row {
 	display: flex;
 	gap: 8px;
 }
 
-.insert-chord-modal__control {
+.basic-chord-modal__control {
 	flex: 1 1 0;
 	padding: 6px;
 	border: 1px solid #bcccdc;
@@ -338,14 +329,14 @@ body {
 	font-size: 14px;
 }
 
-.insert-chord-modal__actions {
+.basic-chord-modal__actions {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
 }
 
-.insert-chord-modal__cancel-button,
-.insert-chord-modal__confirm-button {
+.basic-chord-modal__cancel-button,
+.basic-chord-modal__confirm-button {
 	padding: 6px 16px;
 	border: 1px solid #bcccdc;
 	border-radius: 4px;
@@ -353,7 +344,7 @@ body {
 	cursor: pointer;
 }
 
-.insert-chord-modal__confirm-button {
+.basic-chord-modal__confirm-button {
 	background: #1f2933;
 	color: #ffffff;
 	border-color: #1f2933;

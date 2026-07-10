@@ -1,12 +1,14 @@
+import { BasicChord } from "./basics/basicChord";
 import { FullChordInfo } from "./basics/fullChordInfo";
 
 export type InsertTrigger = "add" | "insertBefore" | "insertAfter";
-export type InsertMethod = "formerNexus" | "latterNexus" | "direct";
+export type ChordEditTrigger = InsertTrigger | "changeChord";
+export type ChordEditMethod = "formerNexus" | "latterNexus" | "direct";
 
-export type InsertContext = {
+export type ChordEditContext = {
 	readonly previousChord: FullChordInfo | null;
 	readonly nextChord: FullChordInfo | null;
-	readonly trigger: InsertTrigger;
+	readonly trigger: ChordEditTrigger;
 };
 
 export type ProgressionItem = {
@@ -14,7 +16,10 @@ export type ProgressionItem = {
 	readonly chordInfo: FullChordInfo;
 };
 
-export function defaultInsertMethod(trigger: InsertTrigger): InsertMethod {
+export function defaultChordEditMethod(trigger: ChordEditTrigger): ChordEditMethod {
+	if (trigger === "changeChord") {
+		return "direct";
+	}
 	return trigger === "insertBefore" ? "latterNexus" : "formerNexus";
 }
 
@@ -42,11 +47,21 @@ export function replaceChordAtIndex(
 	});
 }
 
+export function changeChordAtIndex(
+	progression: readonly ProgressionItem[],
+	index: number,
+	chord: BasicChord
+): ProgressionItem[] {
+	const current = progression[index].chordInfo;
+	const qualityId = chord.mode === current.chord.mode ? current.qualityId : undefined;
+	return replaceChordAtIndex(progression, index, new FullChordInfo(chord, qualityId));
+}
+
 export function getInsertContext(
 	progression: readonly ProgressionItem[],
 	index: number,
 	trigger: InsertTrigger
-): InsertContext {
+): ChordEditContext {
 	if (index < 0 || index > progression.length) {
 		throw new Error(`insert index out of range: ${index}`);
 	}
@@ -55,6 +70,21 @@ export function getInsertContext(
 		previousChord: index === 0 ? null : progression[index - 1].chordInfo,
 		nextChord: index === progression.length ? null : progression[index].chordInfo,
 		trigger
+	};
+}
+
+export function getChangeContext(
+	progression: readonly ProgressionItem[],
+	index: number
+): ChordEditContext {
+	if (index < 0 || index >= progression.length) {
+		throw new Error(`change index out of range: ${index}`);
+	}
+
+	return {
+		previousChord: index === 0 ? null : progression[index - 1].chordInfo,
+		nextChord: index === progression.length - 1 ? null : progression[index + 1].chordInfo,
+		trigger: "changeChord"
 	};
 }
 

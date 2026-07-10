@@ -1,13 +1,16 @@
 import { AnimationEvent, useEffect, useMemo, useRef, useState } from "react";
+import { BasicChordModal } from "./basicChordModal";
 import { ChordPanel } from "./chordPanel";
-import { InsertChordModal } from "./insertChordModal";
 import { NexusPanel, DummyNexusPanel } from "./nexusPanel";
 import { BasicChord } from "../basics/basicChord";
 import { FullChordInfo } from "../basics/fullChordInfo";
+import { PitchClass } from "../basics/pitch";
 import {
+	changeChordAtIndex,
+	ChordEditContext,
 	createProgressionItems,
+	getChangeContext,
 	getInsertContext,
-	InsertContext,
 	insertChordInfoAtIndex,
 	InsertTrigger,
 	ProgressionItem,
@@ -29,31 +32,14 @@ type ShiftAnimationState = {
 	readonly targetIndex: number;
 } | null;
 
-type PendingInsert = {
+type PendingChordEdit = {
 	readonly index: number;
-	readonly context: InsertContext;
+	readonly context: ChordEditContext;
+	readonly initialChord: BasicChord;
 } | null;
 
-type ProgressionEditorModel = {
-	readonly progression: readonly ProgressionItem[];
-	readonly shiftAnimation: ShiftAnimationState;
-	readonly pendingInsert: PendingInsert;
-	readonly handleInsert: (index: number, trigger: InsertTrigger) => void;
-	readonly handleConfirmInsert: (chord: BasicChord) => void;
-	readonly handleCancelInsert: () => void;
-	readonly handleDelete: (index: number) => void;
-	readonly handleChordChange: (index: number, nextChordInfo: FullChordInfo) => void;
-	readonly handleSlotAnimationEnd: (event: AnimationEvent<HTMLDivElement>) => void;
-};
-
-function createActionButtonClassNames(extraClassName: string): string {
-	return `progression-editor__action-button ${extraClassName}`;
-}
-
-function useProgressionEditorModel(
-	value: readonly FullChordInfo[],
-	onChange?: (nextProgression: readonly FullChordInfo[]) => void
-): ProgressionEditorModel {
+export function ProgressionEditor(props: ProgressionEditorProps) {
+	const { value, onChange } = props;
 	const nextIdRef = useRef(0);
 
 	const createId = (): number => {
@@ -66,33 +52,51 @@ function useProgressionEditorModel(
 		createProgressionItems(value, createId)
 	);
 	const [shiftAnimation, setShiftAnimation] = useState<ShiftAnimationState>(null);
-	const [pendingInsert, setPendingInsert] = useState<PendingInsert>(null);
+	const [pendingChordEdit, setPendingChordEdit] = useState<PendingChordEdit>(null);
 
 	useEffect(() => {
 		setProgression(current => syncProgressionItems(current, value, createId));
 	}, [value]);
 
 	const handleInsert = (index: number, trigger: InsertTrigger): void => {
-		setPendingInsert({ index, context: getInsertContext(progression, index, trigger) });
+		setPendingChordEdit({
+			index,
+			context: getInsertContext(progression, index, trigger),
+			initialChord: new BasicChord(new PitchClass(0), "M")
+		});
 	};
 
-	const handleConfirmInsert = (chord: BasicChord): void => {
-		if (!pendingInsert) return;
-		const { index } = pendingInsert;
+	const handleChange = (index: number): void => {
+		setPendingChordEdit({
+			index,
+			context: getChangeContext(progression, index),
+			initialChord: progression[index].chordInfo.chord
+		});
+	};
+
+	const handleConfirmChordEdit = (chord: BasicChord): void => {
+		if (!pendingChordEdit) return;
+		const { index, context } = pendingChordEdit;
+		const isChange = context.trigger === "changeChord";
+
 		setProgression(current => {
-			const next = insertChordInfoAtIndex(current, index, new FullChordInfo(chord), createId);
+			const next = isChange
+				? changeChordAtIndex(current, index, chord)
+				: insertChordInfoAtIndex(current, index, new FullChordInfo(chord, undefined), createId);
 			onChange?.(toChordInfos(next));
 			return next;
 		});
-		setShiftAnimation({
-			kind: "insert-push",
-			targetIndex: index
-		});
-		setPendingInsert(null);
+		if (!isChange) {
+			setShiftAnimation({
+				kind: "insert-push",
+				targetIndex: index
+			});
+		}
+		setPendingChordEdit(null);
 	};
 
-	const handleCancelInsert = (): void => {
-		setPendingInsert(null);
+	const handleCancelChordEdit = (): void => {
+		setPendingChordEdit(null);
 	};
 
 	const handleDelete = (index: number): void => {
@@ -107,7 +111,7 @@ function useProgressionEditorModel(
 		});
 	};
 
-	const handleChordChange = (index: number, nextChordInfo: FullChordInfo): void => {
+	const handleQualityChange = (index: number, nextChordInfo: FullChordInfo): void => {
 		setProgression(current => {
 			const next = replaceChordAtIndex(current, index, nextChordInfo);
 			onChange?.(toChordInfos(next));
@@ -122,33 +126,6 @@ function useProgressionEditorModel(
 		}
 		setShiftAnimation(null);
 	};
-
-	return {
-		progression,
-		shiftAnimation,
-		pendingInsert,
-		handleInsert,
-		handleConfirmInsert,
-		handleCancelInsert,
-		handleDelete,
-		handleChordChange,
-		handleSlotAnimationEnd
-	};
-}
-
-export function ProgressionEditor(props: ProgressionEditorProps) {
-	const { value, onChange } = props;
-	const {
-		progression,
-		shiftAnimation,
-		pendingInsert,
-		handleInsert,
-		handleConfirmInsert,
-		handleCancelInsert,
-		handleDelete,
-		handleChordChange,
-		handleSlotAnimationEnd
-	} = useProgressionEditorModel(value, onChange);
 
 	const getSlotClassName = useMemo(
 		() => (slotIndex: number, baseClassName: string): string => {
@@ -172,60 +149,47 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 				<div className="progression-editor__row">
 					{progression.map((item, index) => (
 						<div key={item.id} className={getSlotClassName(index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
-							{index > 0 ? (
-								<NexusPanel formerChord={progression[index - 1].chordInfo.chord} latterChord={item.chordInfo.chord} />
-							) : (
-								<DummyNexusPanel />
-							)}
-							<div className="progression-editor__panel">
-								<div className="progression-editor__panel-actions">
-									<button
-										type="button"
-										className={createActionButtonClassNames("progression-editor__insert-before-button")}
-										onClick={() => handleInsert(index, "insertBefore")}
-									>
-										Insert before
-									</button>
-									<button
-										type="button"
-										className={createActionButtonClassNames("progression-editor__insert-after-button")}
-										onClick={() => handleInsert(index + 1, "insertAfter")}
-									>
-										Insert after
-									</button>
-									<button
-										type="button"
-										className={createActionButtonClassNames("progression-editor__delete-button")}
-										onClick={() => handleDelete(index)}
-									>
-										Delete
-									</button>
-								</div>
-								<ChordPanel value={item.chordInfo} onChange={nextValue => handleChordChange(index, nextValue)} />
-							</div>
+							{index > 0 ?
+								(<NexusPanel formerChord={progression[index - 1].chordInfo.chord} latterChord={item.chordInfo.chord} />)
+								: (<DummyNexusPanel />)}
+							<ChordPanel
+								value={item.chordInfo}
+								onQualityChange={nextValue => handleQualityChange(index, nextValue)}
+								onInsertBefore={() => handleInsert(index, "insertBefore")}
+								onInsertAfter={() => handleInsert(index + 1, "insertAfter")}
+								onChangeChord={() => handleChange(index)}
+								onDelete={() => handleDelete(index)}
+							/>
 						</div>
 					))}
 					<div className={getSlotClassName(progression.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
 						<DummyNexusPanel />
-						<div className="progression-editor__panel progression-editor__add-panel">
-							<button
-								type="button"
-								className={createActionButtonClassNames("progression-editor__add-button")}
-								onClick={() => handleInsert(progression.length, "add")}
-							>
-								Add chord
-							</button>
-						</div>
+						<AddChordPanel onClick={() => handleInsert(progression.length, "add")} />
 					</div>
 				</div>
 			</div>
-			{pendingInsert && (
-				<InsertChordModal
-					context={pendingInsert.context}
-					onConfirm={handleConfirmInsert}
-					onCancel={handleCancelInsert}
+			{pendingChordEdit && (
+				<BasicChordModal
+					context={pendingChordEdit.context}
+					initialChord={pendingChordEdit.initialChord}
+					onConfirm={handleConfirmChordEdit}
+					onCancel={handleCancelChordEdit}
 				/>
 			)}
+		</div>
+	);
+}
+
+function AddChordPanel({ onClick }: { onClick: () => void; }) {
+	return (
+		<div className="progression-editor__panel-box progression-editor__add-panel">
+			<button
+				type="button"
+				className="progression-editor__add-button"
+				onClick={onClick}
+			>
+				Add chord
+			</button>
 		</div>
 	);
 }

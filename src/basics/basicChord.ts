@@ -1,27 +1,28 @@
 import { Degree, PitchClass } from "./pitch";
-import { ChordQualityId, findChordQuality, Mode } from "./chordQuality";
+
+export type Mode = "M" | "m";
+
+export function ModeToNotation(mode: Mode): string {
+    switch (mode) {
+        case "M": return "";
+        case "m": return "m";
+    }
+}
 
 export class BasicChord {
     readonly root: PitchClass;
-    readonly qualityId: ChordQualityId;
+    readonly mode: Mode;
 
-    constructor(root: PitchClass, qualityId: ChordQualityId) {
+    constructor(root: PitchClass, mode: Mode) {
         this.root = root;
-        this.qualityId = qualityId;
+        this.mode = mode;
     }
     equals(other: BasicChord): boolean {
-        return this.root.equals(other.root) && this.qualityId === other.qualityId;
-    }
-
-    getPitchClasses(): PitchClass[] {
-        const quality = findChordQuality(this.qualityId);
-        const intervals = quality.intervals;
-        return intervals.map(interval => this.root.add(interval));
+        return this.root.equals(other.root) && this.mode === other.mode;
     }
 
     toString(): string {
-        const quality = findChordQuality(this.qualityId);
-        return `${this.root.toString()}${quality.notation}`;
+        return `${this.root.toString()}${ModeToNotation(this.mode)}`;
     }
 }
 
@@ -38,9 +39,6 @@ export class ChordDegree {
     }
 
     toString(): string {
-        switch (this.mode) {
-            case "major": return `${this.degree.toString()}`;
-            case "minor": return `${this.degree.toString()}m`;
-        }
+        return `${this.degree.toString()}${ModeToNotation(this.mode)}`;
     }
 }
