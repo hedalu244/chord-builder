@@ -1,4 +1,4 @@
-import { copyChordInfo, createDefaultChordInfo, FullChordInfo, isSameChordInfo } from "./basics/fullChordInfo";
+import { FullChordInfo } from "./basics/fullChordInfo";
 
 export type InsertTrigger = "add" | "insertBefore" | "insertAfter";
 
@@ -15,15 +15,11 @@ export type ProgressionItem = {
 
 export function createInsertedChordInfo(_context: InsertContext): FullChordInfo {
     // todo 実装
-	return createDefaultChordInfo();
+	return FullChordInfo.createDefault();
 }
 
 export function toChordInfos(items: readonly ProgressionItem[]): FullChordInfo[] {
-	return items.map(item => copyChordInfo(item.chordInfo));
-}
-
-export function copyProgression(progression: readonly FullChordInfo[]): FullChordInfo[] {
-    return progression.map(copyChordInfo);
+	return items.map(item => item.chordInfo);
 }
 
 export function replaceChordAtIndex(
@@ -41,7 +37,7 @@ export function replaceChordAtIndex(
 		}
 		return {
 			id: item.id,
-			chordInfo: copyChordInfo(nextChordInfo)
+			chordInfo: nextChordInfo
 		};
 	});
 }
@@ -87,7 +83,7 @@ export function createProgressionItems(
 	value: readonly FullChordInfo[],
 	createId: () => number
 ): ProgressionItem[] {
-	return copyProgression(value).map(chordInfo => ({
+	return value.map(chordInfo => ({
 		id: createId(),
 		chordInfo
 	}));
@@ -98,10 +94,10 @@ export function syncProgressionItems(
 	value: readonly FullChordInfo[],
 	createId: () => number
 ): readonly ProgressionItem[] {
-	const nextValues = copyProgression(value);
+	const nextValues = value;
 	if (
 		nextValues.length === current.length &&
-		nextValues.every((nextChord, index) => isSameChordInfo(nextChord, current[index].chordInfo))
+		nextValues.every((nextChord, index) => nextChord.equals(current[index].chordInfo))
 	) {
 		return current;
 	}

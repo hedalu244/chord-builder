@@ -12,6 +12,19 @@ class RelativeNexus {
         this.latterMode = latter;
         this.rootMotion = rootMotion;
     }
+
+    equals(other: RelativeNexus): boolean {
+        return this.formerMode === other.formerMode &&
+            this.latterMode === other.latterMode &&
+            this.rootMotion.equals(other.rootMotion);
+    }
+}
+
+export function calcRelativeNexus(former: BasicChord, latter: BasicChord): RelativeNexus {
+    const formerQuality = findChordQuality(former.qualityId);
+    const latterQuality = findChordQuality(latter.qualityId);
+    const rootMotion = latter.root.delta(former.root);
+    return new RelativeNexus(formerQuality.mode, latterQuality.mode, rootMotion);
 }
 
 class DegreeNexus {
@@ -22,6 +35,10 @@ class DegreeNexus {
         this._formerRootDegree = former.degree;
         const rootMotion = latter.degree.delta(former.degree);
         this.relativeNexus = new RelativeNexus(former.mode, latter.mode, rootMotion);
+    }
+    equals(other: DegreeNexus): boolean {
+        return this.formerRootDegree.equals(other.formerRootDegree) &&
+            this.relativeNexus.equals(other.relativeNexus);
     }
 
     get formerRootDegree(): Degree { return this._formerRootDegree; }
@@ -42,28 +59,11 @@ const KnownNexi: readonly DegreeNexus[] = [
     new DegreeNexus(new ChordDegree(new Degree(2), "minor"), new ChordDegree(new Degree(5), "major")), // ii-V
 ];
 
-function findDegreeNexus(former: ChordDegree, latter: ChordDegree): DegreeNexus | undefined {
-    return KnownNexi.find(nexus =>
-        nexus.formerChordDegree.degree.value === former.degree.value &&
-        nexus.formerChordDegree.mode === former.mode &&
-        nexus.latterChordDegree.degree.value === latter.degree.value &&
-        nexus.latterChordDegree.mode === latter.mode
-    );
-};
-
 // V-I in key=A みたいな情報
 type NexusMatchResult = {
     nexus: DegreeNexus;
     key: PitchClass;
 };
-
-export function calcRelativeNexus(former: BasicChord, latter: BasicChord): RelativeNexus {
-    const formerQuality = findChordQuality(former.qualityId);
-    const latterQuality = findChordQuality(latter.qualityId);
-    const rootMotion = latter.root.delta(former.root);
-    return new RelativeNexus(formerQuality.mode, latterQuality.mode, rootMotion);
-}
-
 export function findMatchingNexus(former: BasicChord, latter: BasicChord): NexusMatchResult[] {
     const matches: NexusMatchResult[] = [];
     for (let keyValue = 0; keyValue < 12; keyValue++) {
@@ -71,10 +71,10 @@ export function findMatchingNexus(former: BasicChord, latter: BasicChord): Nexus
         const formerDegree = new ChordDegree(former.root.getDegree(key), findChordQuality(former.qualityId).mode);
         const latterDegree = new ChordDegree(latter.root.getDegree(key), findChordQuality(latter.qualityId).mode);
 
-        const nexus = findDegreeNexus(formerDegree, latterDegree);
-        if (nexus) {
-            matches.push({ nexus, key });
-        }
+        const targetNexus = new DegreeNexus(formerDegree, latterDegree);
+        const nexus = KnownNexi.filter(nexus => nexus.equals(targetNexus));
+
+        matches.push(...nexus.map(nexus => ({ nexus, key })));
     }
     return matches;
 }

@@ -32,12 +32,19 @@ export class Interval {
     private readonly _value: Mod12;
     constructor(pitch: number) { this._value = mod12(pitch); }
     get value(): Mod12 { return this._value; }
+    equals(other: Interval): boolean { return this.value === other.value; }
+
     add(other: Interval): Interval { return new Interval(this.value + other.value); }
     sub(other: Interval): Interval { return new Interval(this.value - other.value); }
     invert(): Interval { return new Interval(-this.value); }
     
     toString(): string {
         const names = ["P1", "m2", "M2", "m3", "M3", "P4", "TT", "P5", "m6", "M6", "m7", "M7"];
+        return names[this.value];
+    }
+    
+    toStringRelative(): string {
+        const names = ["P1", "m2 up", "M2 up", "m3 up", "M3 up", "P5 down", "TT", "P5 up", "M3 down", "m3 down", "M2 down", "m2 down"];
         return names[this.value];
     }
 
@@ -51,6 +58,7 @@ export class Degree {
     private readonly _value: Mod12;
     constructor(pitch: number) { this._value = mod12(pitch); }
     get value(): Mod12 { return this._value; }
+    equals(other: Degree): boolean { return this.value === other.value; }
 
     add(interval: Interval): Degree { return new Degree(this.value + interval.value); }
     sub(interval: Interval): Degree { return new Degree(this.value - interval.value); }
@@ -73,6 +81,8 @@ export class PitchClass {
     private readonly _value: Mod12;
     constructor(pitch: number) { this._value = mod12(pitch); }
     get value(): Mod12 { return this._value; }
+    equals(other: PitchClass): boolean { return this.value === other.value; }
+
     add(interval: Interval): PitchClass { return new PitchClass(this.value + interval.value); }
     sub(interval: Interval): PitchClass { return new PitchClass(this.value - interval.value); }
     delta(other: PitchClass): Interval { return new Interval(this.value - other.value); }

@@ -1,31 +1,24 @@
 import { BasicChord } from "./basicChord";
 import { PitchClass } from "./pitch";
 
-export type FullChordInfo = {
+export class FullChordInfo {
 	readonly chord: BasicChord;
-};
 
-export function copyChordInfo(chordInfo: FullChordInfo): FullChordInfo {
-	return {
-		chord: {
-			root: new PitchClass(chordInfo.chord.root.value),
-			qualityId: chordInfo.chord.qualityId
-		}
-	};
+	constructor(chord: BasicChord) {
+		this.chord = chord;
+	}
+
+	equals(other: FullChordInfo): boolean {
+		return this.chord.equals(other.chord);
+	}
+
+	static createDefault(): FullChordInfo {
+		return new FullChordInfo(
+			new BasicChord(
+				new PitchClass(0),
+				"major7"
+			)
+		);
+	}
 }
 
-export function isSameChordInfo(left: FullChordInfo, right: FullChordInfo): boolean {
-	return (
-		left.chord.root.value === right.chord.root.value &&
-		left.chord.qualityId === right.chord.qualityId
-	);
-}
-
-export function createDefaultChordInfo(): FullChordInfo {
-	return {
-		chord: {
-			root: new PitchClass(0),
-			qualityId: "major7"
-		},
-	};
-}

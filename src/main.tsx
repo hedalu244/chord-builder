@@ -3,18 +3,13 @@ import { createRoot } from "react-dom/client";
 import { Interval, PitchClass } from "./basics/pitch";
 import { ProgressionEditor } from "./gui/progressionEditor";
 import { FullChordInfo } from "./basics/fullChordInfo";
+import { BasicChord } from "./basics/basicChord";
 
 function createDebugChordData(): FullChordInfo[] {
 	return [
-		{
-			chord: { root: new PitchClass(0), qualityId: "major7" },
-		},
-		{
-			chord: { root: new PitchClass(9), qualityId: "minor7" },
-		},
-		{
-			chord: { root: new PitchClass(7), qualityId: "dominant7" },
-		}
+		new FullChordInfo(new BasicChord(new PitchClass(0), "major7")),
+		new FullChordInfo(new BasicChord(new PitchClass(9), "minor7")),
+		new FullChordInfo(new BasicChord(new PitchClass(7), "dominant7"))
 	];
 }
 

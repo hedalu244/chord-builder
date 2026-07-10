@@ -1,7 +1,8 @@
 import { ChangeEvent } from "react";
-import { ChordQualityId, findChordQuality, chordQualities } from "../basics/chordQuality";
+import { ChordQualityId, chordQualities } from "../basics/chordQuality";
 import { PitchClass } from "../basics/pitch";
 import { FullChordInfo } from "../basics/fullChordInfo";
+import { BasicChord } from "../basics/basicChord";
 
 const pitchClassOptions = Array.from({ length: 12 }, (_, index) => {
 	const pitchClass = new PitchClass(index);
@@ -18,27 +19,26 @@ type ChordPanelProps = {
 
 export function ChordPanel(props: ChordPanelProps) {
 	const { value, onChange } = props;
-	const selectedQuality = findChordQuality(value.chord.qualityId);
-	const chordLabel = `${value.chord.root.toString()}${selectedQuality.notation}`;
+	const chordLabel = value.chord.toString();
 
 	const handleRootChange = (event: ChangeEvent<HTMLSelectElement>): void => {
-		onChange({
-			chord: {
-				root: new PitchClass(Number(event.target.value)),
-				qualityId: value.chord.qualityId
-			}
-		});
+		onChange(new FullChordInfo(
+			new BasicChord(
+				new PitchClass(Number(event.target.value)),
+				value.chord.qualityId
+			)
+		));
 	};
 
 	const handleQualityChange = (event: ChangeEvent<HTMLSelectElement>): void => {
 		const nextQualityId = event.target.value as ChordQualityId;
 
-		onChange({
-			chord: {
-				root: value.chord.root,
-				qualityId: nextQualityId
-			}
-		});
+		onChange(new FullChordInfo(
+			new BasicChord(
+				value.chord.root,
+				nextQualityId
+			)
+		));
 	};
 
 	return (

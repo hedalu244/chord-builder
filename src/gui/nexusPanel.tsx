@@ -20,7 +20,7 @@ function formatKnownNexus(formerChord: BasicChord, latterChord: BasicChord): { d
 
 	const relative = calcRelativeNexus(formerChord, latterChord);
 	return {
-		degree: `${relative.formerMode} → ${relative.latterMode}, ${relative.rootMotion.toString()}`,
+		degree: `${relative.formerMode} → ${relative.latterMode}, ${relative.rootMotion.toStringRelative()}`,
 		key: "unknown nexus"
 	};
 }

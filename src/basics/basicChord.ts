@@ -1,15 +1,28 @@
 import { Degree, PitchClass } from "./pitch";
 import { ChordQualityId, findChordQuality, Mode } from "./chordQuality";
 
-export type BasicChord = {
+export class BasicChord {
     readonly root: PitchClass;
     readonly qualityId: ChordQualityId;
-};
 
-export function getPitchClasses(chord: BasicChord): PitchClass[] {
-    const quality = findChordQuality(chord.qualityId);
-    const intervals = quality.intervals;
-    return intervals.map(interval => chord.root.add(interval));
+    constructor(root: PitchClass, qualityId: ChordQualityId) {
+        this.root = root;
+        this.qualityId = qualityId;
+    }
+    equals(other: BasicChord): boolean {
+        return this.root.equals(other.root) && this.qualityId === other.qualityId;
+    }
+
+    getPitchClasses(): PitchClass[] {
+        const quality = findChordQuality(this.qualityId);
+        const intervals = quality.intervals;
+        return intervals.map(interval => this.root.add(interval));
+    }
+
+    toString(): string {
+        const quality = findChordQuality(this.qualityId);
+        return `${this.root.toString()}${quality.notation}`;
+    }
 }
 
 export class ChordDegree {
@@ -19,6 +32,9 @@ export class ChordDegree {
     constructor(degree: Degree, mode: Mode) {
         this.degree = degree;
         this.mode = mode;
+    }
+    equals(other: ChordDegree): boolean {
+        return this.degree.equals(other.degree) && this.mode === other.mode;
     }
 
     toString(): string {
