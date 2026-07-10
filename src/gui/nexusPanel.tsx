@@ -10,7 +10,7 @@ export function NexusPanel(props: NexusPanelProps) {
 	const { formerChord, latterChord } = props;
 
 	return (
-		<div className="nexus-panel">
+		<div className="nexus-panel progression-editor__card">
 			<SearchedNexusBlock formerChord={formerChord} latterChord={latterChord} showFormer={false} showLatter={false} />
 		</div>
 	);
@@ -18,7 +18,7 @@ export function NexusPanel(props: NexusPanelProps) {
 
 export function DummyNexusPanel() {
 	return (
-		<div className="nexus-panel nexus-panel--dummy">
+		<div className="nexus-panel progression-editor__card nexus-panel--dummy">
 		</div>
 	);
 }

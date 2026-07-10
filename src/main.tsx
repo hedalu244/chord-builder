@@ -5,7 +5,7 @@ import { ProgressionEditor } from "./gui/progressionEditor";
 import { FullChordInfo } from "./basics/fullChordInfo";
 import { BasicChord } from "./basics/basicChord";
 
-function createDebugChordData(): FullChordInfo[] {
+function createInitialProgression(): FullChordInfo[] {
 	return [
 		new FullChordInfo(new BasicChord(new PitchClass(0), "M"), "major7"),
 		new FullChordInfo(new BasicChord(new PitchClass(9), "m"), "minor7"),
@@ -14,26 +14,21 @@ function createDebugChordData(): FullChordInfo[] {
 }
 
 function App() {
-	const [progression, setProgression] = useState<readonly FullChordInfo[]>(() => createDebugChordData());
+	const [progression, setProgression] = useState<readonly FullChordInfo[]>(() => createInitialProgression());
 
 	return (
-		<main className="debug-app">
-			<h2 className="debug-app__title">Chord Progression Editor Debug</h2>
-			<p className="debug-app__info">
-				Edit, insert, add, and delete chords. Current progression is logged in the browser console.
-			</p>
+		<main className="app">
+			<h2 className="app__title">Chord Progression Editor</h2>
 			<ProgressionEditor
 				value={progression}
-				onChange={nextProgression => {
-					setProgression(nextProgression);
-					console.log("progression", nextProgression);
-				}}
+				onChange={setProgression}
 			/>
 		</main>
 	);
 }
 
 const mountNode = document.createElement("div");
+mountNode.className = "app-root";
 document.body.appendChild(mountNode);
 
 createRoot(mountNode).render(<App />);

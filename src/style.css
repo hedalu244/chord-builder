@@ -1,26 +1,99 @@
-body {
-	margin: 0;
-	font-family: "Segoe UI", sans-serif;
-	background: #f5f7fa;
-	color: #1f2933;
+:root {
+	/* テキスト・枠線の強調度 (強い順: ink > muted > faint) */
+	--color-ink: #1f2933;
+	--color-ink-rgb: 31, 41, 51;
+	--color-muted: #52606d;
+	--color-faint: #9aa5b1;
+
+	/* 背景・枠線 */
+	--color-surface: #ffffff;
+	--color-highlight: #f5f7fa; /* ページ背景、およびhover/active状態を示す背景 */
+	--color-border: #bcccdc;
+
+	/* 破壊的操作 */
+	--color-danger: #c0392b;
+	--color-danger-surface: #fdecea;
+
+	/* 角丸 */
+	--radius-control: 4px;
+	--radius-card: 8px;
+
+	/* 選択中/アクティブ状態の枠線の太さ */
+	--border-width-active: 2px;
 }
 
-.debug-app {
+html {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	height: 100%;
+	font-family: "Segoe UI", sans-serif;
+	background: var(--color-highlight);
+	color: var(--color-ink);
+}
+
+button {
+	font-family: inherit;
+	cursor: pointer;
+}
+
+.app-root {
+	height: 100%;
+}
+
+.app {
+	box-sizing: border-box;
+	height: 100%;
 	padding: 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
 }
 
-.debug-app__title {
+.app__title {
 	margin: 0;
 	font-size: 24px;
 }
 
-.debug-app__info {
-	margin: 0;
-	font-size: 13px;
-	color: #52606d;
+.progression-editor__scroll-area {
+	box-sizing: border-box;
+	height: 100%;
+	overflow-x: auto;
+	overflow-y: auto;
+	padding-bottom: 8px;
+}
+
+.progression-editor {
+	--progression-card-width: 200px;
+	--progression-card-min-height: 400px;
+	--progression-gap: 12px;
+	--progression-shift: calc(var(--progression-card-width) + var(--progression-gap));
+
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+.progression-editor__row {
+	display: flex;
+	align-items: stretch;
+	gap: var(--progression-gap);
+	isolation: isolate;
+}
+
+.progression-editor__slot {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.progression-editor__card {
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-card);
+	padding: 12px;
+	background: var(--color-surface);
+	width: var(--progression-card-width);
 }
 
 .nexus-panel {
@@ -32,10 +105,6 @@ body {
 	text-align: center;
 
 	gap: 2px;
-	padding: 8px;
-	border-radius: 6px;
-	background: #ffffff;
-	border: 1px solid #d0d7de;
 	transform: translateX(-50%); /* またがるように表示する */
 }
 
@@ -57,51 +126,54 @@ body {
 	font-size: 16px;
 }
 
-.progression-editor__scroll-area {
-	overflow-x: auto;
-	overflow-y: hidden;
-	padding-bottom: 8px;
-}
-
-.progression-editor {
-	--progression-panel-width: 200px;
-	--progression-panel-min-height: 400px;
-	--progression-gap: 12px;
-	--progression-shift: calc(var(--progression-panel-width) + var(--progression-gap));
-}
-
-.progression-editor__row {
-	display: flex;
-	align-items: stretch;
-	gap: var(--progression-gap);
-}
-
-.progression-editor__slot {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.progression-editor__panel-box {
-	border: 1px solid #d0d7de;
-	border-radius: 8px;
-	padding: 12px;
-	background: #ffffff;
-	width: var(--progression-panel-width);
-	height: 100%;
-}
-
 .chord-panel {
 	display: flex;
 	flex-wrap: wrap;
 	align-content: flex-start;
-	gap: 8px;
+	gap: 24px;
+	height: 100%;
 }
 
 .chord-panel__controls {
 	display: flex;
 	flex-direction: row;
+	justify-content: space-between;
 	gap: 4px;
+	width: 100%;
+}
+
+.icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 6px 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	font-size: 13px;
+}
+
+.icon-button:hover {
+	background: var(--color-highlight);
+	border-color: var(--color-faint);
+}
+
+.icon-button__icon {
+	display: block;
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+}
+
+.icon-button__label {
+	white-space: nowrap;
+}
+
+.chord-panel__delete-button:hover {
+	background: var(--color-danger-surface);
+	border-color: var(--color-danger);
 }
 
 .basic-chord-panel,
@@ -117,7 +189,7 @@ body {
 .quality-panel__label {
 	font-size: 12px;
 	font-weight: 600;
-	color: #52606d;
+	color: var(--color-muted);
 	text-align: center;
 }
 
@@ -129,14 +201,6 @@ body {
 	text-align: center;
 }
 
-.basic-chord-panel__change-button {
-	padding: 4px 10px;
-	border: 1px solid #bcccdc;
-	border-radius: 4px;
-	background: #ffffff;
-	cursor: pointer;
-}
-
 .chord-tones {
 	display: flex;
 	flex-wrap: wrap;
@@ -146,18 +210,18 @@ body {
 
 .chord-tones__tone {
 	padding: 2px 6px;
-	border: 1px solid #d0d7de;
+	border: 1px solid var(--color-border);
 	border-radius: 10px;
-	background: #f5f7fa;
-	color: #52606d;
+	background: var(--color-highlight);
+	color: var(--color-muted);
 	font-size: 12px;
 }
 
 .quality-panel__control {
 	padding: 6px;
-	border: 1px solid #bcccdc;
-	border-radius: 4px;
-	background: #ffffff;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
 	font-size: 14px;
 }
 
@@ -190,20 +254,38 @@ body {
 	}
 }
 
-.progression-editor__add-panel {
+.progression-editor__add-item {
+	position: relative;
+	z-index: -1;
+	min-width: var(--progression-card-width);
+}
+
+.add-chord-panel {
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
 	align-items: center;
-	min-height: var(--progression-panel-min-height);
+	justify-content: center;
+	gap: 12px;
+	width: var(--progression-card-width);
+	min-height: var(--progression-card-min-height);
+	border: 2px dashed var(--color-border);
+	border-radius: var(--radius-card);
+	background: transparent;
+	color: var(--color-muted);
 }
 
-.progression-editor__add-item {
-	min-width: var(--progression-panel-width);
+.add-chord-panel:hover {
+	background: rgba(var(--color-ink-rgb), 0.05);
 }
 
-.progression-editor__add-button {
-	width: 100%;
+.add-chord-panel__icon {
+	width: 40px;
+	height: 40px;
+}
+
+.add-chord-panel__label {
+	font-size: 14px;
+	font-weight: 600;
 }
 
 .basic-chord-modal__backdrop {
@@ -212,7 +294,7 @@ body {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	background: rgba(31, 41, 51, 0.5);
+	background: rgba(var(--color-ink-rgb), 0.5);
 	z-index: 100;
 }
 
@@ -222,18 +304,18 @@ body {
 	gap: 16px;
 	width: 560px;
 	padding: 20px;
-	border-radius: 8px;
-	background: #ffffff;
-	box-shadow: 0 8px 24px rgba(31, 41, 51, 0.25);
+	border-radius: var(--radius-card);
+	background: var(--color-surface);
+	box-shadow: 0 8px 24px rgba(var(--color-ink-rgb), 0.25);
 }
 
-.basic-chord-modal__flank-row {
+.basic-chord-modal__method-row {
 	display: flex;
 	align-items: stretch;
 	gap: 4px;
 }
 
-.basic-chord-modal__flank {
+.basic-chord-modal__method-button {
 	flex: 1 1 0;
 	display: flex;
 	flex-direction: column;
@@ -241,30 +323,25 @@ body {
 	align-items: center;
 	gap: 2px;
 	padding: 8px 4px;
-	border: 1px solid #bcccdc;
-	border-radius: 4px;
-	background: #ffffff;
-	cursor: pointer;
+	border: 2px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
 }
 
-.basic-chord-modal__flank--center {
+.basic-chord-modal__method-button--center {
 	font-size: 20px;
 	font-weight: 600;
 }
 
-.basic-chord-modal__flank--active {
-	border-color: #1f2933;
-	border-width: 2px;
-	background: #eef2f6;
+.basic-chord-modal__method-button--active {
+	border-color: var(--color-ink);
+	border-width: var(--border-width-active);
+	background: var(--color-highlight);
 }
 
-.basic-chord-modal__flank-neighbor {
-	font-size: 18px;
-	color: #9aa5b1;
-}
-
-.basic-chord-modal__flank-placeholder {
-	color: #9aa5b1;
+.basic-chord-modal__method-button--disabled {
+	opacity: 0;
+	cursor: default;
 }
 
 .basic-chord-modal__nexus-list {
@@ -283,16 +360,15 @@ body {
 	align-items: center;
 	gap: 4px;
 	padding: 8px;
-	border: 1px solid #bcccdc;
-	border-radius: 4px;
-	background: #ffffff;
-	cursor: pointer;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
 }
 
 .basic-chord-modal__nexus-button--active {
-	border-color: #1f2933;
-	border-width: 2px;
-	background: #eef2f6;
+	border-color: var(--color-ink);
+	border-width: var(--border-width-active);
+	background: var(--color-highlight);
 }
 
 .nexus-block__chords {
@@ -302,18 +378,18 @@ body {
 
 .nexus-block__chord--muted {
 	font-weight: 400;
-	color: #9aa5b1;
+	color: var(--color-faint);
 }
 
 .nexus-block__arrow {
 	font-weight: 400;
-	color: #9aa5b1;
+	color: var(--color-faint);
 	margin: 0 2px;
 }
 
 .nexus-block__relative {
 	font-size: 9px;
-	color: #9aa5b1;
+	color: var(--color-faint);
 	text-align: center;
 }
 
@@ -325,14 +401,8 @@ body {
 
 .nexus-block__key {
 	font-size: 11px;
-	color: #52606d;
+	color: var(--color-muted);
 	text-align: center;
-}
-
-.basic-chord-modal__hint {
-	margin: 0;
-	font-size: 13px;
-	color: #52606d;
 }
 
 .basic-chord-modal__field-row {
@@ -343,29 +413,28 @@ body {
 .basic-chord-modal__control {
 	flex: 1 1 0;
 	padding: 6px;
-	border: 1px solid #bcccdc;
-	border-radius: 4px;
-	background: #ffffff;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
 	font-size: 14px;
 }
 
 .basic-chord-modal__actions {
 	display: flex;
-	justify-content: flex-end;
-	gap: 8px;
+	justify-content: center;
+	gap: 16px;
 }
 
 .basic-chord-modal__cancel-button,
 .basic-chord-modal__confirm-button {
 	padding: 6px 16px;
-	border: 1px solid #bcccdc;
-	border-radius: 4px;
-	background: #ffffff;
-	cursor: pointer;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
 }
 
 .basic-chord-modal__confirm-button {
-	background: #1f2933;
-	color: #ffffff;
-	border-color: #1f2933;
+	background: var(--color-ink);
+	color: var(--color-surface);
+	border-color: var(--color-ink);
 }

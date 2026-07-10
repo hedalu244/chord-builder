@@ -1,4 +1,5 @@
 import { AnimationEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AddChordPanel } from "./addChordPanel";
 import { BasicChordModal } from "./basicChordModal";
 import { ChordPanel } from "./chordPanel";
 import { NexusPanel, DummyNexusPanel } from "./nexusPanel";
@@ -176,20 +177,6 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 					onCancel={handleCancelChordEdit}
 				/>
 			)}
-		</div>
-	);
-}
-
-function AddChordPanel({ onClick }: { onClick: () => void; }) {
-	return (
-		<div className="progression-editor__panel-box progression-editor__add-panel">
-			<button
-				type="button"
-				className="progression-editor__add-button"
-				onClick={onClick}
-			>
-				Add chord
-			</button>
 		</div>
 	);
 }
