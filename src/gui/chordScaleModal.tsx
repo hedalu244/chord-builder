@@ -5,8 +5,6 @@ import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./scaleAnalysis";
 import { KnownScaleInfo, findCandidateScales } from "../basics/knownScale";
 
-const ALL_VALUES = Array.from({ length: 12 }, (_, value) => value);
-
 // 12音を半音順に並べた行。direct inputでは操作可能なチェックボックスとして、候補リストでは静的な表示として使う
 type ToneRowProps = {
 	readonly root: PitchClass;
@@ -19,13 +17,14 @@ function ToneRow(props: ToneRowProps) {
 	const { root, activeValues, lockedValues, onToggle } = props;
 	return (
 		<div className="chord-scale-modal__tone-row">
-			{ALL_VALUES.map(value => {
+			{Interval.all.map(interval => {
+				const value = interval.value;
 				const locked = lockedValues?.has(value) ?? false;
 				const active = activeValues.has(value);
 				const classNames = ["chord-scale-modal__tone-cell"];
 				if (locked) classNames.push("chord-scale-modal__tone-cell--locked");
 				else if (active) classNames.push("chord-scale-modal__tone-cell--active");
-				const label = root.add(new Interval(value)).toString();
+				const label = root.add(interval).toString();
 
 				if (!onToggle) {
 					return (

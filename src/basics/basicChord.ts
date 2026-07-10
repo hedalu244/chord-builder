@@ -2,6 +2,8 @@ import { Degree, Interval, PitchClass } from "./pitch";
 
 export type Mode = "M" | "m";
 
+export const allModes: readonly Mode[] = ["M", "m"];
+
 export function ModeToNotation(mode: Mode): string {
     switch (mode) {
         case "M": return "";

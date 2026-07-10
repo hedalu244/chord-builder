@@ -60,6 +60,8 @@ export class Interval {
         }
         return new Interval(index);
     }
+
+    static readonly all: readonly Interval[] = Array.from({ length: 12 }, (_, value) => new Interval(value));
 }
 
 // スケールの主音=Keyとの相対的な音程
@@ -135,4 +137,6 @@ export class PitchClass {
         }
         throw new Error(`Unknown pitch class: ${str}`);
     }
+
+    static readonly all: readonly PitchClass[] = Array.from({ length: 12 }, (_, value) => new PitchClass(value));
 }

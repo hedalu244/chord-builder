@@ -1,17 +1,9 @@
 import { useState } from "react";
-import { BasicChord, Mode } from "../basics/basicChord";
+import { allModes, BasicChord } from "../basics/basicChord";
 import { DegreeNexus, findNexiByFormerMode, findNexiByLatterMode } from "../basics/nexus";
 import { PitchClass } from "../basics/pitch";
 import { ChordEditContext, ChordEditMethod, defaultChordEditMethod } from "../editor";
 import { SearchedNexusBlock, DescribedNexusBlock } from "./nexusBlock";
-
-const pitchClassOptions = Array.from({ length: 12 }, (_, index) => {
-	const pitchClass = new PitchClass(index);
-	return {
-		value: index,
-		label: pitchClass.toString()
-	};
-});
 
 function methodButtonClassName(active: boolean): string {
 	return active ? "basic-chord-modal__method-button basic-chord-modal__method-button--active" : "basic-chord-modal__method-button";
@@ -23,6 +15,10 @@ function disabledMethodButtonClassName(): string {
 
 function nexusButtonClassName(active: boolean): string {
 	return active ? "basic-chord-modal__nexus-button basic-chord-modal__nexus-button--active" : "basic-chord-modal__nexus-button";
+}
+
+function directButtonClassName(active: boolean): string {
+	return active ? "basic-chord-modal__direct-button basic-chord-modal__direct-button--active" : "basic-chord-modal__direct-button";
 }
 
 type NexusCandidateListProps = {
@@ -126,24 +122,22 @@ export function BasicChordModal(props: BasicChordModalProps) {
 						)
 					)}
 					{method === "direct" && (
-						<div className="basic-chord-modal__field-row">
-							<select
-								className="basic-chord-modal__control"
-								value={String(chord.root.value)}
-								onChange={event => setChord(new BasicChord(new PitchClass(Number(event.target.value)), chord.mode))}
-							>
-								{pitchClassOptions.map(option => (
-									<option key={option.value} value={String(option.value)}>{option.label}</option>
-								))}
-							</select>
-							<select
-								className="basic-chord-modal__control"
-								value={chord.mode}
-								onChange={event => setChord(new BasicChord(chord.root, event.target.value as Mode))}
-							>
-								<option value="M">major</option>
-								<option value="m">minor</option>
-							</select>
+						<div className="basic-chord-modal__direct-grid">
+							{PitchClass.all.map(root => (
+								allModes.map(mode => {
+									const candidate = new BasicChord(root, mode);
+									return (
+										<button
+											type="button"
+											key={`${root.value}-${mode}`}
+											className={directButtonClassName(chord.root.equals(root) && chord.mode === mode)}
+											onClick={() => setChord(candidate)}
+										>
+											{candidate.toString()}
+										</button>
+									);
+								})
+							))}
 						</div>
 					)}
 				</div>
