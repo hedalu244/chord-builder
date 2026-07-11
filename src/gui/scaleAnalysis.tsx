@@ -1,5 +1,5 @@
 import { FullChordInfo } from "../basics/fullChordInfo";
-import { findKnownScale } from "../basics/knownScale";
+import { findKnownScale, getKnownScaleInfo } from "../basics/knownScale";
 import { PitchClass } from "../basics/pitch";
 import { Scale } from "../basics/scale";
 import { getExtraTensionNames } from "../basics/tensions";
@@ -14,7 +14,7 @@ type ScaleAnalysisProps = {
 export function ScaleAnalysis(props: ScaleAnalysisProps) {
 	const { chordInfo, root, scale } = props;
 	const known = findKnownScale(scale);
-	const rootName = root.toString();
+	const description = getKnownScaleInfo(known, root);
 	const tensionNames = getExtraTensionNames(scale, chordInfo.getChordToneIntervals());
 
 	return (
@@ -23,10 +23,8 @@ export function ScaleAnalysis(props: ScaleAnalysisProps) {
 				{chordInfo.toString()}
 				{tensionNames.length > 0 && <sup> ({tensionNames.join(", ")})</sup>}
 			</h4>
-			<span className="scale-analysis__name">{known ? `${rootName} ${known.name}` : "Unknown Scale"}</span>
-			<span className="scale-analysis__origin">
-				{known ? `${root.sub(known.parentRootOffset).toString()} ${known.description}` : "-"}
-			</span>
+			<span className="scale-analysis__name">{description.name}</span>
+			<span className="scale-analysis__origin">{description.description}</span>
 		</div>
 	);
 }

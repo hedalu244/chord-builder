@@ -4,6 +4,7 @@ import { Interval, PitchClass } from "./pitch";
 export class Scale {
     readonly tones: readonly Interval[]; // 昇順、重複なし。必ずInterval(0)を含む
 
+    // 構成音は重複が抜かれ、昇順にソートされる
     constructor(tones: readonly Interval[]) {
         const uniqueValues = Array.from(new Set(tones.map(tone => tone.value))).sort((a, b) => a - b);
         this.tones = uniqueValues.map(value => new Interval(value));
@@ -18,7 +19,7 @@ export class Scale {
         return this.tones.some(t => t.equals(tone));
     }
 
-    // 構成音を指定した数だけシフトしたスケールを返す。シフト後の構成音は昇順にソートされる
+    // 構成音を指定した数だけシフトしたスケールを返す。
     shift(index: number): Scale {
         const base = this.tones[index % this.tones.length];
         return new Scale(this.tones.map(tone => tone.sub(base)));

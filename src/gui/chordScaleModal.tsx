@@ -3,19 +3,18 @@ import { FullChordInfo } from "../basics/fullChordInfo";
 import { Interval, PitchClass } from "../basics/pitch";
 import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./scaleAnalysis";
-import { KnownScaleInfo, findCandidateScales } from "../basics/knownScale";
+import { KnownScale, findCandidateScales, getKnownScaleInfo } from "../basics/knownScale";
 import { EditableToneRow, ToneRow } from "./toneRow";
 
 type CandidateListProps = {
 	readonly root: PitchClass;
-	readonly candidates: readonly KnownScaleInfo[];
+	readonly candidates: readonly KnownScale[];
 	readonly currentScale: Scale;
 	readonly onSelect: (scale: Scale) => void;
 };
 
 function CandidateList(props: CandidateListProps) {
 	const { root, candidates, currentScale, onSelect } = props;
-	const rootName = root.toString();
 	if (candidates.length === 0) {
 		return (
 			<div className="chord-scale-modal__candidate-list">
@@ -26,16 +25,18 @@ function CandidateList(props: CandidateListProps) {
 
 	return (
 		<div className="chord-scale-modal__candidate-list">
-			{candidates.map((info, index) => {
+			{candidates.map((knownScale, index) => {
 				const classNames = ["chord-scale-modal__candidate-button"];
-				if (info.scale.equals(currentScale)) classNames.push("chord-scale-modal__candidate-button--exact");
+				if (knownScale.scale.equals(currentScale)) classNames.push("chord-scale-modal__candidate-button--exact");
+				const description = getKnownScaleInfo(knownScale, root);
+
 				return (
-					<button type="button" key={index} className={classNames.join(" ")} onClick={() => onSelect(info.scale)}>
+					<button type="button" key={index} className={classNames.join(" ")} onClick={() => onSelect(knownScale.scale)}>
 						<div className="chord-scale-modal__candidate-header">
-							<span className="chord-scale-modal__candidate-name">{rootName} {info.name}</span>
-							<span className="chord-scale-modal__candidate-origin">{root.sub(info.parentRootOffset).toString()} {info.description}</span>
+							<span className="chord-scale-modal__candidate-name">{description.name}</span>
+							<span className="chord-scale-modal__candidate-origin">{description.description}</span>
 						</div>
-						<ToneRow root={root} tones={info.scale.getPitchClasses(root)} />
+						<ToneRow root={root} tones={knownScale.scale.getPitchClasses(root)} />
 					</button>
 				);
 			})}
