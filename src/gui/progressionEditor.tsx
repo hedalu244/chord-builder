@@ -6,7 +6,6 @@ import { NexusChangeModal } from "./nexusChangeModal";
 import { NexusPanel, DummyNexusPanel } from "./nexusPanel";
 import { BasicChord } from "../basics/basicChord";
 import { FullChordInfo } from "../basics/fullChordInfo";
-import { PitchClass } from "../basics/pitch";
 import {
 	applyChordEditToPinnedNexi,
 	changeChordAtIndex,
@@ -44,7 +43,7 @@ type ShiftAnimationState = {
 type PendingChordEdit = {
 	readonly index: number;
 	readonly context: ChordEditContext;
-	readonly initialChord: BasicChord;
+	readonly initialChord: BasicChord | null;
 } | null;
 
 type PendingNexusEdit = {
@@ -87,7 +86,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		setPendingChordEdit({
 			index,
 			context: getInsertContext(progression, index, trigger),
-			initialChord: new BasicChord(new PitchClass(0), "M")
+			initialChord: null
 		});
 	};
 
@@ -139,7 +138,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 
 		if (method !== "fixed") {
 			setProgression(current => {
-				const next = method === "formerNexus"
+				const next = method === "latterChord"
 					? changeChordAtIndex(current, slotIndex + 1, nexus.resolveLatterChord(current[slotIndex].chordInfo.chord))
 					: changeChordAtIndex(current, slotIndex, nexus.resolveFormerChord(current[slotIndex + 1].chordInfo.chord));
 				onChange?.(toChordInfos(next));
@@ -149,8 +148,8 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 
 		setPinnedNexi(current => {
 			let next = setNexusSlot(current, slotIndex, nexus);
-			if (method === "formerNexus") next = setNexusSlot(next, slotIndex + 1, undefined);
-			if (method === "latterNexus") next = setNexusSlot(next, slotIndex - 1, undefined);
+			if (method === "latterChord") next = setNexusSlot(next, slotIndex + 1, undefined);
+			if (method === "formerChord") next = setNexusSlot(next, slotIndex - 1, undefined);
 			return next;
 		});
 		setPendingNexusEdit(null);

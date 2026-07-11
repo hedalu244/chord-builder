@@ -15,7 +15,8 @@ type ChordsDisplay = {
 // nexus-panel/basic-chord-modal で共通して表示される、nexusの説明テキスト
 // NOTE: keyLabelという名前は、JSXのspread先で予約語のkeyと衝突するのを避けるため
 type NexusBlockProps = {
-	readonly relative: RelativeNexus;
+	// 片側のコードしか定まっておらず相対関係すら計算できない場合はundefined(その行自体を表示しない)
+	readonly relative: RelativeNexus | undefined;
 	readonly degree: DegreeNexus | undefined;
 	readonly keyLabel: PitchClass | undefined;
 	readonly chords: ChordsDisplay | undefined;
@@ -87,7 +88,8 @@ export function NexusBlock(props: NexusBlockProps) {
 					<span className={chordClassName(chords.emphasizeLatter)}>{chords.latterChord?.toString() ?? ""}</span>
 				</div>
 			)}
-			<div className="nexus-block__relative">{relative.toString()}</div>
+
+			<div className="nexus-block__relative">{relative ? relative.toString() : "-"}</div>
 			<div className="nexus-block__degree">{degree ? degree.toString() : "unknown"}</div>
 			<div className="nexus-block__key">{keyLabel ? `in key=${keyLabel.toString()}` : "-"}</div>
 		</>

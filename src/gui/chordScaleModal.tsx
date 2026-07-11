@@ -77,6 +77,7 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 	return (
 		<div className="modal__backdrop">
 			<div className="modal chord-scale-modal">
+				<div className="modal__title">Edit Chord Scale</div>
 				<ScaleAnalysis chordInfo={chordInfo} root={root} scale={currentScale} />
 				<EditableToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onChange={setCheckedValues} />
 				<CandidateList root={root} candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />

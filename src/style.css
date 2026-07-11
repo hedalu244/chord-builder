@@ -7,7 +7,8 @@
 
 	/* 背景・枠線 */
 	--color-surface: #ffffff;
-	--color-highlight: #f5f7fa; /* ページ背景、およびhover/active状態を示す背景 */
+	--color-bg: #f5f7fa; /*ページ背景*/
+	--color-highlight: #f5f7fa; /* hover/active状態を示す背景 */
 	--color-border: #bcccdc;
 
 	/* 破壊的操作 */
@@ -167,7 +168,7 @@ body {
 	margin: 0;
 	height: 100%;
 	font-family: "Segoe UI", sans-serif;
-	background: var(--color-highlight);
+	background: var(--color-bg);
 	color: var(--color-ink);
 }
 
@@ -272,6 +273,10 @@ button {
 .nexus-panel--dummy {
 	background: transparent;
 	border: 0;
+}
+
+.nexus-panel--auto {
+	background: var(--color-bg);
 }
 
 /* nexus-panel(メインの進行表示)ではnexus-blockをより大きく表示する */
@@ -594,6 +599,14 @@ button {
 	box-shadow: 0 8px 24px rgba(var(--color-ink-rgb), 0.25);
 }
 
+.modal__title {
+	font-size: 12px;
+	font-weight: 600;
+	text-align: left;
+	width:100%;
+	color: var(--color-muted);
+}
+
 .modal__actions {
 	display: flex;
 	justify-content: center;
@@ -613,6 +626,11 @@ button {
 	background: var(--color-ink);
 	color: var(--color-surface);
 	border-color: var(--color-ink);
+}
+
+.modal__confirm-button:disabled {
+	opacity: 0.4;
+	cursor: default;
 }
 
 .modal__clear-button {
@@ -651,6 +669,11 @@ button {
 .basic-chord-modal__method-button--center {
 	font-size: 20px;
 	font-weight: 600;
+}
+
+.basic-chord-modal__method-button-placeholder {
+	font-size: 14px;
+	color: var(--color-faint);
 }
 
 .basic-chord-modal__method-button--active {

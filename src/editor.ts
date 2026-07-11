@@ -5,6 +5,7 @@ import { DegreeNexus } from "./basics/nexus";
 export type InsertTrigger = "add" | "insertBefore" | "insertAfter";
 export type ChordEditTrigger = InsertTrigger | "changeChord";
 export type ChordEditMethod = "formerNexus" | "latterNexus" | "direct";
+export type NexusEditMethod = "latterChord" | "formerChord" | "fixed";
 
 export type ChordEditContext = {
 	readonly previousChord: FullChordInfo | null;
@@ -19,7 +20,6 @@ export type ChordEditResult = {
 	readonly nexus: DegreeNexus | null;
 };
 
-export type NexusEditMethod = "formerNexus" | "fixed" | "latterNexus";
 
 export type NexusEditResult = {
 	readonly method: NexusEditMethod;
@@ -40,6 +40,21 @@ export function defaultChordEditMethod(trigger: ChordEditTrigger): ChordEditMeth
 		return "direct";
 	}
 	return trigger === "insertBefore" ? "latterNexus" : "formerNexus";
+}
+
+// BasicChordModalのタイトル。挿入操作か既存コードの編集かで表示を分ける
+export function chordEditModalTitle(trigger: ChordEditTrigger): string {
+	return trigger === "changeChord" ? "Select Chord" : "Insert Chord";
+}
+
+// BasicChordModalの確定ボタンのラベル。挿入操作ではInsert/Add、既存コードの編集ではOKにする
+export function chordEditConfirmLabel(trigger: ChordEditTrigger): string {
+	switch (trigger) {
+		case "changeChord": return "OK";
+		case "add": return "Add";
+		case "insertBefore":
+		case "insertAfter": return "Insert";
+	}
 }
 
 export function toChordInfos(items: readonly ProgressionItem[]): FullChordInfo[] {

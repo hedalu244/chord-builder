@@ -2,8 +2,8 @@ import { useState } from "react";
 import { allModes, BasicChord } from "../basics/basicChord";
 import { DegreeNexus, findNexiByFormerMode, findNexiByLatterMode } from "../basics/nexus";
 import { PitchClass } from "../basics/pitch";
-import { ChordEditContext, ChordEditMethod, ChordEditResult, defaultChordEditMethod } from "../editor";
-import { SearchedNexusBlock } from "./nexusBlock";
+import { ChordEditContext, ChordEditMethod, chordEditConfirmLabel, chordEditModalTitle, ChordEditResult, defaultChordEditMethod } from "../editor";
+import { NexusBlock, SearchedNexusBlock } from "./nexusBlock";
 import { NexusCandidateList } from "./nexusPicker";
 import { ChordTones } from "./chordTones";
 
@@ -26,7 +26,8 @@ type LastEdit = {
 
 type BasicChordModalProps = {
 	readonly context: ChordEditContext;
-	readonly initialChord: BasicChord;
+	// nullの場合は「まだ何も選択していない」状態でモーダルを開く(挿入操作向け)
+	readonly initialChord: BasicChord | null;
 	readonly onConfirm: (result: ChordEditResult) => void;
 	readonly onCancel: () => void;
 };
@@ -34,7 +35,7 @@ type BasicChordModalProps = {
 export function BasicChordModal(props: BasicChordModalProps) {
 	const { context, initialChord, onConfirm, onCancel } = props;
 	const [method, setMethod] = useState<ChordEditMethod>(() => defaultChordEditMethod(context.trigger));
-	const [chord, setChord] = useState<BasicChord>(initialChord);
+	const [chord, setChord] = useState<BasicChord | null>(initialChord);
 	const [selectedFormerNexus, setSelectedFormerNexus] = useState<DegreeNexus | null>(null);
 	const [selectedLatterNexus, setSelectedLatterNexus] = useState<DegreeNexus | null>(null);
 	const [lastEdit, setLastEdit] = useState<LastEdit>({ method: "direct", nexus: null });
@@ -62,23 +63,48 @@ export function BasicChordModal(props: BasicChordModalProps) {
 	return (
 		<div className="modal__backdrop">
 			<div className="modal basic-chord-modal">
+				<div className="modal__title">{chordEditModalTitle(context.trigger)}</div>
 				<div className="basic-chord-modal__method-row">
 					{previousChord ? (
 						<button type="button" className={methodButtonClassName(method === "formerNexus")} onClick={() => setMethod("formerNexus")}>
-							<SearchedNexusBlock formerChord={previousChord} latterChord={chord} showFormer={true} showLatter={false} />
+							{chord ? (
+								<SearchedNexusBlock formerChord={previousChord} latterChord={chord} showFormer={true} showLatter={false} />
+							) : (
+								<NexusBlock
+									relative={undefined}
+									degree={undefined}
+									keyLabel={undefined}
+									chords={{ formerChord: previousChord, latterChord: undefined, emphasizeFormer: false, emphasizeLatter: false }}
+								/>
+							)}
 						</button>
 					) : (
 						<button type="button" className={disabledMethodButtonClassName()} disabled></button>
 					)}
 
 					<button type="button" className={`${methodButtonClassName(method === "direct")} basic-chord-modal__method-button--center`} onClick={() => setMethod("direct")}>
-						<span>{chord.toString()}</span>
-						<ChordTones tones={chord.getChordTones()} />
+						{chord ? (
+							<>
+								<span>{chord.toString()}</span>
+								<ChordTones tones={chord.getChordTones()} />
+							</>
+						) : (
+							<span className="basic-chord-modal__method-button-placeholder">Select chord</span>
+						)}
 					</button>
 
 					{nextChord ? (
 						<button type="button" className={methodButtonClassName(method === "latterNexus")} onClick={() => setMethod("latterNexus")}>
-							<SearchedNexusBlock formerChord={chord} latterChord={nextChord} showFormer={false} showLatter={true} />
+							{chord ? (
+								<SearchedNexusBlock formerChord={chord} latterChord={nextChord} showFormer={false} showLatter={true} />
+							) : (
+								<NexusBlock
+									relative={undefined}
+									degree={undefined}
+									keyLabel={undefined}
+									chords={{ formerChord: undefined, latterChord: nextChord, emphasizeFormer: false, emphasizeLatter: false }}
+								/>
+							)}
 						</button>
 					) : (
 						<button type="button" className={disabledMethodButtonClassName()} disabled></button>
@@ -117,7 +143,7 @@ export function BasicChordModal(props: BasicChordModalProps) {
 										<button
 											type="button"
 											key={`${root.value}-${mode}`}
-											className={directButtonClassName(chord.root.equals(root) && chord.mode === mode)}
+											className={directButtonClassName(chord !== null && chord.root.equals(root) && chord.mode === mode)}
 											onClick={() => selectDirect(candidate)}
 										>
 											<span>{candidate.toString()}</span>
@@ -132,7 +158,14 @@ export function BasicChordModal(props: BasicChordModalProps) {
 
 				<div className="modal__actions">
 					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>
-					<button type="button" className="modal__confirm-button" onClick={() => onConfirm({ chord, method: lastEdit.method, nexus: lastEdit.nexus })}>OK</button>
+					<button
+						type="button"
+						className="modal__confirm-button"
+						disabled={chord === null}
+						onClick={() => chord && onConfirm({ chord, method: lastEdit.method, nexus: lastEdit.nexus })}
+					>
+						{chordEditConfirmLabel(context.trigger)}
+					</button>
 				</div>
 			</div>
 		</div >

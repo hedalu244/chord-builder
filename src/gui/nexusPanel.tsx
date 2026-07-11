@@ -10,16 +10,20 @@ type NexusPanelProps = {
 	readonly onEdit: () => void;
 };
 
+function nexusPanelClassName(isAuto: boolean): string {
+	return isAuto ? "nexus-panel progression-editor__card nexus-panel--auto" : "nexus-panel progression-editor__card";
+}
+
 export function NexusPanel(props: NexusPanelProps) {
 	const { formerChord, latterChord, pinnedNexus, onEdit } = props;
 
 	return (
-		<div className="nexus-panel progression-editor__card">
+		<div className={nexusPanelClassName(pinnedNexus === undefined)}>
 			<SearchedNexusBlock formerChord={formerChord} latterChord={latterChord} showFormer={false} showLatter={false} pinnedNexus={pinnedNexus} />
 			{pinnedNexus === undefined && (
 				<span className="nexus-panel__auto-label">auto calculated</span>
 			)}
-			<IconButton icon="icons/edit.svg" label="Edit nexus" className="nexus-panel__edit-button" onClick={onEdit} />
+			<IconButton icon="icons/edit.svg" label="Change nexus" className="nexus-panel__edit-button" onClick={onEdit} />
 		</div>
 	);
 }

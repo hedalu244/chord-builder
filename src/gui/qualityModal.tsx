@@ -23,6 +23,7 @@ export function QualityModal(props: QualityModalProps) {
 	return (
 		<div className="modal__backdrop">
 			<div className="modal quality-modal">
+				<div className="modal__title">Select Quality</div>
 				<h4 className="quality-modal__header">{selectedNotation}</h4>
 				<div className="quality-modal__list">
 					<button type="button" className={qualityButtonClassName(qualityId === undefined)} onClick={() => setQualityId(undefined)}>
