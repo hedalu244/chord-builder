@@ -1,6 +1,6 @@
-import { FullChordInfo } from "../basics/fullChordInfo";
+import { FullChordInfo } from "../../basics/fullChordInfo";
 import { BasicChordPanel } from "./basicChordPanel";
-import { IconButton } from "./iconButton";
+import { IconButton } from "../parts/iconButton";
 import { QualityPanel } from "./qualityPanel";
 import { ScalePanel } from "./scalePanel";
 

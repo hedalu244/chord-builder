@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { FullChordInfo } from "../basics/fullChordInfo";
-import { ChordScaleModal } from "./chordScaleModal";
-import { ChordTones } from "./chordTones";
-import { IconButton } from "./iconButton";
-import { ScaleAnalysis } from "./scaleAnalysis";
+import { FullChordInfo } from "../../basics/fullChordInfo";
+import { ChordScaleModal } from "../chordScaleModal";
+import { ChordTones } from "../parts/chordTones";
+import { IconButton } from "../parts/iconButton";
+import { ScaleAnalysis } from "../parts/scaleAnalysis";
 
 type ScalePanelProps = {
 	readonly value: FullChordInfo;

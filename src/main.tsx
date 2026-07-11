@@ -4,9 +4,9 @@ import { PitchClass } from "./basics/pitch";
 import { ProgressionEditor } from "./gui/progressionEditor";
 import { FullChordInfo } from "./basics/fullChordInfo";
 import { BasicChord } from "./basics/basicChord";
-import { colorSchemeClassName } from "./gui/colorSchemeSelect";
-import { ColorSchemeProvider, useColorScheme } from "./gui/colorSchemeContext";
-import { ColorSchemeSelect } from "./gui/colorSchemeSelect";
+import { colorSchemeClassName } from "./gui/colorScheme/colorSchemeSelect";
+import { ColorSchemeProvider, useColorScheme } from "./gui/colorScheme/colorSchemeContext";
+import { ColorSchemeSelect } from "./gui/colorScheme/colorSchemeSelect";
 
 function createInitialProgression(): FullChordInfo[] {
 	return [

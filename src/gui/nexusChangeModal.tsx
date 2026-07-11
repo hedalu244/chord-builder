@@ -3,9 +3,9 @@ import { BasicChord } from "../basics/basicChord";
 import { DegreeNexus } from "../basics/nexus";
 import { findMatchingNexus } from "../basics/knownNexus";
 import { NexusEditMethod, NexusEditResult } from "../editor";
-import { Modal } from "./modal";
-import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./methodTab";
-import { PreferredNexusBlock, SearchedNexusBlock } from "./nexusBlock";
+import { Modal } from "./parts/modal";
+import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./parts/methodTab";
+import { PreferredNexusBlock, SearchedNexusBlock } from "./parts/nexusBlock";
 import { NexusCandidateList, NexusMatchList } from "./nexusPicker";
 
 type NexusChangeModalProps = {

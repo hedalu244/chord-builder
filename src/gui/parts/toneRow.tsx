@@ -1,4 +1,4 @@
-import { Interval, PitchClass } from "../basics/pitch";
+import { Interval, PitchClass } from "../../basics/pitch";
 
 // 構成音を表すセル(locked/active)にのみ、そのPitchClassの色を割り当てる。空セルは無色のまま
 function toneCellColorStyle(value: number, locked: boolean, active: boolean) {

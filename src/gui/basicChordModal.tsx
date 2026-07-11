@@ -2,11 +2,11 @@ import { useState } from "react";
 import { allBasicChords, BasicChord } from "../basics/basicChord";
 import { DegreeNexus } from "../basics/nexus";
 import { ChordEditContext, ChordEditMethod, ChordEditResult, ChordEditTrigger, defaultChordEditMethod } from "../editor";
-import { Modal } from "./modal";
-import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./methodTab";
-import { NexusBlock, SearchedNexusBlock } from "./nexusBlock";
+import { Modal } from "./parts/modal";
+import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./parts/methodTab";
+import { NexusBlock, SearchedNexusBlock } from "./parts/nexusBlock";
 import { NexusCandidateList } from "./nexusPicker";
-import { ChordTones } from "./chordTones";
+import { ChordTones } from "./parts/chordTones";
 import { findMatchingNexus } from "../basics/knownNexus";
 
 // このモーダルのタイトル。挿入操作か既存コードの編集かで表示を分ける

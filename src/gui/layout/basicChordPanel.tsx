@@ -1,6 +1,6 @@
-import { BasicChord } from "../basics/basicChord";
-import { ChordTones } from "./chordTones";
-import { IconButton } from "./iconButton";
+import { BasicChord } from "../../basics/basicChord";
+import { ChordTones } from "../parts/chordTones";
+import { IconButton } from "../parts/iconButton";
 
 type BasicChordPanelProps = {
 	readonly value: BasicChord;

@@ -1,7 +1,7 @@
-import { BasicChord } from "../basics/basicChord";
-import { DegreeNexus } from "../basics/nexus";
-import { IconButton } from "./iconButton";
-import { PreferredNexusBlock, SearchedNexusBlock } from "./nexusBlock";
+import { BasicChord } from "../../basics/basicChord";
+import { DegreeNexus } from "../../basics/nexus";
+import { IconButton } from "../parts/iconButton";
+import { PreferredNexusBlock, SearchedNexusBlock } from "../parts/nexusBlock";
 
 type NexusPanelProps = {
 	readonly formerChord: BasicChord;

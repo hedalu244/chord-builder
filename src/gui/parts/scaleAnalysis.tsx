@@ -1,8 +1,8 @@
-import { FullChordInfo } from "../basics/fullChordInfo";
-import { findKnownScale, getKnownScaleInfo } from "../basics/knownScale";
-import { PitchClass } from "../basics/pitch";
-import { Scale } from "../basics/scale";
-import { getExtraTensionNames } from "../basics/tensions";
+import { FullChordInfo } from "../../basics/fullChordInfo";
+import { findKnownScale, getKnownScaleInfo } from "../../basics/knownScale";
+import { PitchClass } from "../../basics/pitch";
+import { Scale } from "../../basics/scale";
+import { getExtraTensionNames } from "../../basics/tensions";
 
 type ScaleAnalysisProps = {
 	readonly chordInfo: FullChordInfo;

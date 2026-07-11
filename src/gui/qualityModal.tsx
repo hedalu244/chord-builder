@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ChordQualityId, findChordQuality, findQualitiesByMode } from "../basics/chordQuality";
 import { FullChordInfo } from "../basics/fullChordInfo";
-import { Modal } from "./modal";
-import { ToneRow } from "./toneRow";
+import { Modal } from "./parts/modal";
+import { ToneRow } from "./parts/toneRow";
 
 function qualityButtonClassName(active: boolean): string {
 	return active ? "quality-modal__quality-button quality-modal__quality-button--active" : "quality-modal__quality-button";

@@ -2,10 +2,10 @@ import { useState } from "react";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import { Interval, PitchClass } from "../basics/pitch";
 import { Scale } from "../basics/scale";
-import { ScaleAnalysis } from "./scaleAnalysis";
+import { ScaleAnalysis } from "./parts/scaleAnalysis";
 import { KnownScale, findCandidateScales, getKnownScaleInfo } from "../basics/knownScale";
-import { Modal } from "./modal";
-import { EditableToneRow, ToneRow } from "./toneRow";
+import { Modal } from "./parts/modal";
+import { EditableToneRow, ToneRow } from "./parts/toneRow";
 
 type CandidateListProps = {
 	readonly root: PitchClass;

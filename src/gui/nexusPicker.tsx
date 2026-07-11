@@ -1,7 +1,7 @@
 import { BasicChord } from "../basics/basicChord";
 import { findMatchingNexus, KnownNexusInfo } from "../basics/knownNexus";
 import { DegreeNexus } from "../basics/nexus";
-import { KeyNexusBlock } from "./nexusBlock";
+import { KeyNexusBlock } from "./parts/nexusBlock";
 
 function nexusButtonClassName(active: boolean): string {
 	return active ? "nexus-picker__nexus-button nexus-picker__nexus-button--active" : "nexus-picker__nexus-button";

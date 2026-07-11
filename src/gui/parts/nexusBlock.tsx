@@ -1,7 +1,7 @@
-import { BasicChord } from "../basics/basicChord";
-import { RelativeNexus, DegreeNexus, calcRelativeNexus, KeyNexus } from "../basics/nexus";
-import { findMatchingNexus } from "../basics/knownNexus";
-import { PitchClass } from "../basics/pitch";
+import { BasicChord } from "../../basics/basicChord";
+import { RelativeNexus, DegreeNexus, calcRelativeNexus, KeyNexus } from "../../basics/nexus";
+import { findMatchingNexus } from "../../basics/knownNexus";
+import { PitchClass } from "../../basics/pitch";
 
 export type DisplayStyle = "hidden" | "muted" | "emphasized";
 

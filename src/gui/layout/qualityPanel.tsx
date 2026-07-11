@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { findChordQuality } from "../basics/chordQuality";
-import { FullChordInfo } from "../basics/fullChordInfo";
-import { ChordTones } from "./chordTones";
-import { IconButton } from "./iconButton";
-import { QualityModal } from "./qualityModal";
+import { findChordQuality } from "../../basics/chordQuality";
+import { FullChordInfo } from "../../basics/fullChordInfo";
+import { ChordTones } from "../parts/chordTones";
+import { IconButton } from "../parts/iconButton";
+import { QualityModal } from "../qualityModal";
 
 type QualityPanelProps = {
 	readonly value: FullChordInfo;

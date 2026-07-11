@@ -1,9 +1,9 @@
 import { AnimationEvent, useEffect, useMemo, useRef, useState } from "react";
-import { AddChordPanel } from "./addChordPanel";
+import { AddChordPanel } from "./layout/addChordPanel";
 import { BasicChordModal } from "./basicChordModal";
-import { ChordPanel } from "./chordPanel";
+import { ChordPanel } from "./layout/chordPanel";
 import { NexusChangeModal } from "./nexusChangeModal";
-import { NexusPanel, DummyNexusPanel } from "./nexusPanel";
+import { NexusPanel, DummyNexusPanel } from "./layout/nexusPanel";
 import { BasicChord } from "../basics/basicChord";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import {

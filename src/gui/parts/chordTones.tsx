@@ -1,4 +1,4 @@
-import { PitchClass } from "../basics/pitch";
+import { PitchClass } from "../../basics/pitch";
 
 type ChordTonesProps = {
 	readonly tones: readonly PitchClass[];
