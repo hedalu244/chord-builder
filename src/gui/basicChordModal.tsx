@@ -3,7 +3,7 @@ import { allBasicChords, BasicChord } from "../basics/basicChord";
 import { DegreeNexus } from "../basics/nexus";
 import { Modal } from "./parts/modal";
 import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./parts/methodTab";
-import { NexusBlock, SearchedNexusBlock } from "./parts/nexusBlock";
+import { NexusBlock, PreferredNexusBlock, SearchedNexusBlock } from "./parts/nexusBlock";
 import { NexusCandidateList } from "./nexusPicker";
 import { ChordTones } from "./parts/chordTones";
 import { findMatchingNexus } from "../basics/knownNexus";
@@ -13,7 +13,7 @@ import { ChordEditTrigger, ChordEditContext } from "./progressionEditor";
 type Method = "formerNexus" | "latterNexus" | "direct";
 
 function defaultMethod(trigger: ChordEditTrigger): Method {
-	if (trigger === "changeChord") {
+	if (trigger === "changeChord" || trigger === "add") {
 		return "direct";
 	}
 	return trigger === "insertBefore" ? "latterNexus" : "formerNexus";
@@ -63,9 +63,10 @@ export function BasicChordModal(props: BasicChordModalProps) {
 	const nextChord = context.latterChord?.chord ?? null;
 	const chord = selection?.chord ?? null;
 
-	// 各候補リストの強調表示は、現在の選択が実際にそのnexusから導かれたものかどうかで決める
-	const selectedFormerNexus = selection?.method === "formerNexus" ? selection.nexus : null;
-	const selectedLatterNexus = selection?.method === "latterNexus" ? selection.nexus : null;
+	// 各候補リストの強調表示は、現在の選択が実際にそのnexusから導かれたものであればそれを、
+	// そうでなければ既にそのgapに指定されているpreferredNexusを優先して使う
+	const selectedFormerNexus = selection?.method === "formerNexus" ? selection.nexus : context.formerPreferredNexus ?? null;
+	const selectedLatterNexus = selection?.method === "latterNexus" ? selection.nexus : context.latterPreferredNexus ?? null;
 
 	const selectFromFormer = (nexus: DegreeNexus): void => {
 		if (!previousChord) return;
@@ -90,7 +91,15 @@ export function BasicChordModal(props: BasicChordModalProps) {
 		{
 			key: "formerNexus",
 			disabled: !previousChord,
-			button: previousChord && (chord ? (
+			button: previousChord && (selectedFormerNexus ? (
+				<PreferredNexusBlock
+					preferredNexus={selectedFormerNexus}
+					formerChord={previousChord}
+					latterChord={chord ?? undefined}
+					formerStyle="muted"
+					latterStyle="hidden"
+				/>
+			) : chord ? (
 				<SearchedNexusBlock formerChord={previousChord} latterChord={chord} formerStyle="muted" latterStyle="hidden" />
 			) : (
 				<NexusBlock
@@ -139,7 +148,15 @@ export function BasicChordModal(props: BasicChordModalProps) {
 		{
 			key: "latterNexus",
 			disabled: !nextChord,
-			button: nextChord && (chord ? (
+			button: nextChord && (selectedLatterNexus ? (
+				<PreferredNexusBlock
+					preferredNexus={selectedLatterNexus}
+					formerChord={chord ?? undefined}
+					latterChord={nextChord}
+					formerStyle="hidden"
+					latterStyle="muted"
+				/>
+			) : chord ? (
 				<SearchedNexusBlock formerChord={chord} latterChord={nextChord} formerStyle="hidden" latterStyle="muted" />
 			) : (
 				<NexusBlock

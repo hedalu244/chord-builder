@@ -17,6 +17,9 @@ export type ChordEditTrigger = InsertTrigger | "changeChord";
 export type ChordEditContext = {
 	readonly formerChord: FullChordInfo | null;
 	readonly latterChord: FullChordInfo | null;
+	// formerChord/latterChordとの間に既に指定されているpreferredNexus(なければundefined)
+	readonly formerPreferredNexus: DegreeNexus | undefined;
+	readonly latterPreferredNexus: DegreeNexus | undefined;
 	readonly trigger: ChordEditTrigger;
 };
 
@@ -101,15 +104,15 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	}, [value]);
 
 	const handleInsert = (index: number, trigger: InsertTrigger): void => {
-		const { formerChord, latterChord } = progression.insertionNeighbors(index);
-		setPendingChordInsert({ index, context: { formerChord, latterChord, trigger } });
+		const { formerChord, latterChord, formerPreferredNexus, latterPreferredNexus } = progression.insertionNeighbors(index);
+		setPendingChordInsert({ index, context: { formerChord, latterChord, formerPreferredNexus, latterPreferredNexus, trigger } });
 	};
 
 	const handleChange = (index: number): void => {
-		const { formerChord, latterChord } = progression.changeNeighbors(index);
+		const { formerChord, latterChord, formerPreferredNexus, latterPreferredNexus } = progression.changeNeighbors(index);
 		setPendingChordEdit({
 			index,
-			context: { formerChord, latterChord, trigger: "changeChord" },
+			context: { formerChord, latterChord, formerPreferredNexus, latterPreferredNexus, trigger: "changeChord" },
 			initialChord: progression.items[index].chordInfo.chord
 		});
 	};

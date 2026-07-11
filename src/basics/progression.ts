@@ -12,6 +12,9 @@ export type ProgressionChord = {
 export type ProgressionNeighbors = {
 	readonly formerChord: FullChordInfo | null;
 	readonly latterChord: FullChordInfo | null;
+	// formerChordとの間、および latterChordとの間に既に指定されているpreferredNexus(なければundefined)
+	readonly formerPreferredNexus: DegreeNexus | undefined;
+	readonly latterPreferredNexus: DegreeNexus | undefined;
 };
 
 // item.preferredNexusが実際にitems[i-1]とitem自身のコードを結びつけるかどうか
@@ -72,7 +75,10 @@ export class Progression {
 		}
 		return {
 			formerChord: index === 0 ? null : items[index - 1].chordInfo,
-			latterChord: index === items.length ? null : items[index].chordInfo
+			latterChord: index === items.length ? null : items[index].chordInfo,
+			// 挿入によって新たに生まれる隣接関係なので、既存のpreferredNexusは存在しない
+			formerPreferredNexus: undefined,
+			latterPreferredNexus: undefined
 		};
 	}
 
@@ -84,7 +90,9 @@ export class Progression {
 		}
 		return {
 			formerChord: index === 0 ? null : items[index - 1].chordInfo,
-			latterChord: index === items.length - 1 ? null : items[index + 1].chordInfo
+			latterChord: index === items.length - 1 ? null : items[index + 1].chordInfo,
+			formerPreferredNexus: items[index].preferredNexus,
+			latterPreferredNexus: index === items.length - 1 ? undefined : items[index + 1].preferredNexus
 		};
 	}
 
