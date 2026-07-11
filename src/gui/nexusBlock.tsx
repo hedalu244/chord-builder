@@ -25,17 +25,24 @@ function chordClassName(emphasized: boolean): string {
 	return emphasized ? "nexus-block__chord" : "nexus-block__chord nexus-block__chord--muted";
 }
 
-export function SearchedNexusBlock(props: { formerChord: BasicChord; latterChord: BasicChord, showFormer: boolean, showLatter: boolean; }) {
-	const { formerChord, latterChord, showFormer, showLatter } = props;
+export function SearchedNexusBlock(props: { formerChord: BasicChord; latterChord: BasicChord, showFormer: boolean, showLatter: boolean; pinnedNexus?: DegreeNexus; }) {
+	const { formerChord, latterChord, showFormer, showLatter, pinnedNexus } = props;
 	const relative = calcRelativeNexus(formerChord, latterChord);
-	const matches = findMatchingNexus(formerChord, latterChord);
-	const primary = matches[0];
 	const chords = showFormer || showLatter ? {
 		formerChord: showFormer ? formerChord : undefined,
 		latterChord: showLatter ? latterChord : undefined,
 		emphasizeFormer: false,
 		emphasizeLatter: false,
 	} : undefined;
+
+	// ユーザーが明示指定したnexusがあれば、自動探索よりそちらを優先する
+	if (pinnedNexus) {
+		const keyLabel = pinnedNexus.resolveKeyFromFormer(formerChord);
+		return (<NexusBlock relative={relative} degree={pinnedNexus} keyLabel={keyLabel} chords={chords} />);
+	}
+
+	const matches = findMatchingNexus(formerChord, latterChord);
+	const primary = matches[0];
 
 	if (primary) {
 		return (<NexusBlock relative={relative} degree={primary.nexus} keyLabel={primary.key} chords={chords} />);

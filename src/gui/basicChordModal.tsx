@@ -2,8 +2,9 @@ import { useState } from "react";
 import { allModes, BasicChord } from "../basics/basicChord";
 import { DegreeNexus, findNexiByFormerMode, findNexiByLatterMode } from "../basics/nexus";
 import { PitchClass } from "../basics/pitch";
-import { ChordEditContext, ChordEditMethod, defaultChordEditMethod } from "../editor";
-import { SearchedNexusBlock, DescribedNexusBlock } from "./nexusBlock";
+import { ChordEditContext, ChordEditMethod, ChordEditResult, defaultChordEditMethod } from "../editor";
+import { SearchedNexusBlock } from "./nexusBlock";
+import { NexusCandidateList } from "./nexusPicker";
 import { ChordTones } from "./chordTones";
 
 function methodButtonClassName(active: boolean): string {
@@ -14,42 +15,19 @@ function disabledMethodButtonClassName(): string {
 	return "basic-chord-modal__method-button basic-chord-modal__method-button--disabled";
 }
 
-function nexusButtonClassName(active: boolean): string {
-	return active ? "basic-chord-modal__nexus-button basic-chord-modal__nexus-button--active" : "basic-chord-modal__nexus-button";
-}
-
 function directButtonClassName(active: boolean): string {
 	return active ? "basic-chord-modal__direct-button basic-chord-modal__direct-button--active" : "basic-chord-modal__direct-button";
 }
 
-type NexusCandidateListProps = {
-	readonly candidates: readonly DegreeNexus[];
-	readonly anchorChord: BasicChord;
-	readonly anchorRole: "former" | "latter";
-	readonly selected: DegreeNexus | null;
-	readonly onSelect: (nexus: DegreeNexus) => void;
+type LastEdit = {
+	readonly method: ChordEditMethod;
+	readonly nexus: DegreeNexus | null;
 };
-
-// ボタンごとに固有のnexusが分かっているので、探索ではなく直接、former/latter/relative/degree/keyを求める。
-function NexusCandidateList(props: NexusCandidateListProps) {
-	const { candidates, anchorChord, anchorRole, selected, onSelect } = props;
-	return (
-		<div className="basic-chord-modal__nexus-list">
-			{candidates.map((nexus, index) => {
-				return (
-					<button type="button" key={index} className={nexusButtonClassName(nexus === selected)} onClick={() => onSelect(nexus)}>
-						<DescribedNexusBlock anchorChord={anchorChord} anchorRole={anchorRole} nexus={nexus} />
-					</button>
-				);
-			})}
-		</div>
-	);
-}
 
 type BasicChordModalProps = {
 	readonly context: ChordEditContext;
 	readonly initialChord: BasicChord;
-	readonly onConfirm: (chord: BasicChord) => void;
+	readonly onConfirm: (result: ChordEditResult) => void;
 	readonly onCancel: () => void;
 };
 
@@ -59,6 +37,7 @@ export function BasicChordModal(props: BasicChordModalProps) {
 	const [chord, setChord] = useState<BasicChord>(initialChord);
 	const [selectedFormerNexus, setSelectedFormerNexus] = useState<DegreeNexus | null>(null);
 	const [selectedLatterNexus, setSelectedLatterNexus] = useState<DegreeNexus | null>(null);
+	const [lastEdit, setLastEdit] = useState<LastEdit>({ method: "direct", nexus: null });
 
 	const previousChord = context.previousChord?.chord ?? null;
 	const nextChord = context.nextChord?.chord ?? null;
@@ -67,11 +46,17 @@ export function BasicChordModal(props: BasicChordModalProps) {
 		if (!previousChord) return;
 		setChord(nexus.resolveLatterChord(previousChord));
 		setSelectedFormerNexus(nexus);
+		setLastEdit({ method: "formerNexus", nexus });
 	};
 	const selectFromLatter = (nexus: DegreeNexus): void => {
 		if (!nextChord) return;
 		setChord(nexus.resolveFormerChord(nextChord));
 		setSelectedLatterNexus(nexus);
+		setLastEdit({ method: "latterNexus", nexus });
+	};
+	const selectDirect = (candidate: BasicChord): void => {
+		setChord(candidate);
+		setLastEdit({ method: "direct", nexus: null });
 	};
 
 	return (
@@ -133,7 +118,7 @@ export function BasicChordModal(props: BasicChordModalProps) {
 											type="button"
 											key={`${root.value}-${mode}`}
 											className={directButtonClassName(chord.root.equals(root) && chord.mode === mode)}
-											onClick={() => setChord(candidate)}
+											onClick={() => selectDirect(candidate)}
 										>
 											<span>{candidate.toString()}</span>
 											<ChordTones tones={candidate.getChordTones()} />
@@ -147,7 +132,7 @@ export function BasicChordModal(props: BasicChordModalProps) {
 
 				<div className="modal__actions">
 					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>
-					<button type="button" className="modal__confirm-button" onClick={() => onConfirm(chord)}>OK</button>
+					<button type="button" className="modal__confirm-button" onClick={() => onConfirm({ chord, method: lastEdit.method, nexus: lastEdit.nexus })}>OK</button>
 				</div>
 			</div>
 		</div >
