@@ -49,6 +49,11 @@ export class BasicChord {
     }
 }
 
+// 全ルート×全モードの組み合わせ(24通り)。「直接コードを選ぶ」候補一覧などに使う
+export function allBasicChords(): readonly BasicChord[] {
+    return allModes.flatMap(mode => PitchClass.all.map(root => new BasicChord(root, mode)));
+}
+
 export class ChordDegree {
     readonly degree: Degree;
     readonly mode: Mode;

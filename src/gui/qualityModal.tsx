@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChordQualityId, findChordQuality, findQualitiesByMode } from "../basics/chordQuality";
 import { FullChordInfo } from "../basics/fullChordInfo";
+import { Modal } from "./modal";
 import { ToneRow } from "./toneRow";
 
 function qualityButtonClassName(active: boolean): string {
@@ -21,32 +22,25 @@ export function QualityModal(props: QualityModalProps) {
 	const selectedNotation = qualityId === undefined ? chord.toString() : findChordQuality(qualityId).getNotation(chord);
 
 	return (
-		<div className="modal__backdrop">
-			<div className="modal quality-modal">
-				<div className="modal__title">Select Quality</div>
-				<h4 className="quality-modal__header">{selectedNotation}</h4>
-				<div className="quality-modal__list">
-					<button type="button" className={qualityButtonClassName(qualityId === undefined)} onClick={() => setQualityId(undefined)}>
-						<span>{chord.toString()}</span>
-						<ToneRow root={chord.root} tones={chord.getChordTones()} />
+		<Modal className="quality-modal" title="Select Quality" onCancel={onCancel} onConfirm={() => onConfirm(qualityId)}>
+			<h4 className="quality-modal__header">{selectedNotation}</h4>
+			<div className="quality-modal__list">
+				<button type="button" className={qualityButtonClassName(qualityId === undefined)} onClick={() => setQualityId(undefined)}>
+					<span>{chord.toString()}</span>
+					<ToneRow root={chord.root} tones={chord.getChordTones()} />
+				</button>
+				{qualities.map(quality => (
+					<button
+						type="button"
+						key={quality.id}
+						className={qualityButtonClassName(qualityId === quality.id)}
+						onClick={() => setQualityId(quality.id as ChordQualityId)}
+					>
+						<span>{quality.getNotation(chord)}</span>
+						<ToneRow root={chord.root} tones={quality.getChordTones(chord.root)} />
 					</button>
-					{qualities.map(quality => (
-						<button
-							type="button"
-							key={quality.id}
-							className={qualityButtonClassName(qualityId === quality.id)}
-							onClick={() => setQualityId(quality.id as ChordQualityId)}
-						>
-							<span>{quality.getNotation(chord)}</span>
-							<ToneRow root={chord.root} tones={quality.getChordTones(chord.root)} />
-						</button>
-					))}
-				</div>
-				<div className="modal__actions">
-					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>
-					<button type="button" className="modal__confirm-button" onClick={() => onConfirm(qualityId)}>OK</button>
-				</div>
+				))}
 			</div>
-		</div>
+		</Modal>
 	);
 }

@@ -1,128 +1,124 @@
 import { useState } from "react";
 import { BasicChord } from "../basics/basicChord";
-import { DegreeNexus, findMatchingNexus, findNexiByFormerMode, findNexiByLatterMode } from "../basics/nexus";
+import { DegreeNexus } from "../basics/nexus";
+import { findMatchingNexus } from "../basics/knownNexus";
 import { NexusEditMethod, NexusEditResult } from "../editor";
-import { SearchedNexusBlock } from "./nexusBlock";
+import { Modal } from "./modal";
+import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./methodTab";
+import { PreferredNexusBlock, SearchedNexusBlock } from "./nexusBlock";
 import { NexusCandidateList, NexusMatchList } from "./nexusPicker";
-
-function methodButtonClassName(active: boolean): string {
-	return active ? "nexus-change-modal__method-button nexus-change-modal__method-button--active" : "nexus-change-modal__method-button";
-}
-
-// 各モードで実際に選択可能なnexusの一覧。モード切替時に選択を維持できるかの判定にも使う
-function candidatesForMethod(method: NexusEditMethod, formerChord: BasicChord, latterChord: BasicChord): readonly DegreeNexus[] {
-	switch (method) {
-		case "formerChord": return findNexiByLatterMode(latterChord.mode);
-		case "latterChord": return findNexiByFormerMode(formerChord.mode);
-		case "fixed": return findMatchingNexus(formerChord, latterChord).map(match => match.nexus);
-	}
-}
 
 type NexusChangeModalProps = {
 	readonly formerChord: BasicChord;
 	readonly latterChord: BasicChord;
-	readonly pinnedNexus: DegreeNexus | undefined;
+	readonly preferredNexus: DegreeNexus | undefined;
 	readonly onConfirm: (result: NexusEditResult) => void;
 	readonly onClear: () => void;
 	readonly onCancel: () => void;
 };
 
 export function NexusChangeModal(props: NexusChangeModalProps) {
-	const { formerChord, latterChord, pinnedNexus, onConfirm, onClear, onCancel } = props;
+	const { formerChord, latterChord, preferredNexus, onConfirm, onClear, onCancel } = props;
 	const [method, setMethod] = useState<NexusEditMethod>("fixed");
-	const [selectedNexus, setSelectedNexus] = useState<DegreeNexus | null>(() => pinnedNexus ?? null);
+	const [selectedNexus, setSelectedNexus] = useState<DegreeNexus | null>(() => preferredNexus ?? null);
 
 	const handleSetMethod = (nextMethod: NexusEditMethod): void => {
 		if (nextMethod === method) return;
 		setMethod(nextMethod);
-		// 選択中のnexusが切替先モードの候補にも存在すれば維持し、存在しなければ未選択にフォールする
 		setSelectedNexus(current => {
 			if (!current) return null;
-			return candidatesForMethod(nextMethod, formerChord, latterChord).includes(current) ? current : null;
+			return findMatchingNexus(
+				nextMethod === "formerChord" ? undefined : formerChord,
+				nextMethod === "latterChord" ? undefined : latterChord
+				).some(knownNexusInfo => knownNexusInfo.keyNexus.degreeNexus.equals(current)) ? current : null;
 		});
 	};
 
-	// fixedモードの初期状態(pinnedNexus由来)はまだ上記の検証を経ていないため、描画時にも同様の検証を行う
+	// fixedモードの初期状態(preferredNexus由来)はまだ上記の検証を経ていないため、描画時にも同様の検証を行う
 	const selected = method === "fixed"
-		? (selectedNexus && candidatesForMethod("fixed", formerChord, latterChord).includes(selectedNexus) ? selectedNexus : null)
+		? (selectedNexus && findMatchingNexus(formerChord, latterChord).some(knownNexusInfo => knownNexusInfo.keyNexus.degreeNexus.equals(selectedNexus)) ? selectedNexus : null)
 		: selectedNexus;
 
-	const displayedFormerChord = method === "formerChord" && selected ? selected.resolveFormerChord(latterChord) : formerChord;
-	const displayedLatterChord = method === "latterChord" && selected ? selected.resolveLatterChord(formerChord) : latterChord;
+	const displayedFormerChord = method === "formerChord" && selected ? selected.resolveFromLatterChord(latterChord).formerChord : formerChord;
+	const displayedLatterChord = method === "latterChord" && selected ? selected.resolveFromFormerChord(formerChord).latterChord : latterChord;
 
-	const handleClear = (): void => {
-		setSelectedNexus(null);
-		onClear();
+	// fixedモードでselectedがnull(=auto)のままOKを押した場合は優先指定の解除とみなす
+	const handleConfirm = (): void => {
+		if (selected) {
+			onConfirm({ method, nexus: selected });
+		} else if (method === "fixed") {
+			onClear();
+		}
 	};
 
+	const tabs: readonly MethodTabItem<NexusEditMethod>[] = [
+		// 左のタブ=左のコードが変わる方式(formerChord: 右を固定して左を求める)
+		{
+			key: "formerChord",
+			button: <span className="nexus-change-modal__method-button-chord">{displayedFormerChord.toString()}</span>,
+			content: (
+				<NexusCandidateList
+					candidates={findMatchingNexus(undefined, latterChord)} // 変更しない方を固定
+					anchorRole="latter"
+					selected={selected}
+					onSelect={setSelectedNexus}
+				/>
+			),
+		},
+		{
+			key: "fixed",
+			buttonClassName: active => `${methodTabButtonClassName(active)} method-tab-button--center`,
+			button: selected
+				? (
+					<PreferredNexusBlock
+						preferredNexus={selected}
+						formerChord={displayedFormerChord}
+						latterChord={displayedLatterChord}
+						formerStyle="hidden"
+						latterStyle="hidden"
+					/>
+				)
+				: (
+					<SearchedNexusBlock
+						formerChord={displayedFormerChord}
+						latterChord={displayedLatterChord}
+						formerStyle="hidden"
+						latterStyle="hidden"
+					/>
+				),
+			content: (
+				<NexusMatchList
+					formerChord={formerChord}
+					latterChord={latterChord}
+					selected={selected}
+					onSelect={setSelectedNexus}
+				/>
+			),
+		},
+		// 右のタブ=右のコードが変わる方式(latterChord: 左を固定して右を求める)
+		{
+			key: "latterChord",
+			button: <span className="nexus-change-modal__method-button-chord">{displayedLatterChord.toString()}</span>,
+			content: (
+				<NexusCandidateList
+					candidates={findMatchingNexus(formerChord, undefined)} // 変更しない方を固定
+					anchorRole="former"
+					selected={selected}
+					onSelect={setSelectedNexus}
+				/>
+			),
+		},
+	];
+
 	return (
-		<div className="modal__backdrop">
-			<div className="modal nexus-change-modal">
-				<div className="modal__title">Select Nexus</div>
-				<div className="nexus-change-modal__method-row">
-					{/* 左のボタン=左のコードが変わる方式(formerChord: 右を固定して左を求める) */}
-					<button type="button" className={methodButtonClassName(method === "formerChord")} onClick={() => handleSetMethod("formerChord")}>
-						<span className="nexus-change-modal__method-button-chord">{displayedFormerChord.toString()}</span>
-					</button>
-
-					<button type="button" className={`${methodButtonClassName(method === "fixed")} nexus-change-modal__method-button--center`} onClick={() => handleSetMethod("fixed")}>
-						<SearchedNexusBlock
-							formerChord={displayedFormerChord}
-							latterChord={displayedLatterChord}
-							showFormer={false}
-							showLatter={false}
-							pinnedNexus={selected ?? undefined}
-						/>
-					</button>
-
-					{/* 右のボタン=右のコードが変わる方式(latterChord: 左を固定して右を求める) */}
-					<button type="button" className={methodButtonClassName(method === "latterChord")} onClick={() => handleSetMethod("latterChord")}>
-						<span className="nexus-change-modal__method-button-chord">{displayedLatterChord.toString()}</span>
-					</button>
-				</div>
-
-				<div className="nexus-change-modal__content">
-					{method === "formerChord" && (
-						<NexusCandidateList
-							candidates={findNexiByLatterMode(latterChord.mode)}
-							anchorChord={latterChord}
-							anchorRole="latter"
-							selected={selected}
-							onSelect={setSelectedNexus}
-						/>
-					)}
-					{method === "fixed" && (
-						<NexusMatchList
-							formerChord={formerChord}
-							latterChord={latterChord}
-							selected={selected}
-							onSelect={setSelectedNexus}
-						/>
-					)}
-					{method === "latterChord" && (
-						<NexusCandidateList
-							candidates={findNexiByFormerMode(formerChord.mode)}
-							anchorChord={formerChord}
-							anchorRole="former"
-							selected={selected}
-							onSelect={setSelectedNexus}
-						/>
-					)}
-				</div>
-
-				<div className="modal__actions">
-					<button type="button" className="modal__clear-button" disabled={pinnedNexus === undefined} onClick={handleClear}>Clear</button>
-					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>
-					<button
-						type="button"
-						className="modal__confirm-button"
-						disabled={selected === null}
-						onClick={() => selected && onConfirm({ method, nexus: selected })}
-					>
-						OK
-					</button>
-				</div>
-			</div>
-		</div>
+		<Modal
+			className="nexus-change-modal method-tab-modal"
+			title="Select Nexus"
+			onCancel={onCancel}
+			onConfirm={handleConfirm}
+			confirmDisabled={selected === null && method !== "fixed"}
+		>
+			<MethodTab tabs={tabs} active={method} onChange={handleSetMethod} />
+		</Modal>
 	);
 }

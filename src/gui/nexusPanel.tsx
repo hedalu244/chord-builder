@@ -1,12 +1,12 @@
 import { BasicChord } from "../basics/basicChord";
 import { DegreeNexus } from "../basics/nexus";
 import { IconButton } from "./iconButton";
-import { SearchedNexusBlock } from "./nexusBlock";
+import { PreferredNexusBlock, SearchedNexusBlock } from "./nexusBlock";
 
 type NexusPanelProps = {
 	readonly formerChord: BasicChord;
 	readonly latterChord: BasicChord;
-	readonly pinnedNexus: DegreeNexus | undefined;
+	readonly preferredNexus: DegreeNexus | undefined;
 	readonly onEdit: () => void;
 };
 
@@ -15,12 +15,14 @@ function nexusPanelClassName(isAuto: boolean): string {
 }
 
 export function NexusPanel(props: NexusPanelProps) {
-	const { formerChord, latterChord, pinnedNexus, onEdit } = props;
+	const { formerChord, latterChord, preferredNexus, onEdit } = props;
 
 	return (
-		<div className={nexusPanelClassName(pinnedNexus === undefined)}>
-			<SearchedNexusBlock formerChord={formerChord} latterChord={latterChord} showFormer={false} showLatter={false} pinnedNexus={pinnedNexus} />
-			{pinnedNexus === undefined && (
+		<div className={nexusPanelClassName(preferredNexus === undefined)}>
+			{preferredNexus
+				? <PreferredNexusBlock preferredNexus={preferredNexus} formerChord={formerChord} latterChord={latterChord} formerStyle="hidden" latterStyle="hidden" />
+				: <SearchedNexusBlock formerChord={formerChord} latterChord={latterChord} formerStyle="hidden" latterStyle="hidden" />}
+			{preferredNexus === undefined && (
 				<span className="nexus-panel__auto-label">auto calculated</span>
 			)}
 			<IconButton icon="icons/edit.svg" label="Change nexus" className="nexus-panel__edit-button" onClick={onEdit} />

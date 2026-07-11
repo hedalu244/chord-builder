@@ -4,6 +4,7 @@ import { Interval, PitchClass } from "../basics/pitch";
 import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./scaleAnalysis";
 import { KnownScale, findCandidateScales, getKnownScaleInfo } from "../basics/knownScale";
+import { Modal } from "./modal";
 import { EditableToneRow, ToneRow } from "./toneRow";
 
 type CandidateListProps = {
@@ -75,17 +76,10 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 	};
 
 	return (
-		<div className="modal__backdrop">
-			<div className="modal chord-scale-modal">
-				<div className="modal__title">Edit Chord Scale</div>
-				<ScaleAnalysis chordInfo={chordInfo} root={root} scale={currentScale} />
-				<EditableToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onChange={setCheckedValues} />
-				<CandidateList root={root} candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />
-				<div className="modal__actions">
-					<button type="button" className="modal__cancel-button" onClick={onCancel}>Cancel</button>
-					<button type="button" className="modal__confirm-button" onClick={handleConfirm}>OK</button>
-				</div>
-			</div>
-		</div>
+		<Modal className="chord-scale-modal" title="Edit Chord Scale" onCancel={onCancel} onConfirm={handleConfirm}>
+			<ScaleAnalysis chordInfo={chordInfo} root={root} scale={currentScale} />
+			<EditableToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onChange={setCheckedValues} />
+			<CandidateList root={root} candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />
+		</Modal>
 	);
 }

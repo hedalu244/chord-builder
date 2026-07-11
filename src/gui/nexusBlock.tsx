@@ -1,91 +1,116 @@
 import { BasicChord } from "../basics/basicChord";
-import { RelativeNexus, DegreeNexus, findMatchingNexus, calcRelativeNexus } from "../basics/nexus";
+import { RelativeNexus, DegreeNexus, calcRelativeNexus, KeyNexus } from "../basics/nexus";
+import { findMatchingNexus } from "../basics/knownNexus";
 import { PitchClass } from "../basics/pitch";
+
+export type DisplayStyle = "hidden" | "muted" | "emphasized";
 
 type ChordsDisplay = {
 	readonly formerChord: BasicChord | undefined;
+	readonly formerStyle: DisplayStyle;
 	readonly latterChord: BasicChord | undefined;
-
-	readonly emphasizeFormer: boolean;
-	readonly emphasizeLatter: boolean;
-
-	//readonly emphasizeSide: "former" | "latter";
+	readonly latterStyle: DisplayStyle;
 };
 
-// nexus-panel/basic-chord-modal で共通して表示される、nexusの説明テキスト
-// NOTE: keyLabelという名前は、JSXのspread先で予約語のkeyと衝突するのを避けるため
-type NexusBlockProps = {
-	// 片側のコードしか定まっておらず相対関係すら計算できない場合はundefined(その行自体を表示しない)
-	readonly relative: RelativeNexus | undefined;
-	readonly degree: DegreeNexus | undefined;
-	readonly keyLabel: PitchClass | undefined;
-	readonly chords: ChordsDisplay | undefined;
+function chordClassName(style: DisplayStyle): string {
+	return style === "emphasized" ? "nexus-block__chord" : "nexus-block__chord nexus-block__chord--muted";
+}
+
+function chordText(chord: BasicChord | undefined, style: DisplayStyle): string {
+	return style === "hidden" ? "" : (chord?.toString() ?? "");
+}
+
+type PreferredNexusBlockProps = {
+	readonly preferredNexus: DegreeNexus;
+	readonly formerChord?: BasicChord;
+	readonly latterChord?: BasicChord;
+	readonly formerStyle: DisplayStyle;
+	readonly latterStyle: DisplayStyle;
 };
 
-function chordClassName(emphasized: boolean): string {
-	return emphasized ? "nexus-block__chord" : "nexus-block__chord nexus-block__chord--muted";
-}
-
-export function SearchedNexusBlock(props: { formerChord: BasicChord; latterChord: BasicChord, showFormer: boolean, showLatter: boolean; pinnedNexus?: DegreeNexus; }) {
-	const { formerChord, latterChord, showFormer, showLatter, pinnedNexus } = props;
-	const relative = calcRelativeNexus(formerChord, latterChord);
-	const chords = showFormer || showLatter ? {
-		formerChord: showFormer ? formerChord : undefined,
-		latterChord: showLatter ? latterChord : undefined,
-		emphasizeFormer: false,
-		emphasizeLatter: false,
-	} : undefined;
-
-	// ユーザーが明示指定したnexusがあれば、自動探索よりそちらを優先する
-	if (pinnedNexus) {
-		const keyLabel = pinnedNexus.resolveKeyFromFormer(formerChord);
-		return (<NexusBlock relative={relative} degree={pinnedNexus} keyLabel={keyLabel} chords={chords} />);
-	}
-
-	const matches = findMatchingNexus(formerChord, latterChord);
-	const primary = matches[0];
-
-	if (primary) {
-		return (<NexusBlock relative={relative} degree={primary.nexus} keyLabel={primary.key} chords={chords} />);
-	}
-
-	return (
-		<NexusBlock relative={relative} degree={undefined} keyLabel={undefined} chords={chords} />
-	);
-}
-
-export function DescribedNexusBlock(props: { anchorChord: BasicChord, anchorRole: "former" | "latter", nexus: DegreeNexus; }) {
-	const { anchorChord, anchorRole, nexus } = props;
-	const formerChord = anchorRole === "former" ? anchorChord : nexus.resolveFormerChord(anchorChord);
-	const latterChord = anchorRole === "latter" ? anchorChord : nexus.resolveLatterChord(anchorChord);
-	const keyLabel = anchorRole === "former" ? nexus.resolveKeyFromFormer(formerChord) : nexus.resolveKeyFromLatter(latterChord);
-	const chords = {
-		formerChord: formerChord,
-		latterChord: latterChord,
-		emphasizeFormer: anchorRole === "latter", // 逆側を強調する
-		emphasizeLatter: anchorRole === "former" // 逆側を強調する
-	};
+export function PreferredNexusBlock(props: PreferredNexusBlockProps) {
+	const { preferredNexus, formerChord, latterChord, formerStyle, latterStyle } = props;
+	const keyLabel = formerChord
+		? preferredNexus.resolveFromFormerChord(formerChord).key
+		: (latterChord ? preferredNexus.resolveFromLatterChord(latterChord).key : undefined);
 
 	return (
 		<NexusBlock
-			relative={nexus.relativeNexus}
-			degree={nexus}
+			relative={preferredNexus.relativeNexus}
+			degree={preferredNexus}
 			keyLabel={keyLabel}
-			chords={chords}
+			chords={{ formerChord, formerStyle, latterChord, latterStyle }}
 		/>
 	);
 }
 
-// nexusの相対/度数/キー説明を表示する。chordsを渡すと接続元→接続先のコード名も表示する。
+type SearchedNexusBlockProps = {
+	readonly formerChord: BasicChord;
+	readonly latterChord: BasicChord;
+	readonly formerStyle: DisplayStyle;
+	readonly latterStyle: DisplayStyle;
+};
+
+export function SearchedNexusBlock(props: SearchedNexusBlockProps) {
+	const { formerChord, latterChord, formerStyle, latterStyle } = props;
+	const relative = calcRelativeNexus(formerChord, latterChord);
+	const keyNexus = findMatchingNexus(formerChord, latterChord)[0]?.keyNexus;
+	const degree = keyNexus?.degreeNexus;
+	const keyLabel = keyNexus?.key;
+	return (
+		<NexusBlock
+			relative={relative}
+			degree={degree}
+			keyLabel={keyLabel}
+			chords={{ formerChord, formerStyle, latterChord, latterStyle }}
+		/>
+	);
+}
+
+type KeyNexusBlockProps = {
+	readonly keyNexus: KeyNexus;
+	readonly formerStyle: DisplayStyle;
+	readonly latterStyle: DisplayStyle;
+};
+
+export function KeyNexusBlock(props: KeyNexusBlockProps) {
+	const { keyNexus, formerStyle, latterStyle } = props;
+	return (
+		<NexusBlock
+			relative={keyNexus.relativeNexus}
+			degree={keyNexus.degreeNexus}
+			keyLabel={keyNexus.key}
+			chords={{
+				formerChord: keyNexus.formerChord,
+				formerStyle,
+				latterChord: keyNexus.latterChord,
+				latterStyle,
+			}}
+		/>
+	);
+}
+
+// nexus-panel/basic-chord-modal/nexus-change-modal で共通して表示される、nexusの説明テキスト
+// NOTE: keyLabelという名前は、JSXのspread先で予約語のkeyと衝突するのを避けるため
+type NexusBlockProps = {
+	// 片側のコードしか定まっておらず相対関係すら計算できない場合はundefined
+	readonly relative: RelativeNexus | undefined;
+	readonly degree: DegreeNexus | undefined;
+	readonly keyLabel: PitchClass | undefined;
+	readonly chords: ChordsDisplay;
+};
+
+// nexusの相対/度数/キー説明を表示する。chordsのformerStyle/latterStyleが両方hiddenでなければ接続元→接続先のコード名も表示する。
 export function NexusBlock(props: NexusBlockProps) {
 	const { relative, degree, keyLabel, chords } = props;
+	const showChords = chords.formerStyle !== "hidden" || chords.latterStyle !== "hidden";
 	return (
 		<>
-			{chords && (
+			{showChords && (
 				<div className="nexus-block__chords">
-					<span className={chordClassName(chords.emphasizeFormer)}>{chords.formerChord?.toString() ?? ""}</span>
+					<span className={chordClassName(chords.formerStyle)}>{chordText(chords.formerChord, chords.formerStyle)}</span>
 					<span className="nexus-block__arrow">→</span>
-					<span className={chordClassName(chords.emphasizeLatter)}>{chords.latterChord?.toString() ?? ""}</span>
+					<span className={chordClassName(chords.latterStyle)}>{chordText(chords.latterChord, chords.latterStyle)}</span>
 				</div>
 			)}
 

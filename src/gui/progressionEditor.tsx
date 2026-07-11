@@ -7,7 +7,7 @@ import { NexusPanel, DummyNexusPanel } from "./nexusPanel";
 import { BasicChord } from "../basics/basicChord";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import {
-	applyChordEditToPinnedNexi,
+	applyChordEditToPreferredNexi,
 	changeChordAtIndex,
 	ChordEditContext,
 	ChordEditResult,
@@ -18,7 +18,7 @@ import {
 	insertNexusSlot,
 	InsertTrigger,
 	NexusEditResult,
-	PinnedNexi,
+	PreferredNexi,
 	ProgressionItem,
 	removeChordAtIndex,
 	removeNexusSlot,
@@ -63,7 +63,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	const [progression, setProgression] = useState<readonly ProgressionItem[]>(() =>
 		createProgressionItems(value, createId)
 	);
-	const [pinnedNexi, setPinnedNexi] = useState<PinnedNexi>(() =>
+	const [preferredNexi, setPreferredNexi] = useState<PreferredNexi>(() =>
 		new Array(Math.max(0, value.length - 1)).fill(undefined)
 	);
 	const [shiftAnimation, setShiftAnimation] = useState<ShiftAnimationState>(null);
@@ -75,7 +75,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	}, [value]);
 
 	useEffect(() => {
-		setPinnedNexi(current => {
+		setPreferredNexi(current => {
 			const expectedLength = Math.max(0, progression.length - 1);
 			if (current.length === expectedLength) return current;
 			return new Array(expectedLength).fill(undefined);
@@ -110,9 +110,9 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 			onChange?.(toChordInfos(next));
 			return next;
 		});
-		setPinnedNexi(current => {
+		setPreferredNexi(current => {
 			const base = isChange ? current : insertNexusSlot(current, index);
-			return applyChordEditToPinnedNexi(base, index, result.method, result.nexus);
+			return applyChordEditToPreferredNexi(base, index, result.method, result.nexus);
 		});
 		if (!isChange) {
 			setShiftAnimation({
@@ -139,14 +139,14 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		if (method !== "fixed") {
 			setProgression(current => {
 				const next = method === "latterChord"
-					? changeChordAtIndex(current, slotIndex + 1, nexus.resolveLatterChord(current[slotIndex].chordInfo.chord))
-					: changeChordAtIndex(current, slotIndex, nexus.resolveFormerChord(current[slotIndex + 1].chordInfo.chord));
+					? changeChordAtIndex(current, slotIndex + 1, nexus.resolveFromFormerChord(current[slotIndex].chordInfo.chord).latterChord)
+					: changeChordAtIndex(current, slotIndex, nexus.resolveFromLatterChord(current[slotIndex + 1].chordInfo.chord).formerChord);
 				onChange?.(toChordInfos(next));
 				return next;
 			});
 		}
 
-		setPinnedNexi(current => {
+		setPreferredNexi(current => {
 			let next = setNexusSlot(current, slotIndex, nexus);
 			if (method === "latterChord") next = setNexusSlot(next, slotIndex + 1, undefined);
 			if (method === "formerChord") next = setNexusSlot(next, slotIndex - 1, undefined);
@@ -156,7 +156,8 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	};
 
 	const handleClearNexus = (slotIndex: number): void => {
-		setPinnedNexi(current => setNexusSlot(current, slotIndex, undefined));
+		setPreferredNexi(current => setNexusSlot(current, slotIndex, undefined));
+		setPendingNexusEdit(null);
 	};
 
 	const handleCancelChordEdit = (): void => {
@@ -169,7 +170,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 			onChange?.(toChordInfos(next));
 			return next;
 		});
-		setPinnedNexi(current => removeNexusSlot(current, index));
+		setPreferredNexi(current => removeNexusSlot(current, index));
 		setShiftAnimation({
 			kind: "delete-shift",
 			targetIndex: index
@@ -218,7 +219,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 								(<NexusPanel
 									formerChord={progression[index - 1].chordInfo.chord}
 									latterChord={item.chordInfo.chord}
-									pinnedNexus={pinnedNexi[index - 1]}
+									preferredNexus={preferredNexi[index - 1]}
 									onEdit={() => handleOpenNexusEdit(index - 1)}
 								/>)
 								: (<DummyNexusPanel />)}
@@ -250,7 +251,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 				<NexusChangeModal
 					formerChord={progression[pendingNexusEdit.slotIndex].chordInfo.chord}
 					latterChord={progression[pendingNexusEdit.slotIndex + 1].chordInfo.chord}
-					pinnedNexus={pinnedNexi[pendingNexusEdit.slotIndex]}
+					preferredNexus={preferredNexi[pendingNexusEdit.slotIndex]}
 					onConfirm={handleConfirmNexusEdit}
 					onClear={() => handleClearNexus(pendingNexusEdit.slotIndex)}
 					onCancel={handleCancelNexusEdit}

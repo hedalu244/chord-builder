@@ -8,8 +8,8 @@ export type ChordEditMethod = "formerNexus" | "latterNexus" | "direct";
 export type NexusEditMethod = "latterChord" | "formerChord" | "fixed";
 
 export type ChordEditContext = {
-	readonly previousChord: FullChordInfo | null;
-	readonly nextChord: FullChordInfo | null;
+	readonly formerChord: FullChordInfo | null;
+	readonly latterChord: FullChordInfo | null;
 	readonly trigger: ChordEditTrigger;
 };
 
@@ -19,7 +19,6 @@ export type ChordEditResult = {
 	// formerNexus/latterNexus で選んだ nexus。direct では null
 	readonly nexus: DegreeNexus | null;
 };
-
 
 export type NexusEditResult = {
 	readonly method: NexusEditMethod;
@@ -33,28 +32,13 @@ export type ProgressionItem = {
 
 // progression[i]とprogression[i+1]の間のnexusをユーザーが明示指定した場合の値。長さはprogression.length-1。
 // undefinedは自動計算へのフォールバックを意味する。
-export type PinnedNexi = readonly (DegreeNexus | undefined)[];
+export type PreferredNexi = readonly (DegreeNexus | undefined)[];
 
 export function defaultChordEditMethod(trigger: ChordEditTrigger): ChordEditMethod {
 	if (trigger === "changeChord") {
 		return "direct";
 	}
 	return trigger === "insertBefore" ? "latterNexus" : "formerNexus";
-}
-
-// BasicChordModalのタイトル。挿入操作か既存コードの編集かで表示を分ける
-export function chordEditModalTitle(trigger: ChordEditTrigger): string {
-	return trigger === "changeChord" ? "Select Chord" : "Insert Chord";
-}
-
-// BasicChordModalの確定ボタンのラベル。挿入操作ではInsert/Add、既存コードの編集ではOKにする
-export function chordEditConfirmLabel(trigger: ChordEditTrigger): string {
-	switch (trigger) {
-		case "changeChord": return "OK";
-		case "add": return "Add";
-		case "insertBefore":
-		case "insertAfter": return "Insert";
-	}
 }
 
 export function toChordInfos(items: readonly ProgressionItem[]): FullChordInfo[] {
@@ -104,8 +88,8 @@ export function getInsertContext(
 	}
 
 	return {
-		previousChord: index === 0 ? null : progression[index - 1].chordInfo,
-		nextChord: index === progression.length ? null : progression[index].chordInfo,
+		formerChord: index === 0 ? null : progression[index - 1].chordInfo,
+		latterChord: index === progression.length ? null : progression[index].chordInfo,
 		trigger
 	};
 }
@@ -119,8 +103,8 @@ export function getChangeContext(
 	}
 
 	return {
-		previousChord: index === 0 ? null : progression[index - 1].chordInfo,
-		nextChord: index === progression.length - 1 ? null : progression[index + 1].chordInfo,
+		formerChord: index === 0 ? null : progression[index - 1].chordInfo,
+		latterChord: index === progression.length - 1 ? null : progression[index + 1].chordInfo,
 		trigger: "changeChord"
 	};
 }
@@ -156,53 +140,53 @@ export function removeChordAtIndex(progression: readonly ProgressionItem[], inde
 }
 
 export function setNexusSlot(
-	pinned: PinnedNexi,
+	preferred: PreferredNexi,
 	index: number,
 	nexus: DegreeNexus | undefined
-): PinnedNexi {
-	if (index < 0 || index >= pinned.length) {
-		return pinned;
+): PreferredNexi {
+	if (index < 0 || index >= preferred.length) {
+		return preferred;
 	}
-	return pinned.map((current, currentIndex) => currentIndex === index ? nexus : current);
+	return preferred.map((current, currentIndex) => currentIndex === index ? nexus : current);
 }
 
 // insertChordInfoAtIndexと同じindexで呼ぶ。挿入によって生じる1〜2個の新しい隣接スロットはundefinedになる。
-export function insertNexusSlot(pinned: PinnedNexi, index: number): PinnedNexi {
-	const length = pinned.length + 1;
+export function insertNexusSlot(preferred: PreferredNexi, index: number): PreferredNexi {
+	const length = preferred.length + 1;
 	return Array.from({ length }, (_, j) => {
-		if (j < index - 1) return pinned[j];
+		if (j < index - 1) return preferred[j];
 		if (j === index - 1) return undefined;
 		if (j === index) return undefined;
-		return pinned[j - 1];
+		return preferred[j - 1];
 	});
 }
 
 // removeChordAtIndexと同じindexで呼ぶ。削除によって統合される隣接スロットはundefinedになる（端の削除はシフトのみ）。
-export function removeNexusSlot(pinned: PinnedNexi, index: number): PinnedNexi {
-	const length = pinned.length - 1;
+export function removeNexusSlot(preferred: PreferredNexi, index: number): PreferredNexi {
+	const length = preferred.length - 1;
 	if (length <= 0) return [];
 	return Array.from({ length }, (_, j) => {
-		if (j < index - 1) return pinned[j];
+		if (j < index - 1) return preferred[j];
 		if (j === index - 1) return undefined;
-		return pinned[j + 1];
+		return preferred[j + 1];
 	});
 }
 
 // indexは「今回変更/挿入されたコードの新しい位置」。formerNexus/latterNexusで選んだnexusをその隣接スロットに反映し、
-// 逆側の隣接スロットは（コードが変わったことで既存のピンが無効になり得るため）undefinedに戻す。
-export function applyChordEditToPinnedNexi(
-	pinned: PinnedNexi,
+// 逆側の隣接スロットは（コードが変わったことで既存の優先指定が無効になり得るため）undefinedに戻す。
+export function applyChordEditToPreferredNexi(
+	preferred: PreferredNexi,
 	index: number,
 	method: ChordEditMethod,
 	nexus: DegreeNexus | null
-): PinnedNexi {
+): PreferredNexi {
 	if (method === "formerNexus" && nexus) {
-		return setNexusSlot(setNexusSlot(pinned, index - 1, nexus), index, undefined);
+		return setNexusSlot(setNexusSlot(preferred, index - 1, nexus), index, undefined);
 	}
 	if (method === "latterNexus" && nexus) {
-		return setNexusSlot(setNexusSlot(pinned, index, nexus), index - 1, undefined);
+		return setNexusSlot(setNexusSlot(preferred, index, nexus), index - 1, undefined);
 	}
-	return setNexusSlot(setNexusSlot(pinned, index - 1, undefined), index, undefined);
+	return setNexusSlot(setNexusSlot(preferred, index - 1, undefined), index, undefined);
 }
 
 export function createProgressionItems(
