@@ -26,6 +26,8 @@
 音を鳴らしたい。さすがにね。
 
 
+一つ前のセッションで、editor.tsとprogressionEditor.tsx、basicChordModal、nexusChangeModalに大幅な
+
 ## 選択とトランスポーズ
 chordpanel直下にチェックボックスを追加
 

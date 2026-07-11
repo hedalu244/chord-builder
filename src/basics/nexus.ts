@@ -18,6 +18,13 @@ export class RelativeNexus {
             this.rootMotion.equals(other.rootMotion);
     }
 
+    // former→latterの実際のコードを、このrelativeNexusとして解釈して矛盾しないか
+    match(former: BasicChord, latter: BasicChord): boolean {
+        return this.formerMode === former.mode &&
+            this.latterMode === latter.mode &&
+            this.rootMotion.equals(latter.root.delta(former.root));
+    }
+
     toString(): string {
         return `${this.formerMode} → ${this.rootMotion.toStringRelative()} ${this.latterMode}`;
     }
@@ -40,6 +47,12 @@ export class DegreeNexus {
     equals(other: DegreeNexus): boolean {
         return this.formerRootDegree.equals(other.formerRootDegree) &&
             this.relativeNexus.equals(other.relativeNexus);
+    }
+
+    // former→latterの実際のコードを、このdegreeNexusとして解釈して矛盾しないか
+    // (formerRootDegreeはキーが定まって初めて絶対音高と結びつくため、ここではrelativeNexusの整合性のみが判定対象になる)
+    match(former: BasicChord, latter: BasicChord): boolean {
+        return this.relativeNexus.match(former, latter);
     }
 
     get formerRootDegree(): Degree { return this._formerRootDegree; }
@@ -113,5 +126,10 @@ export class KeyNexus {
     get latterChord(): BasicChord {
         const latterRoot = this.degreeNexus.latterRootDegree.toPitchClass(this.key);
         return new BasicChord(latterRoot, this.degreeNexus.relativeNexus.latterMode);
+    }
+
+    // former→latterの実際のコードを、このkeyNexusとして解釈して矛盾しないか
+    match(former: BasicChord, latter: BasicChord): boolean {
+        return this.formerChord.equals(former) && this.latterChord.equals(latter);
     }
 }

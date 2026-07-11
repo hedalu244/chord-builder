@@ -4,29 +4,21 @@ import { BasicChordModal } from "./basicChordModal";
 import { ChordPanel } from "./layout/chordPanel";
 import { NexusChangeModal } from "./nexusChangeModal";
 import { NexusPanel, DummyNexusPanel } from "./layout/nexusPanel";
-import { BasicChord } from "../basics/basicChord";
 import { FullChordInfo } from "../basics/fullChordInfo";
-import {
-	applyChordEditToPreferredNexi,
-	changeChordAtIndex,
-	ChordEditContext,
-	ChordEditResult,
-	createProgressionItems,
-	getChangeContext,
-	getInsertContext,
-	insertChordInfoAtIndex,
-	insertNexusSlot,
-	InsertTrigger,
-	NexusEditResult,
-	PreferredNexi,
-	ProgressionItem,
-	removeChordAtIndex,
-	removeNexusSlot,
-	replaceChordAtIndex,
-	setNexusSlot,
-	syncProgressionItems,
-	toChordInfos
-} from "../editor";
+import { BasicChord } from "../basics/basicChord";
+import { DegreeNexus } from "../basics/nexus";
+import { Progression } from "../basics/progression";
+import { NexusEditBasis } from "./nexusPicker";
+
+type InsertTrigger = "add" | "insertBefore" | "insertAfter";
+
+export type ChordEditTrigger = InsertTrigger | "changeChord";
+
+export type ChordEditContext = {
+	readonly formerChord: FullChordInfo | null;
+	readonly latterChord: FullChordInfo | null;
+	readonly trigger: ChordEditTrigger;
+};
 
 type ProgressionEditorProps = {
 	readonly value: readonly FullChordInfo[];
@@ -40,15 +32,53 @@ type ShiftAnimationState = {
 	readonly targetIndex: number;
 } | null;
 
+// 既存コードの変更(BasicChordModalをchangeChordトリガーで開く)。対象は常に既存なのでinitialChordは必ず存在する
 type PendingChordEdit = {
 	readonly index: number;
 	readonly context: ChordEditContext;
-	readonly initialChord: BasicChord | null;
+	readonly initialChord: BasicChord;
+} | null;
+
+// 新規コードの挿入(BasicChordModalをadd/insertBefore/insertAfterトリガーで開く)。まだ何も選ばれていない
+type PendingChordInsert = {
+	readonly index: number;
+	readonly context: ChordEditContext;
 } | null;
 
 type PendingNexusEdit = {
 	readonly slotIndex: number;
 } | null;
+
+// BasicChordModalで確定された内容: コードそのものが指定されたか、前後どちらかのコードを基準にnexusが指定されたか
+type ChordSpec =
+	| { readonly kind: "direct"; readonly chord: BasicChord }
+	| { readonly kind: "nexus"; readonly basis: NexusEditBasis; readonly nexus: DegreeNexus };
+
+function resolveByNexus(progression: Progression, gapIndex: number, basis: NexusEditBasis, nexus: DegreeNexus): Progression {
+	return basis === "former"
+		? progression.setNexusFromFormerChord(gapIndex, nexus)
+		: progression.setNexusFromLatterChord(gapIndex, nexus);
+}
+
+// コードが新規に挿入される。nexus由来の場合、挿入位置には基準側と同じコードを仮置きし、resolveByNexusが直後に導き直す
+function insertBySpec(progression: Progression, index: number, spec: ChordSpec, createId: () => number): Progression {
+	if (spec.kind === "direct") {
+		return progression.insertChord(index, new FullChordInfo(spec.chord, undefined), createId);
+	}
+	const gapIndex = spec.basis === "former" ? index - 1 : index;
+	const placeholder = new FullChordInfo(progression.items[gapIndex].chordInfo.chord, undefined);
+	const inserted = progression.insertChord(index, placeholder, createId);
+	return resolveByNexus(inserted, gapIndex, spec.basis, spec.nexus);
+}
+
+// 既存のindex位置のコードが変更される
+function changeBySpec(progression: Progression, index: number, spec: ChordSpec): Progression {
+	if (spec.kind === "direct") {
+		return progression.changeChord(index, spec.chord);
+	}
+	const gapIndex = spec.basis === "former" ? index - 1 : index;
+	return resolveByNexus(progression, gapIndex, spec.basis, spec.nexus);
+}
 
 export function ProgressionEditor(props: ProgressionEditorProps) {
 	const { value, onChange } = props;
@@ -60,117 +90,41 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		return id;
 	};
 
-	const [progression, setProgression] = useState<readonly ProgressionItem[]>(() =>
-		createProgressionItems(value, createId)
-	);
-	const [preferredNexi, setPreferredNexi] = useState<PreferredNexi>(() =>
-		new Array(Math.max(0, value.length - 1)).fill(undefined)
-	);
+	const [progression, setProgression] = useState<Progression>(() => Progression.create(value, createId));
 	const [shiftAnimation, setShiftAnimation] = useState<ShiftAnimationState>(null);
 	const [pendingChordEdit, setPendingChordEdit] = useState<PendingChordEdit>(null);
+	const [pendingChordInsert, setPendingChordInsert] = useState<PendingChordInsert>(null);
 	const [pendingNexusEdit, setPendingNexusEdit] = useState<PendingNexusEdit>(null);
 
 	useEffect(() => {
-		setProgression(current => syncProgressionItems(current, value, createId));
+		setProgression(current => current.sync(value, createId));
 	}, [value]);
 
-	useEffect(() => {
-		setPreferredNexi(current => {
-			const expectedLength = Math.max(0, progression.length - 1);
-			if (current.length === expectedLength) return current;
-			return new Array(expectedLength).fill(undefined);
-		});
-	}, [progression.length]);
-
 	const handleInsert = (index: number, trigger: InsertTrigger): void => {
-		setPendingChordEdit({
-			index,
-			context: getInsertContext(progression, index, trigger),
-			initialChord: null
-		});
+		const { formerChord, latterChord } = progression.insertionNeighbors(index);
+		setPendingChordInsert({ index, context: { formerChord, latterChord, trigger } });
 	};
 
 	const handleChange = (index: number): void => {
+		const { formerChord, latterChord } = progression.changeNeighbors(index);
 		setPendingChordEdit({
 			index,
-			context: getChangeContext(progression, index),
-			initialChord: progression[index].chordInfo.chord
+			context: { formerChord, latterChord, trigger: "changeChord" },
+			initialChord: progression.items[index].chordInfo.chord
 		});
 	};
 
-	const handleConfirmChordEdit = (result: ChordEditResult): void => {
-		if (!pendingChordEdit) return;
-		const { index, context } = pendingChordEdit;
-		const isChange = context.trigger === "changeChord";
-
-		setProgression(current => {
-			const next = isChange
-				? changeChordAtIndex(current, index, result.chord)
-				: insertChordInfoAtIndex(current, index, new FullChordInfo(result.chord, undefined), createId);
-			onChange?.(toChordInfos(next));
-			return next;
-		});
-		setPreferredNexi(current => {
-			const base = isChange ? current : insertNexusSlot(current, index);
-			return applyChordEditToPreferredNexi(base, index, result.method, result.nexus);
-		});
-		if (!isChange) {
-			setShiftAnimation({
-				kind: "insert-push",
-				targetIndex: index
-			});
-		}
-		setPendingChordEdit(null);
+	const applyProgression = (next: Progression): void => {
+		setProgression(next);
+		onChange?.(next.chordInfos);
 	};
 
 	const handleOpenNexusEdit = (slotIndex: number): void => {
 		setPendingNexusEdit({ slotIndex });
 	};
 
-	const handleCancelNexusEdit = (): void => {
-		setPendingNexusEdit(null);
-	};
-
-	const handleConfirmNexusEdit = (result: NexusEditResult): void => {
-		if (!pendingNexusEdit) return;
-		const { slotIndex } = pendingNexusEdit;
-		const { method, nexus } = result;
-
-		if (method !== "fixed") {
-			setProgression(current => {
-				const next = method === "latterChord"
-					? changeChordAtIndex(current, slotIndex + 1, nexus.resolveFromFormerChord(current[slotIndex].chordInfo.chord).latterChord)
-					: changeChordAtIndex(current, slotIndex, nexus.resolveFromLatterChord(current[slotIndex + 1].chordInfo.chord).formerChord);
-				onChange?.(toChordInfos(next));
-				return next;
-			});
-		}
-
-		setPreferredNexi(current => {
-			let next = setNexusSlot(current, slotIndex, nexus);
-			if (method === "latterChord") next = setNexusSlot(next, slotIndex + 1, undefined);
-			if (method === "formerChord") next = setNexusSlot(next, slotIndex - 1, undefined);
-			return next;
-		});
-		setPendingNexusEdit(null);
-	};
-
-	const handleClearNexus = (slotIndex: number): void => {
-		setPreferredNexi(current => setNexusSlot(current, slotIndex, undefined));
-		setPendingNexusEdit(null);
-	};
-
-	const handleCancelChordEdit = (): void => {
-		setPendingChordEdit(null);
-	};
-
 	const handleDelete = (index: number): void => {
-		setProgression(current => {
-			const next = removeChordAtIndex(current, index);
-			onChange?.(toChordInfos(next));
-			return next;
-		});
-		setPreferredNexi(current => removeNexusSlot(current, index));
+		applyProgression(progression.removeChord(index));
 		setShiftAnimation({
 			kind: "delete-shift",
 			targetIndex: index
@@ -178,11 +132,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	};
 
 	const handleChordInfoChange = (index: number, nextChordInfo: FullChordInfo): void => {
-		setProgression(current => {
-			const next = replaceChordAtIndex(current, index, nextChordInfo);
-			onChange?.(toChordInfos(next));
-			return next;
-		});
+		applyProgression(progression.updateChordInfo(index, nextChordInfo));
 		setShiftAnimation(null);
 	};
 
@@ -213,13 +163,13 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		<div className="progression-editor">
 			<div className="progression-editor__scroll-area">
 				<div className="progression-editor__row">
-					{progression.map((item, index) => (
+					{progression.items.map((item, index) => (
 						<div key={item.id} className={getSlotClassName(index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
 							{index > 0 ?
 								(<NexusPanel
-									formerChord={progression[index - 1].chordInfo.chord}
+									formerChord={progression.items[index - 1].chordInfo.chord}
 									latterChord={item.chordInfo.chord}
-									preferredNexus={preferredNexi[index - 1]}
+									preferredNexus={item.preferredNexus}
 									onEdit={() => handleOpenNexusEdit(index - 1)}
 								/>)
 								: (<DummyNexusPanel />)}
@@ -233,28 +183,78 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 							/>
 						</div>
 					))}
-					<div className={getSlotClassName(progression.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
+					<div className={getSlotClassName(progression.items.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
 						<DummyNexusPanel />
-						<AddChordPanel onClick={() => handleInsert(progression.length, "add")} />
+						<AddChordPanel onClick={() => handleInsert(progression.items.length, "add")} />
 					</div>
 				</div>
 			</div>
+			{pendingChordInsert && (
+				<BasicChordModal
+					context={pendingChordInsert.context}
+					initialChord={null}
+					onConfirmDirect={chord => {
+						applyProgression(insertBySpec(progression, pendingChordInsert.index, { kind: "direct", chord }, createId));
+						setShiftAnimation({ kind: "insert-push", targetIndex: pendingChordInsert.index });
+						setPendingChordInsert(null);
+					}}
+					onConfirmFormerNexus={nexus => {
+						applyProgression(insertBySpec(progression, pendingChordInsert.index, { kind: "nexus", basis: "former", nexus }, createId));
+						setShiftAnimation({ kind: "insert-push", targetIndex: pendingChordInsert.index });
+						setPendingChordInsert(null);
+					}}
+					onConfirmLatterNexus={nexus => {
+						applyProgression(insertBySpec(progression, pendingChordInsert.index, { kind: "nexus", basis: "latter", nexus }, createId));
+						setShiftAnimation({ kind: "insert-push", targetIndex: pendingChordInsert.index });
+						setPendingChordInsert(null);
+					}}
+					onCancel={() => setPendingChordInsert(null)}
+				/>
+			)}
 			{pendingChordEdit && (
 				<BasicChordModal
 					context={pendingChordEdit.context}
 					initialChord={pendingChordEdit.initialChord}
-					onConfirm={handleConfirmChordEdit}
-					onCancel={handleCancelChordEdit}
+					onConfirmDirect={chord => {
+						applyProgression(changeBySpec(progression, pendingChordEdit.index, { kind: "direct", chord }));
+						setPendingChordEdit(null);
+					}}
+					onConfirmFormerNexus={nexus => {
+						applyProgression(changeBySpec(progression, pendingChordEdit.index, { kind: "nexus", basis: "former", nexus }));
+						setPendingChordEdit(null);
+					}}
+					onConfirmLatterNexus={nexus => {
+						applyProgression(changeBySpec(progression, pendingChordEdit.index, { kind: "nexus", basis: "latter", nexus }));
+						setPendingChordEdit(null);
+					}}
+					onCancel={() => setPendingChordEdit(null)}
 				/>
 			)}
 			{pendingNexusEdit && (
 				<NexusChangeModal
-					formerChord={progression[pendingNexusEdit.slotIndex].chordInfo.chord}
-					latterChord={progression[pendingNexusEdit.slotIndex + 1].chordInfo.chord}
-					preferredNexus={preferredNexi[pendingNexusEdit.slotIndex]}
-					onConfirm={handleConfirmNexusEdit}
-					onClear={() => handleClearNexus(pendingNexusEdit.slotIndex)}
-					onCancel={handleCancelNexusEdit}
+					formerChord={progression.items[pendingNexusEdit.slotIndex].chordInfo.chord}
+					latterChord={progression.items[pendingNexusEdit.slotIndex + 1].chordInfo.chord}
+					preferredNexus={progression.items[pendingNexusEdit.slotIndex + 1].preferredNexus}
+					onConfirmFixed={nexus => {
+						// 両側のコードは動かないのでonChangeは不要
+						setProgression(progression.setPreferredNexus(pendingNexusEdit.slotIndex, nexus));
+						setPendingNexusEdit(null);
+					}}
+					onConfirmFormerChord={nexus => {
+						// "formerChord"タブ = 前のコードが変わる方式 = 後ろのコードを基準に前を導く
+						applyProgression(resolveByNexus(progression, pendingNexusEdit.slotIndex, "latter", nexus));
+						setPendingNexusEdit(null);
+					}}
+					onConfirmLatterChord={nexus => {
+						// "latterChord"タブ = 後ろのコードが変わる方式 = 前のコードを基準に後ろを導く
+						applyProgression(resolveByNexus(progression, pendingNexusEdit.slotIndex, "former", nexus));
+						setPendingNexusEdit(null);
+					}}
+					onClear={() => {
+						setProgression(progression.setPreferredNexus(pendingNexusEdit.slotIndex, undefined));
+						setPendingNexusEdit(null);
+					}}
+					onCancel={() => setPendingNexusEdit(null)}
 				/>
 			)}
 		</div>

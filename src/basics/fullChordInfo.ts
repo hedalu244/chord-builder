@@ -30,9 +30,13 @@ export class FullChordInfo {
 		return `${findChordQuality(this.qualityId).getNotation(this.chord)}`;
 	}
 
-	// ルート/モードの変更。スケールの形(ルートからの相対音程)はそのまま保たれる
+	// コードの変更。モードに互換性があれば(=ルートのみの変更とみなし)クオリティ・スケールの形を維持し、
+	// モードが変わる場合は(コード自体が別物になったとみなし)クオリティ・スケールをデフォルトにリセットする
 	withChord(chord: BasicChord): FullChordInfo {
-		return new FullChordInfo(chord, this.qualityId, this.extraScaleTones);
+		if (chord.mode === this.chord.mode) {
+			return new FullChordInfo(chord, this.qualityId, this.extraScaleTones);
+		}
+		return new FullChordInfo(chord, undefined);
 	}
 
 	// クオリティの変更。実際に変わる場合はスケールをデフォルトにリセットする

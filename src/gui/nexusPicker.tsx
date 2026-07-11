@@ -11,10 +11,13 @@ function nexusAutoButtonClassName(active: boolean): string {
 	return active ? "nexus-picker__auto-button nexus-picker__auto-button--active" : "nexus-picker__auto-button";
 }
 
+// gapIndexの前後どちらのコードを基準(固定)に、nexusからもう一方を導くか
+export type NexusEditBasis = "former" | "latter";
+
 type NexusCandidateListProps = {
 	readonly candidates: readonly KnownNexusInfo[];
 	// candidatesの中でformer/latterのどちらが固定側(anchor)かを表す。強調表示(変化する側)の判定にのみ使う
-	readonly anchorRole: "former" | "latter";
+	readonly anchorRole: NexusEditBasis;
 	readonly selected: DegreeNexus | null;
 	readonly onSelect: (degreeNexus: DegreeNexus) => void;
 };

@@ -1,5 +1,5 @@
 import { ChordDegree, Mode, BasicChord } from "./basicChord";
-import { calcRelativeNexus, DegreeNexus, KeyNexus, RelativeNexus } from "./nexus";
+import { DegreeNexus, KeyNexus } from "./nexus";
 import { PitchClass } from "./pitch";
 
 // とりあえずI, IIm, IIIm, IV, V, VIm, の6つの組み合わせを入れてみる
@@ -47,9 +47,6 @@ function knownNexiByFormerMode(mode: Mode): readonly DegreeNexus[] {
 function knownNexiByLatterMode(mode: Mode): readonly DegreeNexus[] {
     return KnownNexi.filter(degreeNexus => degreeNexus.relativeNexus.latterMode === mode);
 }
-function knownNexiByRelativeNexus(relative: RelativeNexus): readonly DegreeNexus[] {
-    return KnownNexi.filter(degreeNexus => degreeNexus.relativeNexus.equals(relative));
-}
 
 // E-A as V-I in key=A みたいな情報。
 export type KnownNexusInfo = {
@@ -66,8 +63,7 @@ export function findMatchingNexus(
     latter: BasicChord | undefined
 ): readonly KnownNexusInfo[] {
     if (former !== undefined && latter !== undefined) {
-        const relative = calcRelativeNexus(former, latter);
-        return knownNexiByRelativeNexus(relative).flatMap(degreeNexus =>
+        return KnownNexi.filter(degreeNexus => degreeNexus.match(former, latter)).map(degreeNexus =>
             ({ keyNexus: degreeNexus.resolveFromFormerChord(former) }));
     }
     if (former !== undefined) {

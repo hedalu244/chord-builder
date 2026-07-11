@@ -2,27 +2,34 @@ import { useState } from "react";
 import { BasicChord } from "../basics/basicChord";
 import { DegreeNexus } from "../basics/nexus";
 import { findMatchingNexus } from "../basics/knownNexus";
-import { NexusEditMethod, NexusEditResult } from "../editor";
 import { Modal } from "./parts/modal";
 import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./parts/methodTab";
 import { PreferredNexusBlock, SearchedNexusBlock } from "./parts/nexusBlock";
 import { NexusCandidateList, NexusMatchList } from "./nexusPicker";
 
+// タブ切替のためだけの内部区分。確定コールバックが分かれているため、モーダルの外にはこの区分自体が出てこない。
+type Method = "latterChord" | "formerChord" | "fixed";
+
 type NexusChangeModalProps = {
 	readonly formerChord: BasicChord;
 	readonly latterChord: BasicChord;
 	readonly preferredNexus: DegreeNexus | undefined;
-	readonly onConfirm: (result: NexusEditResult) => void;
+	// 両側のコードは動かさず、nexusの優先指定だけを行う
+	readonly onConfirmFixed: (nexus: DegreeNexus) => void;
+	// 後ろのコードを固定し、前のコードをnexusから導く
+	readonly onConfirmFormerChord: (nexus: DegreeNexus) => void;
+	// 前のコードを固定し、後ろのコードをnexusから導く
+	readonly onConfirmLatterChord: (nexus: DegreeNexus) => void;
 	readonly onClear: () => void;
 	readonly onCancel: () => void;
 };
 
 export function NexusChangeModal(props: NexusChangeModalProps) {
-	const { formerChord, latterChord, preferredNexus, onConfirm, onClear, onCancel } = props;
-	const [method, setMethod] = useState<NexusEditMethod>("fixed");
+	const { formerChord, latterChord, preferredNexus, onConfirmFixed, onConfirmFormerChord, onConfirmLatterChord, onClear, onCancel } = props;
+	const [method, setMethod] = useState<Method>("fixed");
 	const [selectedNexus, setSelectedNexus] = useState<DegreeNexus | null>(() => preferredNexus ?? null);
 
-	const handleSetMethod = (nextMethod: NexusEditMethod): void => {
+	const handleSetMethod = (nextMethod: Method): void => {
 		if (nextMethod === method) return;
 		setMethod(nextMethod);
 		setSelectedNexus(current => {
@@ -36,7 +43,7 @@ export function NexusChangeModal(props: NexusChangeModalProps) {
 
 	// fixedモードの初期状態(preferredNexus由来)はまだ上記の検証を経ていないため、描画時にも同様の検証を行う
 	const selected = method === "fixed"
-		? (selectedNexus && findMatchingNexus(formerChord, latterChord).some(knownNexusInfo => knownNexusInfo.keyNexus.degreeNexus.equals(selectedNexus)) ? selectedNexus : null)
+		? (selectedNexus && selectedNexus.match(formerChord, latterChord) ? selectedNexus : null)
 		: selectedNexus;
 
 	const displayedFormerChord = method === "formerChord" && selected ? selected.resolveFromLatterChord(latterChord).formerChord : formerChord;
@@ -45,13 +52,15 @@ export function NexusChangeModal(props: NexusChangeModalProps) {
 	// fixedモードでselectedがnull(=auto)のままOKを押した場合は優先指定の解除とみなす
 	const handleConfirm = (): void => {
 		if (selected) {
-			onConfirm({ method, nexus: selected });
+			if (method === "fixed") onConfirmFixed(selected);
+			if (method === "formerChord") onConfirmFormerChord(selected);
+			if (method === "latterChord") onConfirmLatterChord(selected);
 		} else if (method === "fixed") {
 			onClear();
 		}
 	};
 
-	const tabs: readonly MethodTabItem<NexusEditMethod>[] = [
+	const tabs: readonly MethodTabItem<Method>[] = [
 		// 左のタブ=左のコードが変わる方式(formerChord: 右を固定して左を求める)
 		{
 			key: "formerChord",

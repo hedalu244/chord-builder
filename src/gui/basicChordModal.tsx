@@ -1,13 +1,23 @@
 import { useState } from "react";
 import { allBasicChords, BasicChord } from "../basics/basicChord";
 import { DegreeNexus } from "../basics/nexus";
-import { ChordEditContext, ChordEditMethod, ChordEditResult, ChordEditTrigger, defaultChordEditMethod } from "../editor";
 import { Modal } from "./parts/modal";
 import { MethodTab, MethodTabItem, methodTabButtonClassName } from "./parts/methodTab";
 import { NexusBlock, SearchedNexusBlock } from "./parts/nexusBlock";
 import { NexusCandidateList } from "./nexusPicker";
 import { ChordTones } from "./parts/chordTones";
 import { findMatchingNexus } from "../basics/knownNexus";
+import { ChordEditTrigger, ChordEditContext } from "./progressionEditor";
+
+// タブ切替のためだけの内部区分。確定コールバックが分かれているため、モーダルの外にはこの区分自体が出てこない。
+type Method = "formerNexus" | "latterNexus" | "direct";
+
+function defaultMethod(trigger: ChordEditTrigger): Method {
+	if (trigger === "changeChord") {
+		return "direct";
+	}
+	return trigger === "insertBefore" ? "latterNexus" : "formerNexus";
+}
 
 // このモーダルのタイトル。挿入操作か既存コードの編集かで表示を分ける
 function modalTitle(trigger: ChordEditTrigger): string {
@@ -28,49 +38,55 @@ function directButtonClassName(active: boolean): string {
 	return active ? "basic-chord-modal__direct-button basic-chord-modal__direct-button--active" : "basic-chord-modal__direct-button";
 }
 
-type LastEdit = {
-	readonly method: ChordEditMethod;
-	readonly nexus: DegreeNexus | null;
-};
+// 現在モーダル内で選択されている内容。どの方式で選ばれたかと、それによって決まるchordを一体で持つ
+type Selection =
+	| { readonly method: "direct"; readonly chord: BasicChord }
+	| { readonly method: "formerNexus"; readonly nexus: DegreeNexus; readonly chord: BasicChord }
+	| { readonly method: "latterNexus"; readonly nexus: DegreeNexus; readonly chord: BasicChord };
 
 type BasicChordModalProps = {
 	readonly context: ChordEditContext;
 	// nullの場合は「まだ何も選択していない」状態でモーダルを開く(挿入操作向け)
 	readonly initialChord: BasicChord | null;
-	readonly onConfirm: (result: ChordEditResult) => void;
+	readonly onConfirmDirect: (chord: BasicChord) => void;
+	readonly onConfirmFormerNexus: (nexus: DegreeNexus) => void;
+	readonly onConfirmLatterNexus: (nexus: DegreeNexus) => void;
 	readonly onCancel: () => void;
 };
 
 export function BasicChordModal(props: BasicChordModalProps) {
-	const { context, initialChord, onConfirm, onCancel } = props;
-	const [method, setMethod] = useState<ChordEditMethod>(() => defaultChordEditMethod(context.trigger));
-	const [chord, setChord] = useState<BasicChord | null>(initialChord);
-	const [lastEdit, setLastEdit] = useState<LastEdit>({ method: "direct", nexus: null });
+	const { context, initialChord, onConfirmDirect, onConfirmFormerNexus, onConfirmLatterNexus, onCancel } = props;
+	const [method, setMethod] = useState<Method>(() => defaultMethod(context.trigger));
+	const [selection, setSelection] = useState<Selection | null>(() => initialChord ? { method: "direct", chord: initialChord } : null);
 
 	const previousChord = context.formerChord?.chord ?? null;
 	const nextChord = context.latterChord?.chord ?? null;
+	const chord = selection?.chord ?? null;
 
-	// 各候補リストの強調表示は、現在のchordが実際にそのnexusから導かれたものかどうかで決める
-	// (別タブで選び直した後も古い選択がハイライトされたままにならないよう、stateとしては持たずlastEditから導出する)
-	const selectedFormerNexus = lastEdit.method === "formerNexus" ? lastEdit.nexus : null;
-	const selectedLatterNexus = lastEdit.method === "latterNexus" ? lastEdit.nexus : null;
+	// 各候補リストの強調表示は、現在の選択が実際にそのnexusから導かれたものかどうかで決める
+	const selectedFormerNexus = selection?.method === "formerNexus" ? selection.nexus : null;
+	const selectedLatterNexus = selection?.method === "latterNexus" ? selection.nexus : null;
 
 	const selectFromFormer = (nexus: DegreeNexus): void => {
 		if (!previousChord) return;
-		setChord(nexus.resolveFromFormerChord(previousChord).latterChord);
-		setLastEdit({ method: "formerNexus", nexus });
+		setSelection({ method: "formerNexus", nexus, chord: nexus.resolveFromFormerChord(previousChord).latterChord });
 	};
 	const selectFromLatter = (nexus: DegreeNexus): void => {
 		if (!nextChord) return;
-		setChord(nexus.resolveFromLatterChord(nextChord).formerChord);
-		setLastEdit({ method: "latterNexus", nexus });
+		setSelection({ method: "latterNexus", nexus, chord: nexus.resolveFromLatterChord(nextChord).formerChord });
 	};
 	const selectDirect = (candidate: BasicChord): void => {
-		setChord(candidate);
-		setLastEdit({ method: "direct", nexus: null });
+		setSelection({ method: "direct", chord: candidate });
 	};
 
-	const tabs: readonly MethodTabItem<ChordEditMethod>[] = [
+	const handleConfirm = (): void => {
+		if (!selection) return;
+		if (selection.method === "direct") onConfirmDirect(selection.chord);
+		if (selection.method === "formerNexus") onConfirmFormerNexus(selection.nexus);
+		if (selection.method === "latterNexus") onConfirmLatterNexus(selection.nexus);
+	};
+
+	const tabs: readonly MethodTabItem<Method>[] = [
 		{
 			key: "formerNexus",
 			disabled: !previousChord,
@@ -149,9 +165,9 @@ export function BasicChordModal(props: BasicChordModalProps) {
 			className="basic-chord-modal method-tab-modal"
 			title={modalTitle(context.trigger)}
 			onCancel={onCancel}
-			onConfirm={() => chord && onConfirm({ chord, method: lastEdit.method, nexus: lastEdit.nexus })}
+			onConfirm={handleConfirm}
 			confirmLabel={confirmButtonLabel(context.trigger)}
-			confirmDisabled={chord === null}
+			confirmDisabled={selection === null}
 		>
 			<MethodTab tabs={tabs} active={method} onChange={setMethod} />
 		</Modal>
