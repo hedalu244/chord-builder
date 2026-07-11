@@ -88,7 +88,7 @@ export const KnownNexi: readonly DegreeNexus[] = [
     new DegreeNexus(ChordDegree.parse("I"), ChordDegree.parse("VIm")),
 
     new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("I")),
-    new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("III")),
+    new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("IIIm")),
     new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("IV")),
     new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("V")),
     new DegreeNexus(ChordDegree.parse("IIm"), ChordDegree.parse("VIm")),
