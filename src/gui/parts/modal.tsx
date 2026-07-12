@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 type ModalProps = {
-	// 個々のモーダル固有の見た目調整用クラス名(例: "quality-modal")
+	// 個々のモーダル固有の見た目調整用クラス名(例: "chord-modal")
 	readonly className?: string;
 	readonly title: string;
 	readonly children: ReactNode;

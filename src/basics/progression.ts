@@ -1,21 +1,34 @@
-import { Triad } from "./triad";
+import { Chord } from "./chord";
 import { ContextScale } from "./contextScale";
-import { FullChordInfo } from "./fullChordInfo";
+import { Interval } from "./pitch";
+
+// Progressionの外部表現(1コード分)。編集セッション中のみ意味を持つid/contextScaleは含まない
+export type ChordEntry = {
+	readonly chord: Chord;
+	// undefined(または空配列) = デフォルトスケール(コード構成音のみ)。それ以外はコード構成音に追加する音(スケールルートからの半音値)
+	readonly extraChordScaleTones: readonly Interval[] | undefined;
+};
 
 export type ProgressionChord = {
 	readonly id: number;
-	readonly chordInfo: FullChordInfo | undefined; // undefinedはまだ何も選ばれていない状態を意味する
+	readonly entry: ChordEntry | undefined; // undefinedはまだ何も選ばれていない状態(プレースホルダー)を意味する
 	// このコードの直後との関係を表すコンテクストスケール。undefinedは未選択(自動)を意味する。末尾要素では常にundefined。
 	readonly contextScale: ContextScale | undefined;
 };
 
-function chordInfoEquals(a: FullChordInfo | undefined, b: FullChordInfo | undefined): boolean {
+function chordEntryEquals(a: ChordEntry | undefined, b: ChordEntry | undefined): boolean {
 	if (a === undefined || b === undefined) return a === b;
-	return a.equals(b);
+	if (!a.chord.equals(b.chord)) return false;
+	const tones = a.extraChordScaleTones ?? [];
+	const otherTones = b.extraChordScaleTones ?? [];
+	if (tones.length !== otherTones.length) return false;
+	return tones.every((tone, i) => tone.equals(otherTones[i]));
 }
 
 // 編集対象のコード進行を保持する非破壊データ。各編集操作は、それがUI上のどの操作を通じて行われたかに関知せず、
 // 結果として何が変わるかだけを表す新しいProgressionを返す。
+// idとcontextScaleは編集セッション内だけの付随情報だが、配列がシフトする操作(insertChord/removeItem)では
+// 対応するChordEntryと一緒に動く必要があるため、あえて1つのitem配列にまとめて持たせている。
 export class Progression {
 	readonly items: readonly ProgressionChord[];
 
@@ -23,37 +36,37 @@ export class Progression {
 		this.items = items;
 	}
 
-	static create(value: readonly (FullChordInfo | undefined)[], createId: () => number): Progression {
-		return new Progression(value.map(chordInfo => ({ id: createId(), chordInfo, contextScale: undefined })));
+	static create(value: readonly (ChordEntry | undefined)[], createId: () => number): Progression {
+		return new Progression(value.map(entry => ({ id: createId(), entry, contextScale: undefined })));
 	}
 
-	get chordInfos(): (FullChordInfo | undefined)[] {
-		return this.items.map(item => item.chordInfo);
+	get chordEntries(): (ChordEntry | undefined)[] {
+		return this.items.map(item => item.entry);
 	}
 
 	// 外部から渡されたvalueとの差分をidを保ったまま取り込む。中身が同じなら同一インスタンスを返す。
 	// 既存のcontextScaleはそのまま引き継がれる。
-	sync(value: readonly (FullChordInfo | undefined)[], createId: () => number): Progression {
+	sync(value: readonly (ChordEntry | undefined)[], createId: () => number): Progression {
 		const current = this.items;
 		if (
 			value.length === current.length &&
-			value.every((chordInfo, index) => chordInfoEquals(chordInfo, current[index].chordInfo))
+			value.every((entry, index) => chordEntryEquals(entry, current[index].entry))
 		) {
 			return this;
 		}
-		return new Progression(value.map((chordInfo, index) => ({
+		return new Progression(value.map((entry, index) => ({
 			id: current[index]?.id ?? createId(),
-			chordInfo,
+			entry,
 			contextScale: current[index]?.contextScale
 		})));
 	}
 
-	// 未選択(プレースホルダー)を含めて、コードが挿入された。挿入された要素のcontextScaleは常に未選択から始まる
-	insertChord(index: number, chordInfo: FullChordInfo | undefined, createId: () => number): Progression {
+	// 未選択(プレースホルダー)を挿入する。実際のコードを挿入したい場合は、挿入後に続けてsetChordを呼ぶこと
+	insertChord(index: number, createId: () => number): Progression {
 		if (index < 0 || index > this.items.length) {
 			throw new Error(`insert index out of range: ${index}`);
 		}
-		const inserted: ProgressionChord = { id: createId(), chordInfo, contextScale: undefined };
+		const inserted: ProgressionChord = { id: createId(), entry: undefined, contextScale: undefined };
 		return new Progression([
 			...this.items.slice(0, index),
 			inserted,
@@ -77,26 +90,27 @@ export class Progression {
 		if (index < 0 || index >= this.items.length) {
 			throw new Error(`clear index out of range: ${index}`);
 		}
-		return new Progression(this.items.map((item, i) => i === index ? { ...item, chordInfo: undefined } : item));
+		return new Progression(this.items.map((item, i) => i === index ? { ...item, entry: undefined } : item));
 	}
 
-	// index位置のTriadを設定する。既存のコードがあればクオリティ/スケールを維持したまま置き換え、
-	// 未選択(プレースホルダー)であれば新規にFullChordInfoを作る
-	setChord(index: number, chord: Triad): Progression {
+	// index位置のChordを設定する。既存/未選択いずれの場合もスケールをデフォルトにリセットして置き換える
+	setChord(index: number, chord: Chord): Progression {
 		if (index < 0 || index >= this.items.length) {
 			throw new Error(`set index out of range: ${index}`);
 		}
-		return new Progression(this.items.map((item, i) =>
-			i === index ? { ...item, chordInfo: item.chordInfo ? item.chordInfo.withChord(chord) : new FullChordInfo(chord, undefined) } : item
-		));
+		return new Progression(this.items.map((item, i) => i === index ? { ...item, entry: { chord, extraChordScaleTones: undefined } } : item));
 	}
 
-	// Triad以外のプロパティ(クオリティ/スケール)が更新された。コードの実体が変わらないためcontextScaleとの関係にも影響しない。
-	updateChordInfo(index: number, chordInfo: FullChordInfo): Progression {
+	// Chord以外のプロパティ(extraChordScaleTones)が更新された。コードの実体が変わらないためcontextScaleとの関係にも影響しない。
+	setExtraChordScaleTones(index: number, extraChordScaleTones: readonly Interval[] | undefined): Progression {
 		if (index < 0 || index >= this.items.length) {
 			throw new Error(`update index out of range: ${index}`);
 		}
-		return new Progression(this.items.map((item, i) => i === index ? { ...item, chordInfo } : item));
+		const entry = this.items[index].entry;
+		if (!entry) {
+			throw new Error(`no chord selected at index: ${index}`);
+		}
+		return new Progression(this.items.map((item, i) => i === index ? { ...item, entry: { ...entry, extraChordScaleTones } } : item));
 	}
 
 	// index位置のコードのcontextScaleを設定/解除(undefinedで解除)する。末尾要素は直後の実体を持たないが、

@@ -1,32 +1,36 @@
 import { useState } from "react";
-import { FullChordInfo } from "../../basics/fullChordInfo";
+import { Chord } from "../../basics/chord";
+import { getChordScale } from "../../basics/chordScale";
+import { Interval } from "../../basics/pitch";
 import { ChordScaleModal } from "../chordScaleModal";
 import { ChordTones } from "../parts/chordTones";
 import { IconButton } from "../parts/iconButton";
 import { ScaleAnalysis } from "../parts/scaleAnalysis";
 
 type ScalePanelProps = {
-	readonly value: FullChordInfo;
-	readonly onChange: (nextValue: FullChordInfo) => void;
+	readonly chord: Chord;
+	readonly extraChordScaleTones: readonly Interval[] | undefined;
+	readonly onChange: (nextExtraChordScaleTones: readonly Interval[] | undefined) => void;
 };
 
 export function ScalePanel(props: ScalePanelProps) {
-	const { value, onChange } = props;
+	const { chord, extraChordScaleTones, onChange } = props;
 	const [isEditing, setIsEditing] = useState(false);
-	const root = value.getChordRoot();
-	const scale = value.getScale();
+	const root = chord.triad.root;
+	const scale = getChordScale(chord, extraChordScaleTones);
 
 	return (
 		<div className="scale-panel">
 			<span className="scale-panel__label">Scale</span>
-			<ScaleAnalysis chordInfo={value} root={root} scale={scale} />
+			<ScaleAnalysis chord={chord} root={root} scale={scale} />
 			<ChordTones tones={scale.getPitchClasses(root)} />
 			<IconButton icon="icons/edit.svg" label="Edit scale" onClick={() => setIsEditing(true)} />
 			{isEditing && (
 				<ChordScaleModal
-					chordInfo={value}
-					onConfirm={extraScaleTones => {
-						onChange(value.withExtraScaleTones(extraScaleTones));
+					chord={chord}
+					extraChordScaleTones={extraChordScaleTones}
+					onConfirm={nextExtraChordScaleTones => {
+						onChange(nextExtraChordScaleTones);
 						setIsEditing(false);
 					}}
 					onCancel={() => setIsEditing(false)}

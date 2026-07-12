@@ -1,28 +1,32 @@
-import { FullChordInfo } from "../../basics/fullChordInfo";
+import { Chord } from "../../basics/chord";
 import { findKnownScale, getKnownScaleInfo } from "../../basics/knownScale";
 import { PitchClass } from "../../basics/pitch";
 import { Scale } from "../../basics/scale";
 import { getExtraTensionNames } from "../../basics/tensions";
 
 type ScaleAnalysisProps = {
-	readonly chordInfo: FullChordInfo;
+	readonly chord: Chord;
 	readonly root: PitchClass;
-	readonly scale: Scale; // モーダル編集中はまだchordInfoに反映されていないプレビュー値になりうる
+	readonly scale: Scale; // モーダル編集中はまだ確定していないプレビュー値になりうる
 };
 
 // スケールパネル/スケールモーダルで共通の、構成音以外の分析情報(名前・ペアレントスケール由来・テンション記法)
 export function ScaleAnalysis(props: ScaleAnalysisProps) {
-	const { chordInfo, root, scale } = props;
+	const { chord, root, scale } = props;
 	const known = findKnownScale(scale);
 	const description = getKnownScaleInfo(known, root);
-	const tensionNames = getExtraTensionNames(scale, chordInfo.getChordToneIntervals());
+	const tensionNames = getExtraTensionNames(scale, chord.getChordToneIntervals());
+	const knownNotations = chord.getKnownNotations();
 
 	return (
 		<div className="scale-analysis">
 			<h4 className="scale-analysis__tension">
-				{chordInfo.toString()}
+				{chord.getSyntheticNotation()}
 				{tensionNames.length > 0 && <sup> ({tensionNames.join(", ")})</sup>}
 			</h4>
+			{knownNotations.length > 0 && (
+				<span className="scale-analysis__alt-notations">{knownNotations.join(" / ")}</span>
+			)}
 			<span className="scale-analysis__name">{description.name}</span>
 			<span className="scale-analysis__origin">{description.description}</span>
 		</div>

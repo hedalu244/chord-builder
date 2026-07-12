@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FullChordInfo } from "../basics/fullChordInfo";
+import { Chord } from "../basics/chord";
+import { getChordScale } from "../basics/chordScale";
 import { Interval, PitchClass } from "../basics/pitch";
 import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./parts/scaleAnalysis";
@@ -46,19 +47,20 @@ function CandidateList(props: CandidateListProps) {
 }
 
 type ChordScaleModalProps = {
-	readonly chordInfo: FullChordInfo;
-	readonly onConfirm: (extraScaleTones: readonly Interval[] | undefined) => void;
+	readonly chord: Chord;
+	readonly extraChordScaleTones: readonly Interval[] | undefined;
+	readonly onConfirm: (nextExtraChordScaleTones: readonly Interval[] | undefined) => void;
 	readonly onCancel: () => void;
 };
 
 export function ChordScaleModal(props: ChordScaleModalProps) {
-	const { chordInfo, onConfirm, onCancel } = props;
-	const root = chordInfo.getChordRoot();
-	const chordToneIntervals = chordInfo.getChordToneIntervals();
+	const { chord, extraChordScaleTones, onConfirm, onCancel } = props;
+	const root = chord.triad.root;
+	const chordToneIntervals = chord.getChordToneIntervals();
 	const lockedValues = new Set<number>(chordToneIntervals.map(tone => tone.value));
 
 	const [checkedValues, setCheckedValues] = useState<ReadonlySet<number>>(
-		() => new Set(chordInfo.getScale().tones.map(tone => tone.value))
+		() => new Set(getChordScale(chord, extraChordScaleTones).tones.map(tone => tone.value))
 	);
 
 	const currentScale = new Scale(Interval.map(Array.from(checkedValues)));
@@ -69,15 +71,15 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 	};
 
 	const handleConfirm = (): void => {
-		const extraScaleTones = Array.from(checkedValues)
+		const nextExtraChordScaleTones = Array.from(checkedValues)
 			.filter(value => !lockedValues.has(value))
 			.map(value => new Interval(value));
-		onConfirm(extraScaleTones.length === 0 ? undefined : extraScaleTones);
+		onConfirm(nextExtraChordScaleTones.length === 0 ? undefined : nextExtraChordScaleTones);
 	};
 
 	return (
 		<Modal className="chord-scale-modal" title="Edit Chord Scale" onCancel={onCancel} onConfirm={handleConfirm}>
-			<ScaleAnalysis chordInfo={chordInfo} root={root} scale={currentScale} />
+			<ScaleAnalysis chord={chord} root={root} scale={currentScale} />
 			<EditableToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onChange={setCheckedValues} />
 			<CandidateList root={root} candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />
 		</Modal>
