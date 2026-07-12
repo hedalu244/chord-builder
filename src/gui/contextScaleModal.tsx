@@ -16,7 +16,7 @@ export function ContextScaleModal(props: ContextScaleModalProps) {
 	const [name, setName] = useState<string>(value.name);
 
 	return (
-		<Modal className="context-scale-modal" title="Edit Context Scale" onCancel={onCancel} onConfirm={() => onConfirm({ key, name })}>
+		<Modal className="context-scale-modal" title="Edit Context Scale" onCancel={onCancel} onConfirm={() => onConfirm(new ContextScale(key, name))}>
 			<div className="context-scale-modal__controls">
 				<select
 					className="context-scale-modal__select"

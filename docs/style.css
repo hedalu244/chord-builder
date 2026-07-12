@@ -229,6 +229,11 @@ button {
 	overflow-x: auto;
 	overflow-y: auto;
 	padding-bottom: 8px;
+
+	/* scale-rowとchord-rowをまとめて1つの領域としてスクロールさせる(行ごとに独立してスクロールさせない) */
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 .progression-editor {
@@ -242,7 +247,10 @@ button {
 	min-height: 0;
 }
 
-.progression-editor__row {
+/* scale-row/chord-rowは列数・列幅(--progression-card-width)・列間隔(--progression-gap)を揃えることで、
+   互いに独立したReact配列(Progression.contexts/chords)でありながら見た目上は縦に揃って見える */
+.progression-editor__scale-row,
+.progression-editor__chord-row {
 	display: flex;
 	align-items: stretch;
 	gap: var(--progression-gap);
@@ -250,9 +258,7 @@ button {
 }
 
 .progression-editor__slot {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
+	display: block;
 }
 
 .progression-editor__card {
@@ -548,8 +554,8 @@ button {
 
 .add-chord-panel {
 	position: relative;
-	flex-grow: 1;
 	width: var(--progression-card-width);
+	height: 100%;
 	min-height: var(--progression-card-min-height);
 	border: 2px dashed var(--color-border);
 	border-radius: var(--radius-card);

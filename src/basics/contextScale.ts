@@ -14,19 +14,44 @@ const knownScales: readonly KnownScale[] = [
     { scale: new Scale(Interval.map([0, 2, 4, 5, 7, 8, 11])), name: "Harmonic Major" },
 ];
 
-export type ContextScale = {
+export const knownScaleNames: readonly string[] = knownScales.map(({ name }) => name);
+
+// 前後のコードとの関係を表すキー・スケール。実体のScaleは持たず、knownScaleNamesのいずれかをnameとして持つ(idのように扱う)
+// ChordScaleとは全くの別概念なので注意すること。変数名の都合などで一語に略すときはccaleではなくcontextと略すこと
+export class ContextScale {
     readonly key: PitchClass;
     readonly name: string;
-};
 
-export const knownScaleNames: readonly string[] = knownScales.map(({ name }) => name);
+    constructor(key: PitchClass, name: string) {
+        this.key = key;
+        this.name = name;
+    }
+
+    getScale(): Scale {
+        const found = knownScales.find(known => known.name === this.name);
+        if (!found) {
+            throw new Error(`unknown scale name: ${this.name}`);
+        }
+        return found.scale;
+    }
+
+    equals(other: ContextScale): boolean {
+        return this.key.equals(other.key) && this.name === other.name;
+    }
+
+    // 片方または両方がundefinedの場合も扱えるequals。配列の差分検出(Progression.sync)で使う
+    static equals(a: ContextScale | undefined, b: ContextScale | undefined): boolean {
+        if (a === undefined || b === undefined) return a === b;
+        return a.equals(b);
+    }
+}
 
 // former/latterの構成音(合計6音、重複はそのまま数える)のうち、スケールに含まれる音の数が最も多くなる
 // キー・スケールを推定する。同点の場合はキーの昇順→knownScalesの定義順で最初に見つかったものを採用する
 export function estimateContextScale(former: Triad, latter: Triad): ContextScale {
     const chordTones = [...former.getChordTones(), ...latter.getChordTones()];
 
-    let best: ContextScale = { key: PitchClass.all[0], name: knownScales[0].name };
+    let best = new ContextScale(PitchClass.all[0], knownScales[0].name);
     let bestScore = -1;
     for (const key of PitchClass.all) {
         for (const { scale, name } of knownScales) {
@@ -34,7 +59,7 @@ export function estimateContextScale(former: Triad, latter: Triad): ContextScale
             const score = chordTones.filter(tone => pitchClasses.some(pc => pc.equals(tone))).length;
             if (score > bestScore) {
                 bestScore = score;
-                best = { key, name };
+                best = new ContextScale(key, name);
             }
         }
     }

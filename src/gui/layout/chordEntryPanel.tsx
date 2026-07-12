@@ -1,4 +1,4 @@
-import { ChordEntry } from "../../basics/progression";
+import { ChordEntry } from "../../basics/chordEntry";
 import { Interval } from "../../basics/pitch";
 import { ChordPanel } from "./chordPanel";
 import { IconButton } from "../parts/iconButton";
@@ -24,7 +24,7 @@ export function ChordEntryPanel(props: ChordEntryPanelProps) {
 				<IconButton icon="icons/insert-after.svg" label="Insert after" className="chord-entry-panel__insert-after-button" onClick={onInsertAfter} />
 			</div>
 			<ChordPanel value={entry.chord} onChangeChord={onChangeChord} />
-			<ScalePanel chord={entry.chord} extraChordScaleTones={entry.extraChordScaleTones} onChange={onChange} />
+			<ScalePanel entry={entry} onChange={onChange} />
 		</div>
 	);
 }

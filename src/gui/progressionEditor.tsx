@@ -6,15 +6,16 @@ import { ChordEntryPanel } from "./layout/chordEntryPanel";
 import { ContextScaleModal } from "./contextScaleModal";
 import { ContextScalePanel, DummyContextScalePanel } from "./layout/contextScalePanel";
 import { Chord } from "../basics/chord";
+import { ChordEntry } from "../basics/chordEntry";
 import { ContextScale, estimateContextScale, knownScaleNames } from "../basics/contextScale";
 import { Interval, PitchClass } from "../basics/pitch";
-import { ChordEntry, Progression } from "../basics/progression";
+import { Progression, ProgressionValue } from "../basics/progression";
 
 export type ChordEditTrigger = "add" | "changeChord";
 
 type ProgressionEditorProps = {
-	readonly value: readonly (ChordEntry | undefined)[];
-	readonly onChange?: (nextProgression: readonly (ChordEntry | undefined)[]) => void;
+	readonly value: ProgressionValue;
+	readonly onChange?: (next: ProgressionValue) => void;
 };
 
 type ShiftAnimationKind = "insert-push" | "delete-shift";
@@ -65,7 +66,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 
 	const applyProgression = (next: Progression): void => {
 		setProgression(next);
-		onChange?.(next.chordEntries);
+		onChange?.(next.value);
 	};
 
 	const handleContextScaleChange = (index: number, contextScale: ContextScale | undefined): void => {
@@ -74,39 +75,39 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 
 	// 手動設定値があればそれを、なければ前後のコードから自動計算した値をモーダルの初期状態にする
 	const handleEditContextScale = (index: number): void => {
-		const contextScale = progression.items[index].contextScale;
-		const formerChord = progression.items[index].entry?.chord.triad;
-		const latterChord = progression.items[index + 1]?.entry?.chord.triad;
+		const contextScale = progression.contexts[index].contextScale;
+		const formerChord = progression.chords[index].entry?.chord.triad;
+		const latterChord = progression.chords[index + 1]?.entry?.chord.triad;
 		const initialValue = contextScale
-			?? (formerChord && latterChord ? estimateContextScale(formerChord, latterChord) : { key: PitchClass.all[0], name: knownScaleNames[0] });
+			?? (formerChord && latterChord ? estimateContextScale(formerChord, latterChord) : new ContextScale(PitchClass.all[0], knownScaleNames[0]));
 		setPendingContextScaleEdit({ index, initialValue });
 	};
 
 	// 前後のコードが揃っていない箇所でcontextScaleを手動で設定し始める(初期値は先頭のキー/スケール)
 	const handleAddContextScale = (index: number): void => {
-		setProgression(progression.setContextScale(index, { key: PitchClass.all[0], name: knownScaleNames[0] }));
+		setProgression(progression.setContextScale(index, new ContextScale(PitchClass.all[0], knownScaleNames[0])));
 	};
 
 	// 未選択(プレースホルダー)を挿入する。実体の選択はAddChordPanelから別途行う
 	const handleInsertBefore = (index: number): void => {
-		applyProgression(progression.insertChord(index, createId));
+		applyProgression(progression.insert(index, createId));
 		setShiftAnimation({ kind: "insert-push", targetIndex: index });
 	};
 
 	const handleInsertAfter = (index: number): void => {
 		const targetIndex = index + 1;
-		applyProgression(progression.insertChord(targetIndex, createId));
+		applyProgression(progression.insert(targetIndex, createId));
 		setShiftAnimation({ kind: "insert-push", targetIndex });
 	};
 
 	// 配列のシフトは行わず、未選択(プレースホルダー)に戻すだけ
 	const handleDelete = (index: number): void => {
-		applyProgression(progression.clearChord(index));
+		applyProgression(progression.setChord(index, undefined));
 	};
 
 	// プレースホルダーそのものを取り除く
-	const handleShrink = (index: number): void => {
-		applyProgression(progression.removeItem(index));
+	const handleShift = (index: number): void => {
+		applyProgression(progression.shift(index));
 		setShiftAnimation({ kind: "delete-shift", targetIndex: index });
 	};
 
@@ -119,11 +120,11 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	};
 
 	const handleAppend = (): void => {
-		setPendingChordAppend({ index: progression.items.length });
+		setPendingChordAppend({ index: progression.chords.length });
 	};
 
-	const handleExtraChordScaleTonesChange = (index: number, nextExtraChordScaleTones: readonly Interval[] | undefined): void => {
-		applyProgression(progression.setExtraChordScaleTones(index, nextExtraChordScaleTones));
+	const handleExtraChordScaleTonesChange = (index: number, chord: Chord, nextExtraChordScaleTones: readonly Interval[] | undefined): void => {
+		applyProgression(progression.setChord(index, new ChordEntry(chord, nextExtraChordScaleTones)));
 		setShiftAnimation(null);
 	};
 
@@ -153,13 +154,13 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	return (
 		<div className="progression-editor">
 			<div className="progression-editor__scroll-area">
-				<div className="progression-editor__row">
-					{progression.items.map((item, index) => {
-						const entry = item.entry;
-						const nextEntry = progression.items[index + 1]?.entry;
-						const contextScale = item.contextScale;
+				<div className="progression-editor__scale-row">
+					{progression.contexts.map((context, index) => {
+						const entry = progression.chords[index]?.entry;
+						const nextEntry = progression.chords[index + 1]?.entry;
+						const contextScale = context.contextScale;
 						return (
-							<div key={item.id} className={getSlotClassName(index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
+							<div key={context.id} className={getSlotClassName(index, "progression-editor__scale-item")} onAnimationEnd={handleSlotAnimationEnd}>
 								{(contextScale !== undefined || (entry !== undefined && nextEntry !== undefined)) ?
 									(<ContextScalePanel
 										formerChord={entry?.chord.triad}
@@ -169,23 +170,34 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 										onEdit={() => handleEditContextScale(index)}
 									/>)
 									: (<AddContextScaleButton onClick={() => handleAddContextScale(index)} />)}
+							</div>
+						);
+					})}
+					<div className={getSlotClassName(progression.chords.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
+						<DummyContextScalePanel />
+					</div>
+				</div>
+				<div className="progression-editor__chord-row">
+					{progression.chords.map((chord, index) => {
+						const entry = chord.entry;
+						return (
+							<div key={chord.id} className={getSlotClassName(index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
 								{entry !== undefined ? (
 									<ChordEntryPanel
 										entry={entry}
-										onChange={next => handleExtraChordScaleTonesChange(index, next)}
+										onChange={next => handleExtraChordScaleTonesChange(index, entry.chord, next)}
 										onInsertBefore={() => handleInsertBefore(index)}
 										onInsertAfter={() => handleInsertAfter(index)}
 										onChangeChord={() => handleChangeChord(index, entry.chord)}
 										onDelete={() => handleDelete(index)}
 									/>
 								) : (
-									<AddChordPanel onClick={() => handleFillPlaceholder(index)} onShrink={() => handleShrink(index)} />
+									<AddChordPanel onClick={() => handleFillPlaceholder(index)} onShift={() => handleShift(index)} />
 								)}
 							</div>
 						);
 					})}
-					<div className={getSlotClassName(progression.items.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
-						<DummyContextScalePanel />
+					<div className={getSlotClassName(progression.chords.length, "progression-editor__add-item")} onAnimationEnd={handleSlotAnimationEnd}>
 						<AddChordPanel onClick={handleAppend} />
 					</div>
 				</div>
@@ -195,8 +207,8 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 					trigger="add"
 					initialChord={null}
 					onConfirm={chord => {
-						const inserted = progression.insertChord(pendingChordAppend.index, createId);
-						applyProgression(inserted.setChord(pendingChordAppend.index, chord));
+						const inserted = progression.insert(pendingChordAppend.index, createId);
+						applyProgression(inserted.setChord(pendingChordAppend.index, new ChordEntry(chord, undefined)));
 						setShiftAnimation({ kind: "insert-push", targetIndex: pendingChordAppend.index });
 						setPendingChordAppend(null);
 					}}
@@ -208,7 +220,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 					trigger={pendingChordEdit.initialChord === null ? "add" : "changeChord"}
 					initialChord={pendingChordEdit.initialChord}
 					onConfirm={chord => {
-						applyProgression(progression.setChord(pendingChordEdit.index, chord));
+						applyProgression(progression.setChord(pendingChordEdit.index, new ChordEntry(chord, undefined)));
 						setPendingChordEdit(null);
 					}}
 					onCancel={() => setPendingChordEdit(null)}

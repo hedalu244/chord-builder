@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Chord } from "../basics/chord";
-import { getChordScale } from "../basics/chordScale";
+import { ChordEntry } from "../basics/chordEntry";
 import { Interval, PitchClass } from "../basics/pitch";
 import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./parts/scaleAnalysis";
@@ -47,20 +46,20 @@ function CandidateList(props: CandidateListProps) {
 }
 
 type ChordScaleModalProps = {
-	readonly chord: Chord;
-	readonly extraChordScaleTones: readonly Interval[] | undefined;
+	readonly entry: ChordEntry;
 	readonly onConfirm: (nextExtraChordScaleTones: readonly Interval[] | undefined) => void;
 	readonly onCancel: () => void;
 };
 
 export function ChordScaleModal(props: ChordScaleModalProps) {
-	const { chord, extraChordScaleTones, onConfirm, onCancel } = props;
+	const { entry, onConfirm, onCancel } = props;
+	const { chord } = entry;
 	const root = chord.triad.root;
 	const chordToneIntervals = chord.getChordToneIntervals();
 	const lockedValues = new Set<number>(chordToneIntervals.map(tone => tone.value));
 
 	const [checkedValues, setCheckedValues] = useState<ReadonlySet<number>>(
-		() => new Set(getChordScale(chord, extraChordScaleTones).tones.map(tone => tone.value))
+		() => new Set(entry.getChordScale().tones.map(tone => tone.value))
 	);
 
 	const currentScale = new Scale(Interval.map(Array.from(checkedValues)));
