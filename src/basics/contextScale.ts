@@ -1,4 +1,3 @@
-import { Triad } from "./triad";
 import { Interval, PitchClass } from "./pitch";
 import { Scale } from "./scale";
 
@@ -44,27 +43,4 @@ export class ContextScale {
         if (a === undefined || b === undefined) return a === b;
         return a.equals(b);
     }
-}
-
-// former/latterの構成音(合計6音、重複はそのまま数える)のうち、スケールに含まれる音の数が最も多くなる
-// キー・スケールを推定する。同点の場合はキーの昇順→knownScalesの定義順で最初に見つかったものを採用する
-// former/latterのどちらかが定まっていない場合は推定できないためundefinedを返す
-export function estimateContextScale(former: Triad | undefined, latter: Triad | undefined): ContextScale | undefined {
-    if (former === undefined || latter === undefined) return undefined;
-
-    const chordTones = [...former.getChordTones(), ...latter.getChordTones()];
-
-    let best = new ContextScale(PitchClass.all[0], knownScales[0].name);
-    let bestScore = -1;
-    for (const key of PitchClass.all) {
-        for (const { scale, name } of knownScales) {
-            const pitchClasses = scale.getPitchClasses(key);
-            const score = chordTones.filter(tone => pitchClasses.some(pc => pc.equals(tone))).length;
-            if (score > bestScore) {
-                bestScore = score;
-                best = new ContextScale(key, name);
-            }
-        }
-    }
-    return best;
 }

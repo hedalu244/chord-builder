@@ -15,7 +15,7 @@ export type ProgressionValue = {
 	readonly contexts: readonly (ContextScale | undefined)[];
 };
 
-// insertBefore/After・shiftBefore/Afterは、要求されたindexそのものではなく、PlaceholderArrayWithIdが
+// insert・shiftは、要求されたindexそのものではなく、PlaceholderArrayWithIdが
 // 実際に操作した(できるだけ後方にずらされた)位置に対して行われる。chordsとcontextsは独立に動くため、
 // 実際に操作された位置もそれぞれ別のindexになりうる。呼び出し側(アニメーション対象の特定など)が
 // その実際の位置を知れるよう、結果のProgressionと一緒に返す。
@@ -33,8 +33,8 @@ function normalizeLengths(
 	contexts: PlaceholderArrayWithId<ContextScale>,
 	createId: () => number
 ): { chords: PlaceholderArrayWithId<ChordEntry>; contexts: PlaceholderArrayWithId<ContextScale> } {
-	if (contexts.length < chords.length - 1) {
-		return { chords, contexts: contexts.pad(chords.length - 1, createId) };
+	if (contexts.length < chords.length) {
+		return { chords, contexts: contexts.pad(chords.length, createId) };
 	}
 	if (chords.length < contexts.length) {
 		return { chords: chords.pad(contexts.length, createId), contexts };
@@ -102,30 +102,15 @@ export class Progression {
 	// 未選択(プレースホルダー)をindex位置に挿入する。entry・contextともにindex位置に挿入されるため、
 	// それまでcontexts[index]が表していたchords[index-1]とchords[index]の関係は、挿入後は
 	// chords[index-1]と新しいentryとの関係として読み替えられる。
-	insertBefore(index: number, createId: () => number): ProgressionMutationResult {
+	// before/afterの区別は呼び出し側(UI)に持たせず、常にこのinsertだけを公開する。「カードの右を押す」操作は
+	// index + 1を渡してこれを呼ぶことで表す。
+	insert(index: number, createId: () => number): ProgressionMutationResult {
 		if (index < 0 || index > this.chords.length) {
-			throw new Error(`insertBefore index out of range: ${index}`);
+			throw new Error(`insert index out of range: ${index}`);
 		}
 		// contexts.lengthはchords.lengthより1少ないことがあるため、その場合の末尾への挿入(index===chords.length)は
 		// contextsにとっての末尾(=contexts.length)に対応させる
-		const contextIndex = Math.min(index, this.contexts.length);
 		const chordMutation = this.chords.insert(index, createId);
-		const contextMutation = this.contexts.insert(contextIndex, createId);
-		return {
-			progression: Progression.normalized(chordMutation.result, contextMutation.result, createId),
-			chordIndex: chordMutation.index,
-			contextIndex: contextMutation.index
-		};
-	}
-
-	// 未選択(プレースホルダー)をindex位置の直後に挿入する。entryはindex + 1位置に、contextはindex位置に
-	// 挿入されるため、それまでcontexts[index]が表していたchords[index]とchords[index+1]の関係は、
-	// 挿入後は新しいentryとchords[index+1]だった要素との関係として読み替えられる。
-	insertAfter(index: number, createId: () => number): ProgressionMutationResult {
-		if (index < 0 || index >= this.chords.length) {
-			throw new Error(`insertAfter index out of range: ${index}`);
-		}
-		const chordMutation = this.chords.insert(index + 1, createId);
 		const contextMutation = this.contexts.insert(index, createId);
 		return {
 			progression: Progression.normalized(chordMutation.result, contextMutation.result, createId),
@@ -134,45 +119,22 @@ export class Progression {
 		};
 	}
 
-	// shiftAfter(index)が可能かどうか。chords[index]自体がplaceholderであることに加え、
-	// あわせて取り除かれるcontexts[index](chords[index]とchords[index+1]の関係)も
-	// placeholderである(=非undefinedな値を失わない)必要がある。
-	canShiftAfter(index: number): boolean {
-		return this.chords.canShift(index) && this.contexts.canShift(index);
+	// index位置がshiftできるかどうか。shiftボタンはchordのプレースホルダーにしか表示されないため、
+	// chords[index]は常にplaceholderであり、ここでは「末尾のplaceholderではないか」だけを見れば足りる
+	// (末尾のplaceholderは常に「次を追加できる場所」として残す必要があるため)。
+	// なお、あわせて取り除かれるcontexts側の要素がplaceholderかどうかはここでは判定しない。
+	// 手動設定されたcontextScaleを持っていても、そのままshiftで失われる(shiftはchordのプレースホルダーにしか
+	// 出ないためchordが失われることはないが、contextScaleは失われうる。改善の余地はあるが現時点ではこう割り切る)。
+	canShift(index: number): boolean {
+		return this.chords.canShift(index);
 	}
 
-	// shiftBefore(index)が可能かどうか。chords[index]自体がplaceholderであることに加え、
-	// あわせて取り除かれるcontexts[index-1](chords[index-1]とchords[index]の関係)も
-	// placeholderである(=非undefinedな値を失わない)必要がある。
-	canShiftBefore(index: number): boolean {
-		const contextIndex = index - 1 >= 0 ? index - 1 : index;
-		return this.chords.canShift(index) && this.contexts.canShift(contextIndex);
-	}
-
-	// index位置の要素そのものを取り除く。あわせてcontexts[index](chords[index]とchords[index+1]の関係)
-	// も取り除く。chords[index-1]との関係を表すcontexts[index-1]はそのまま残る。
-	shiftAfter(index: number, createId: () => number): ProgressionMutationResult {
-		if (!this.canShiftAfter(index)) {
-			throw new Error(`cannot shiftAfter index: ${index}`);
-		}
+	// index位置のプレースホルダーそのものを取り除く。あわせてcontexts[index - 1]
+	// (chords[index-1]とchords[index]の関係)も取り除く。chords[index+1]との関係を表していたcontexts[index]は、
+	// 詰められてchords[index]との関係になる。
+	shift(index: number, createId: () => number): ProgressionMutationResult {
 		const chordMutation = this.chords.shift(index);
 		const contextMutation = this.contexts.shift(index);
-		return {
-			progression: Progression.normalized(chordMutation.result, contextMutation.result, createId),
-			chordIndex: chordMutation.index,
-			contextIndex: contextMutation.index
-		};
-	}
-
-	// index位置の要素そのものを取り除く。あわせてcontexts[index - 1](chords[index-1]とchords[index]の関係)
-	// も取り除く。chords[index+1]との関係を表していたcontexts[index]は、詰められてchords[index]との関係になる。
-	shiftBefore(index: number, createId: () => number): ProgressionMutationResult {
-		if (!this.canShiftBefore(index)) {
-			throw new Error(`cannot shiftBefore index: ${index}`);
-		}
-		const contextIndex = index - 1 >= 0 ? index - 1 : index;
-		const chordMutation = this.chords.shift(index);
-		const contextMutation = this.contexts.shift(contextIndex);
 		return {
 			progression: Progression.normalized(chordMutation.result, contextMutation.result, createId),
 			chordIndex: chordMutation.index,
@@ -207,4 +169,15 @@ export class Progression {
 	deleteContextScale(index: number, createId: () => number): Progression {
 		return Progression.normalized(this.chords, this.contexts.delete(index, createId), createId);
 	}
+}
+
+// 未指定(placeholder)のcontextScaleは、指定値が見つかるまでindexから前方向に逐次探索し、直前に
+// 指定された値を継承する。1つ目のcontextScaleは常に指定されている前提のため、通常この探索は
+// 途中で見つかって止まるが、見つからなければundefinedを返す
+export function estimateContextScale(progression: Progression, index: number): ContextScale | undefined {
+	for (let i = index; i >= 0; i--) {
+		const value = progression.contexts.array[i]?.value;
+		if (value !== undefined) return value;
+	}
+	return undefined;
 }

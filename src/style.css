@@ -7,7 +7,7 @@
 
 	/* 背景・枠線 */
 	--color-surface: #ffffff;
-	--color-bg: #f5f7fa; /*ページ背景*/
+	--color-bg: #f0f3f7; /*ページ背景*/
 	--color-highlight: #f5f7fa; /* hover/active状態を示す背景 */
 	--color-border: #bcccdc;
 
@@ -234,6 +234,10 @@ button {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+	/* align-items:stretch(既定)のままだとscale-row/chord-rowの幅がこのスクロール領域の幅に
+	   合わせて縮められてしまい、カード幅の合計がそれを超えたときにカードそのものが潰れてしまう。
+	   flex-startにして行を内容量(max-content)で幅取りさせ、はみ出した分はoverflow-xでスクロールさせる */
+	align-items: flex-start;
 }
 
 .progression-editor {
@@ -259,13 +263,21 @@ button {
 
 .progression-editor__slot {
 	display: block;
+	/* placeholder(破線)とcard(実体)がアニメーションで重なる際、cardが手前・placeholderが背面になるようにする。
+	   slotはchord-row/scale-row内のflexアイテムなのでposition指定なしでもz-indexが有効。 */
+	z-index: 0;
+}
+
+.progression-editor__slot:has(.progression-editor__card) {
+	z-index: 1;
 }
 
 .progression-editor__card {
-	border: 1px solid var(--color-border);
+	border: 0;
 	border-radius: var(--radius-card);
 	padding: 12px;
 	background: var(--color-surface);
+	box-shadow: 0 5px 10px rgba(var(--color-ink-rgb), 0.2), 0 15px 20px rgba(var(--color-ink-rgb), 0.1);
 	width: var(--progression-card-width);
 }
 
@@ -286,7 +298,7 @@ button {
 
 .context-scale-panel--dummy {
 	background: transparent;
-	border: 0;
+	box-shadow: none;
 }
 
 /* context-scale-panel(メインの進行表示)ではnexus-blockをより大きく表示する */
@@ -344,6 +356,7 @@ button {
 }
 
 .chord-entry-panel {
+	position: relative;
 	display: flex;
 	flex-wrap: wrap;
 	align-content: flex-start;
@@ -351,12 +364,25 @@ button {
 	height: 100%;
 }
 
-.chord-entry-panel__controls {
+/* chord-panelはcontrols(position: absoluteでカード左上に重なる)の下からはみ出さないよう、
+   controlsの高さぶんmargin-topで避ける */
+.chord-entry-panel > .chord-panel {
+	margin-top: 36px;
+}
+
+/* カード(chord-entry-panel)・プレースホルダー(add-chord-panel)どちらの左上にも重ねて表示する
+   insert/delete等のコントロール行。flexで場所を取ると個々のpadding差で位置がずれるため、
+   両者ともposition: absoluteで揃える */
+.progression-editor__card-controls {
+	position: absolute;
+	top: 10px;
+	left: 8px;
+	right: 8px;
 	display: flex;
-	flex-direction: row;
 	justify-content: space-between;
-	gap: 4px;
-	width: 100%;
+}
+.progression-editor__placeholder .progression-editor__card-controls {
+	top: 8px; /*border分調整*/
 }
 
 .icon-button {
@@ -368,13 +394,13 @@ button {
 	height: 32px;
 	border: 1px solid var(--color-border);
 	border-radius: 50%;
-	background: var(--color-surface);
+	background: transparent;
 	color: var(--color-ink);
 	font-size: 13px;
 }
 
 .icon-button:hover {
-	background: var(--color-highlight);
+	background: rgba(var(--color-ink-rgb), 0.05);
 	border-color: var(--color-faint);
 }
 
@@ -522,32 +548,42 @@ button {
 	font-weight: 600;
 }
 
-@keyframes progression-editor-delete {
-	from { margin-left: var(--progression-shift); }
-	to { margin-left: 0; }
-}
-
 @keyframes progression-editor-insert {
-	from { margin-right: calc(-1 * var(--progression-shift)); }
-	to { margin-right: 0; }
+	from { margin-right: calc(-1 * var(--progression-shift)); opacity: 0; }
+	to { margin-right: 0; opacity: 1; }
 }
 
-.progression-editor__slot--delete-shift {
-	margin-left: var(--progression-shift);
-	animation: progression-editor-delete 0.5s ease forwards;
+/* shiftで取り除かれた要素のghost。取り除かれた直後の位置にそのまま留まりつつ幅・余白をつぶして
+   フェードアウトすることで、後続の要素が自然に詰めてくるように見せる(JSでmarginを動かす必要がない) */
+@keyframes progression-editor-exit {
+	from { margin-right: 0; opacity: 1; }
+	to { margin-right: calc(-1 * var(--progression-shift)); opacity: 0; }
 }
 
 .progression-editor__slot--insert-push {
 	margin-right: calc(-1 * var(--progression-shift));
+	opacity: 0;
 	animation: progression-editor-insert 0.5s ease forwards;
 }
 
+.progression-editor__slot--exiting {
+	overflow: hidden;
+	pointer-events: none;
+	animation: progression-editor-exit 0.5s ease forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.progression-editor__slot--delete-shift,
 	.progression-editor__slot--insert-push {
 		animation: none;
-		margin-left: 0;
 		margin-right: 0;
+		opacity: 1;
+	}
+
+	.progression-editor__slot--exiting {
+		animation: none;
+		width: 0;
+		margin-right: calc(-1 * var(--progression-gap));
+		opacity: 0;
 	}
 }
 
@@ -556,15 +592,6 @@ button {
 	width: var(--progression-card-width);
 	height: 100%;
 	min-height: var(--progression-card-min-height);
-}
-
-.add-chord-panel__controls {
-	position: absolute;
-	top: 8px;
-	left: 8px;
-	right: 8px;
-	display: flex;
-	justify-content: space-between;
 }
 
 .add-chord-panel__body {

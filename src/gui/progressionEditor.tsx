@@ -1,15 +1,14 @@
-import { AnimationEvent, useEffect, useMemo, useRef, useState } from "react";
+import { AnimationEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChordModal } from "./chordModal";
 import { ChordEntryPanel } from "./layout/chordEntryPanel";
 import { ContextScaleModal } from "./contextScaleModal";
-import { AutoContextScalePanel, ContextScalePanel, DummyContextScalePanel } from "./layout/contextScalePanel";
+import { AutoContextScalePanel, ContextScalePanel } from "./layout/contextScalePanel";
 import { Chord } from "../basics/chord";
 import { ChordEntry } from "../basics/chordEntry";
-import { ContextScale, estimateContextScale, knownScaleNames } from "../basics/contextScale";
+import { ContextScale, knownScaleNames } from "../basics/contextScale";
 import { Interval, PitchClass } from "../basics/pitch";
-import { Progression, ProgressionValue } from "../editor/progression";
+import { ChordWithId, ContextWithId, estimateContextScale, Progression, ProgressionValue } from "../editor/progression";
 import { AddChordPanel } from "./layout/addChordPanel";
-import { AddContextScaleButton } from "./layout/addContextScaleButton";
 
 export type ChordEditTrigger = "add" | "changeChord";
 
@@ -18,15 +17,22 @@ type ProgressionEditorProps = {
 	readonly onChange?: (next: ProgressionValue) => void;
 };
 
-type ShiftAnimationKind = "insert-push" | "delete-shift";
-
 // chordsとcontextsは独立に動くため、実際にアニメーションさせるべき位置(PlaceholderArrayWithIdが
-// 実際に操作した位置)もそれぞれ別のindexになりうる。progression.insertBefore/After・shiftBefore/Afterが
+// 実際に操作した位置)もそれぞれ別のindexになりうる。progression.insertが
 // 返すchordIndex/contextIndexをそのまま保持する
-type ShiftAnimationState = {
-	readonly kind: ShiftAnimationKind;
+type InsertAnimationState = {
 	readonly chordIndex: number;
 	readonly contextIndex: number;
+} | null;
+
+// shiftで取り除かれた直後の要素は、配列からは既に消えているが、フェードアウト+幅つぶれの
+// アニメーションが終わるまでは見た目上その場に残しておきたい。取り除かれる直前の見た目を
+// (非操作的なコピーとして)スナップショットして保持し、アニメーション終了で消し去る。
+// indexは取り除かれた(=今はその位置に後続の要素が詰めてきている)位置を指す。
+type ExitGhost = {
+	readonly id: number;
+	readonly index: number;
+	readonly node: ReactNode;
 } | null;
 
 // ChordModalをchangeChord/addトリガーで開く。既存コードの変更ならinitialChordが存在し、
@@ -54,7 +60,9 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	};
 
 	const [progression, setProgression] = useState<Progression>(() => Progression.create(value, createId));
-	const [shiftAnimation, setShiftAnimation] = useState<ShiftAnimationState>(null);
+	const [insertAnimation, setInsertAnimation] = useState<InsertAnimationState>(null);
+	const [chordExitGhost, setChordExitGhost] = useState<ExitGhost>(null);
+	const [contextExitGhost, setContextExitGhost] = useState<ExitGhost>(null);
 	const [pendingChordEdit, setPendingChordEdit] = useState<PendingChordEdit>(null);
 	const [pendingContextScaleEdit, setPendingContextScaleEdit] = useState<PendingContextScaleEdit>(null);
 
@@ -75,30 +83,30 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		);
 	};
 
-	// 手動設定値があればそれを、なければ前後のコードから自動計算した値をモーダルの初期状態にする
+	// 手動設定値があればそれを、なければ直前から継承した値をモーダルの初期状態にする
 	const handleEditContextScale = (index: number): void => {
 		const contextScale = progression.contexts.array[index].value;
-		const formerChord = progression.chords.array[index].value?.chord.triad;
-		const latterChord = progression.chords.array[index + 1]?.value?.chord.triad;
 		const initialValue = contextScale
-			?? estimateContextScale(formerChord, latterChord)
+			?? estimateContextScale(progression, index)
 			?? new ContextScale(PitchClass.all[0], knownScaleNames[0]);
 		setPendingContextScaleEdit({ index, initialValue });
 	};
 
 	// 未選択(プレースホルダー)を挿入する。実体の選択はAddChordPanelから別途行う。
 	// 実際に挿入された位置はPlaceholderArrayWithId側の都合で要求したindexとずれうるため、
-	// アニメーション対象はprogression側が返すchordIndex/contextIndexを使う
+	// アニメーション対象はprogression側が返すchordIndex/contextIndexを使う。
+	// before/afterのボタンはカード・プレースホルダーどちらでも同じ左右の位置にあり、どちらも
+	// このinsertだけを呼ぶ(右側はindex + 1を渡すことで「afterへの挿入」を表す)。
 	const handleInsertBefore = (index: number): void => {
-		const { progression: next, chordIndex, contextIndex } = progression.insertBefore(index, createId);
+		const { progression: next, chordIndex, contextIndex } = progression.insert(index, createId);
 		applyProgression(next);
-		setShiftAnimation({ kind: "insert-push", chordIndex, contextIndex });
+		setInsertAnimation({ chordIndex, contextIndex });
 	};
 
 	const handleInsertAfter = (index: number): void => {
-		const { progression: next, chordIndex, contextIndex } = progression.insertAfter(index, createId);
+		const { progression: next, chordIndex, contextIndex } = progression.insert(index + 1, createId);
 		applyProgression(next);
-		setShiftAnimation({ kind: "insert-push", chordIndex, contextIndex });
+		setInsertAnimation({ chordIndex, contextIndex });
 	};
 
 	// 配列のシフトは行わず、未選択(プレースホルダー)に戻すだけ
@@ -106,18 +114,19 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		applyProgression(progression.deleteChord(index, createId));
 	};
 
-	// プレースホルダーそのものを取り除く。あわせて直後のcontext(chords[index]とchords[index+1]の関係)を取り除く
-	const handleShiftAfter = (index: number): void => {
-		const { progression: next, chordIndex, contextIndex } = progression.shiftAfter(index, createId);
-		applyProgression(next);
-		setShiftAnimation({ kind: "delete-shift", chordIndex, contextIndex });
-	};
+	// プレースホルダーそのものを取り除く。あわせて直前のcontext(chords[index-1]とchords[index]の関係)を取り除く。
+	// 取り除かれる直前の見た目をExitGhostとしてスナップショットしてから、実際にprogressionを更新する
+	const handleShift = (index: number): void => {
+		const removedChord = progression.chords.array[index];
+		const removedContext = progression.contexts.array[index];
 
-	// プレースホルダーそのものを取り除く。あわせて直前のcontext(chords[index-1]とchords[index]の関係)を取り除く
-	const handleShiftBefore = (index: number): void => {
-		const { progression: next, chordIndex, contextIndex } = progression.shiftBefore(index, createId);
+		setChordExitGhost({ id: removedChord.id, index, node: renderChordContent(removedChord, index) });
+		setContextExitGhost(
+			removedContext ? { id: removedContext.id, index, node: renderContextContent(removedContext, index) } : null
+		);
+
+		const { progression: next } = progression.shift(index, createId);
 		applyProgression(next);
-		setShiftAnimation({ kind: "delete-shift", chordIndex, contextIndex });
 	};
 
 	const handleChangeChord = (index: number, initialChord: Chord): void => {
@@ -130,85 +139,153 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 
 	const handleExtraChordScaleTonesChange = (index: number, chord: Chord, nextExtraChordScaleTones: readonly Interval[] | undefined): void => {
 		applyProgression(progression.setChord(index, new ChordEntry(chord, nextExtraChordScaleTones), createId));
-		setShiftAnimation(null);
+		setInsertAnimation(null);
 	};
 
 	const handleSlotAnimationEnd = (event: AnimationEvent<HTMLDivElement>): void => {
 		if (event.currentTarget !== event.target) {
 			return;
 		}
-		setShiftAnimation(null);
+		setInsertAnimation(null);
+	};
+
+	const handleGhostAnimationEnd = (row: "chord" | "context") => (event: AnimationEvent<HTMLDivElement>): void => {
+		if (event.currentTarget !== event.target) {
+			return;
+		}
+		if (row === "chord") {
+			setChordExitGhost(null);
+		} else {
+			setContextExitGhost(null);
+		}
 	};
 
 	const getSlotClassName = useMemo(
 		() => (row: "chord" | "context", slotIndex: number, baseClassName: string): string => {
 			const classNames = ["progression-editor__slot", baseClassName];
-			const targetIndex = row === "chord" ? shiftAnimation?.chordIndex : shiftAnimation?.contextIndex;
-			if (shiftAnimation !== null && targetIndex === slotIndex) {
-				if (shiftAnimation.kind === "insert-push") {
-					classNames.push("progression-editor__slot--insert-push");
-				}
-				if (shiftAnimation.kind === "delete-shift") {
-					classNames.push("progression-editor__slot--delete-shift");
-				}
+			const targetIndex = row === "chord" ? insertAnimation?.chordIndex : insertAnimation?.contextIndex;
+			if (insertAnimation !== null && targetIndex === slotIndex) {
+				classNames.push("progression-editor__slot--insert-push");
 			}
 			return classNames.join(" ");
 		},
-		[shiftAnimation]
+		[insertAnimation]
 	);
+
+	// カードとプレースホルダーどちらの中身を表示するかは、chords行の描画と(shift時の)ExitGhostの
+	// スナップショット取得の両方で使うため、共通の関数として切り出す
+	const renderChordContent = (chord: ChordWithId, index: number): ReactNode => {
+		const entry = chord.value;
+		return entry !== undefined ? (
+			<ChordEntryPanel
+				entry={entry}
+				onChange={next => handleExtraChordScaleTonesChange(index, entry.chord, next)}
+				onInsertBefore={() => handleInsertBefore(index)}
+				onInsertAfter={() => handleInsertAfter(index)}
+				onChangeChord={() => handleChangeChord(index, entry.chord)}
+				onDelete={() => handleDelete(index)}
+			/>
+		) : (
+			<AddChordPanel
+				onClick={() => handleFillPlaceholder(index)}
+				onInsertBefore={() => handleInsertBefore(index)}
+				onInsertAfter={index < progression.chords.array.length - 1 ? () => handleInsertAfter(index) : undefined}
+				onShift={progression.canShift(index) ? () => handleShift(index) : undefined}
+			/>
+		);
+	};
+
+	// 同上の理由でcontexts行の中身も共通の関数として切り出す
+	const renderContextContent = (context: ContextWithId, index: number): ReactNode => {
+		const entry = progression.chords.array[index]?.value;
+		const nextEntry = progression.chords.array[index + 1]?.value;
+		const contextScale = context.value;
+		return contextScale !== undefined ? (
+			<ContextScalePanel
+				formerChord={entry?.chord.triad}
+				latterChord={nextEntry?.chord.triad}
+				contextScale={contextScale}
+				onDelete={index === 0 ? undefined : () => handleContextScaleChange(index, undefined)}
+				onEdit={() => handleEditContextScale(index)}
+			/>
+		) : (
+			<AutoContextScalePanel
+				progression={progression}
+				index={index}
+				formerChord={entry?.chord.triad}
+				latterChord={nextEntry?.chord.triad}
+				onEdit={() => handleEditContextScale(index)}
+			/>
+		);
+	};
+
+	const contextRowNodes: ReactNode[] = [];
+	progression.contexts.array.forEach((context, index) => {
+		if (contextExitGhost && contextExitGhost.index === index) {
+			contextRowNodes.push(
+				<div
+					key={`ghost-${contextExitGhost.id}`}
+					className="progression-editor__slot progression-editor__scale-item progression-editor__slot--exiting"
+					onAnimationEnd={handleGhostAnimationEnd("context")}
+				>
+					{contextExitGhost.node}
+				</div>
+			);
+		}
+		contextRowNodes.push(
+			<div key={context.id} className={getSlotClassName("context", index, "progression-editor__scale-item")} onAnimationEnd={handleSlotAnimationEnd}>
+				{renderContextContent(context, index)}
+			</div>
+		);
+	});
+	if (contextExitGhost && contextExitGhost.index === progression.contexts.array.length) {
+		contextRowNodes.push(
+			<div
+				key={`ghost-${contextExitGhost.id}`}
+				className="progression-editor__slot progression-editor__scale-item progression-editor__slot--exiting"
+				onAnimationEnd={handleGhostAnimationEnd("context")}
+			>
+				{contextExitGhost.node}
+			</div>
+		);
+	}
+
+	const chordRowNodes: ReactNode[] = [];
+	progression.chords.array.forEach((chord, index) => {
+		if (chordExitGhost && chordExitGhost.index === index) {
+			chordRowNodes.push(
+				<div
+					key={`ghost-${chordExitGhost.id}`}
+					className="progression-editor__slot progression-editor__chord-item progression-editor__slot--exiting"
+					onAnimationEnd={handleGhostAnimationEnd("chord")}
+				>
+					{chordExitGhost.node}
+				</div>
+			);
+		}
+		chordRowNodes.push(
+			<div key={chord.id} className={getSlotClassName("chord", index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
+				{renderChordContent(chord, index)}
+			</div>
+		);
+	});
+	if (chordExitGhost && chordExitGhost.index === progression.chords.array.length) {
+		chordRowNodes.push(
+			<div
+				key={`ghost-${chordExitGhost.id}`}
+				className="progression-editor__slot progression-editor__chord-item progression-editor__slot--exiting"
+				onAnimationEnd={handleGhostAnimationEnd("chord")}
+			>
+				{chordExitGhost.node}
+			</div>
+		);
+	}
 
 	return (
 		<div className="progression-editor">
 			<div className="progression-editor__scroll-area">
-				<div className="progression-editor__scale-row">
-					{progression.contexts.array.map((context, index) => {
-						const entry = progression.chords.array[index]?.value;
-						const nextEntry = progression.chords.array[index + 1]?.value;
-						const contextScale = context.value;
-						return (
-							<div key={context.id} className={getSlotClassName("context", index, "progression-editor__scale-item")} onAnimationEnd={handleSlotAnimationEnd}>
-								{contextScale !== undefined ? (<ContextScalePanel
-									formerChord={entry?.chord.triad}
-									latterChord={nextEntry?.chord.triad}
-									contextScale={contextScale}
-									onDelete={() => handleContextScaleChange(index, undefined)}
-									onEdit={() => handleEditContextScale(index)}
-								/>) :
-									(entry !== undefined && nextEntry !== undefined) ? (<AutoContextScalePanel
-										formerChord={entry?.chord.triad}
-										latterChord={nextEntry?.chord.triad}
-										onEdit={() => handleEditContextScale(index)}
-									/>)
-										: (<AddContextScaleButton onClick={() => handleEditContextScale(index)} />)}
-							</div>
-						);
-					})}
-				</div>
-				<div className="progression-editor__chord-row">
-					{progression.chords.array.map((chord, index) => {
-						const entry = chord.value;
-						return (
-							<div key={chord.id} className={getSlotClassName("chord", index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
-								{entry !== undefined ? (
-									<ChordEntryPanel
-										entry={entry}
-										onChange={next => handleExtraChordScaleTonesChange(index, entry.chord, next)}
-										onInsertBefore={() => handleInsertBefore(index)}
-										onInsertAfter={() => handleInsertAfter(index)}
-										onChangeChord={() => handleChangeChord(index, entry.chord)}
-										onDelete={() => handleDelete(index)}
-									/>
-								) : (
-									<AddChordPanel
-										onClick={() => handleFillPlaceholder(index)}
-										onShiftBefore={progression.canShiftBefore(index) ? () => handleShiftBefore(index) : undefined}
-										onShiftAfter={progression.canShiftAfter(index) ? () => handleShiftAfter(index) : undefined}
-									/>
-								)}
-							</div>
-						);
-					})}
-				</div>
+				<div className="progression-editor__scale-row">{contextRowNodes}</div>
+				<div className="progression-editor__chord-row">{chordRowNodes}</div>
 			</div>
 			{pendingChordEdit && (
 				<ChordModal

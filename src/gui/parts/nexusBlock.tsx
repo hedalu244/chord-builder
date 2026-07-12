@@ -1,5 +1,5 @@
 import { Triad, DegreeTriad } from "../../basics/triad";
-import { ContextScale, estimateContextScale } from "../../basics/contextScale";
+import { ContextScale } from "../../basics/contextScale";
 import { calcRelativeNexus, calcTriadDegree, RelativeNexus } from "../../basics/nexus";
 import { PitchClass } from "../../basics/pitch";
 
@@ -9,15 +9,13 @@ type ScaleNexusBlockProps = {
 	readonly latterChord: Triad | undefined;
 };
 
-// contextScale未指定の場合、前後のコードが両方揃っていれば推定値をフォールバックとして使う。
 // スケールが定まらなくても、片側のコードだけでその側のDegreeは表示できる
 export function ScaleNexusBlock(props: ScaleNexusBlockProps) {
 	const { contextScale, formerChord, latterChord } = props;
-	const resolved = contextScale ?? estimateContextScale(formerChord, latterChord);
-	const former = (formerChord && resolved) ? calcTriadDegree(formerChord, resolved) : undefined;
-	const latter = (latterChord && resolved) ? calcTriadDegree(latterChord, resolved) : undefined;
+	const former = (formerChord && contextScale) ? calcTriadDegree(formerChord, contextScale) : undefined;
+	const latter = (latterChord && contextScale) ? calcTriadDegree(latterChord, contextScale) : undefined;
 	const relative = (formerChord && latterChord) ? calcRelativeNexus(formerChord, latterChord) : undefined;
-	return <NexusBlock former={former} latter={latter} relative={relative} keyLabel={resolved?.key} />;
+	return <NexusBlock former={former} latter={latter} relative={relative} keyLabel={contextScale?.key} />;
 }
 
 // NOTE: keyLabelという名前は、JSXのspread先で予約語のkeyと衝突するのを避けるため

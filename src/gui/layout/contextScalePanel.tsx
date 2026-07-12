@@ -1,21 +1,25 @@
 import { Triad } from "../../basics/triad";
 import { ContextScale } from "../../basics/contextScale";
+import { Progression, estimateContextScale } from "../../editor/progression";
 import { IconButton } from "../parts/iconButton";
 import { ScaleNexusBlock } from "../parts/nexusBlock";
 
 type AutoContextScalePanelProps = {
+	readonly progression: Progression;
+	readonly index: number;
 	readonly formerChord: Triad | undefined;
 	readonly latterChord: Triad | undefined;
 	readonly onEdit: () => void;
 };
 
+// 未指定のcontextScaleは、直前に指定された値を継承する(estimateContextScale)
 export function AutoContextScalePanel(props: AutoContextScalePanelProps) {
-	const { formerChord, latterChord, onEdit } = props;
+	const { progression, index, formerChord, latterChord, onEdit } = props;
+	const resolved = estimateContextScale(progression, index);
 
-	// undefinedで自動計算させる。
 	return (
 		<div className="context-scale-panel progression-editor__placeholder">
-			<ScaleNexusBlock contextScale={undefined} formerChord={formerChord} latterChord={latterChord} />
+			<ScaleNexusBlock contextScale={resolved} formerChord={formerChord} latterChord={latterChord} />
 			<div className="context-scale-panel__controls">
 				<IconButton icon="icons/edit.svg" label="Change" onClick={onEdit} />
 			</div>
@@ -28,7 +32,8 @@ type ContextScalePanelProps = {
 	readonly contextScale: ContextScale;
 	readonly formerChord: Triad | undefined;
 	readonly latterChord: Triad | undefined;
-	readonly onDelete: () => void;
+	// 1つ目のcontextは削除できないため、その場合はonDeleteを渡さずボタン自体を隠す
+	readonly onDelete?: () => void;
 	readonly onEdit: () => void;
 };
 
@@ -42,7 +47,9 @@ export function ContextScalePanel(props: ContextScalePanelProps) {
 			<ScaleNexusBlock contextScale={contextScale} formerChord={formerChord} latterChord={latterChord} />
 			<div className="context-scale-panel__controls">
 				<IconButton icon="icons/edit.svg" label="Change" onClick={onEdit} />
-				<IconButton icon="icons/delete.svg" label="Delete" className="icon-button--delete" onClick={onDelete} />
+				{onDelete && (
+					<IconButton icon="icons/delete.svg" label="Delete" className="icon-button--delete" onClick={onDelete} />
+				)}
 			</div>
 		</div>
 	);

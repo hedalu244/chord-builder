@@ -85,17 +85,19 @@ export class PlaceholderArrayWithId<T> {
         return this.set(index, undefined, createId);
     }
 
-    // index位置にplaceholderを1つ挿入する。ただし、index位置(にpad後になる要素)がplaceholderであれば、
-    // それを動かす代わりに1つ後ろへの挿入とみなして再帰的に判定する。これを繰り返し、実データの手前か
-    // 末尾に達したところで実際に挿入する。結果として、挿入によって位置がずれる要素をできるだけ減らす。
+    // index位置にplaceholderを1つ挿入する。
     // 実際に挿入された(要求されたindexとは異なりうる)indexも一緒に返す。
     insert(index: number, createId: () => number): PlaceholderArrayMutation<T> {
         if (index < 0) throw new Error(`index out of range: ${index}`);
         const padded = this.pad(index, createId).array;
         let target = index;
+        /*
+        // ただし、index位置(にpad後になる要素)がplaceholderであれば、
+        // それを動かす代わりに1つ後ろへの挿入とみなして再帰的に判定する。これを繰り返し、実データの手前か
+        // 末尾に達したところで実際に挿入する。結果として、挿入によって位置がずれる要素をできるだけ減らす。
         while (target < padded.length && padded[target].value === undefined) {
             target++;
-        }
+        }*/
         const result = new PlaceholderArrayWithId([
             ...padded.slice(0, target),
             { value: undefined, id: createId() },
@@ -113,18 +115,19 @@ export class PlaceholderArrayWithId<T> {
         return true;
     }
 
-    // index位置のplaceholderを1つ取り除く。ただし、直後の要素もplaceholderであれば、そちらを
-    // 優先して取り除く(再帰的に、末尾に達するまで)。これにより、取り除かれることで位置がずれる
-    // 要素をできるだけ減らす。再帰の結果末尾に達した場合に限り、末尾のplaceholderを取り除ける
+    // index位置のplaceholderを1つ取り除く。
     // (canShiftに直接末尾のindexを渡した場合はfalseになり、ここには到達しない)。
     // 実際に取り除かれた(要求されたindexとは異なりうる)indexも一緒に返す。取り除いた後、そこには
     // 直後にあった要素が詰めて入ってくるため、返すindexは削除後の配列でもそのまま「動いてきた要素の位置」を指す。
     shift(index: number): PlaceholderArrayMutation<T> {
-        if (!this.canShift(index)) throw new Error(`cannot shift index: ${index}`);
         let target = index;
+        /*
+        // 直後の要素もplaceholderであれば、そちらを
+        // 優先して取り除く(再帰的に、末尾に達するまで)。これにより、取り除かれることで位置がずれる
+        // 要素をできるだけ減らす。再帰の結果末尾に達した場合に限り、末尾のplaceholderを取り除ける
         while (target < this.array.length - 1 && this.array[target + 1].value === undefined) {
             target++;
-        }
+        }*/
         const result = new PlaceholderArrayWithId([...this.array.slice(0, target), ...this.array.slice(target + 1)]);
         return { result, index: target };
     }
