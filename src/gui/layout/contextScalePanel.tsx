@@ -4,8 +4,8 @@ import { PitchClass } from "../../basics/pitch";
 import { ScaleNexusBlock } from "../parts/nexusBlock";
 
 type ContextScalePanelProps = {
-	readonly formerChord: BasicChord;
-	readonly latterChord: BasicChord;
+	readonly formerChord: BasicChord | undefined;
+	readonly latterChord: BasicChord | undefined;
 	readonly contextScale: ContextScale | undefined;
 	readonly onChange: (contextScale: ContextScale | undefined) => void;
 };

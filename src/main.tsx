@@ -8,7 +8,7 @@ import { colorSchemeClassName } from "./gui/colorScheme/colorSchemeSelect";
 import { ColorSchemeProvider, useColorScheme } from "./gui/colorScheme/colorSchemeContext";
 import { ColorSchemeSelect } from "./gui/colorScheme/colorSchemeSelect";
 
-function createInitialProgression(): FullChordInfo[] {
+function createInitialProgression(): (FullChordInfo | undefined)[] {
 	return [
 		new FullChordInfo(new BasicChord(new PitchClass(0), "M"), "major7"),
 		new FullChordInfo(new BasicChord(new PitchClass(9), "m"), "minor7"),
@@ -17,7 +17,7 @@ function createInitialProgression(): FullChordInfo[] {
 }
 
 function App() {
-	const [progression, setProgression] = useState<readonly FullChordInfo[]>(() => createInitialProgression());
+	const [progression, setProgression] = useState<readonly (FullChordInfo | undefined)[]>(() => createInitialProgression());
 	const { colorScheme } = useColorScheme();
 
 	return (

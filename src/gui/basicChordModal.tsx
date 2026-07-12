@@ -9,14 +9,9 @@ function modalTitle(trigger: ChordEditTrigger): string {
 	return trigger === "changeChord" ? "Select Chord" : "Insert Chord";
 }
 
-// 確定ボタンのラベル。挿入操作ではInsert/Add、既存コードの編集ではOKにする
+// 確定ボタンのラベル。挿入操作ではAdd、既存コードの編集ではOKにする
 function confirmButtonLabel(trigger: ChordEditTrigger): string {
-	switch (trigger) {
-		case "changeChord": return "OK";
-		case "add": return "Add";
-		case "insertBefore":
-		case "insertAfter": return "Insert";
-	}
+	return trigger === "changeChord" ? "OK" : "Add";
 }
 
 function directButtonClassName(active: boolean): string {

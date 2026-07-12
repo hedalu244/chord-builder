@@ -160,6 +160,10 @@
 	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
 }
 
+* {
+	box-sizing: border-box;
+}
+
 html {
 	height: 100%;
 }
@@ -261,13 +265,13 @@ button {
 .context-scale-panel {
 	display: flex;
 	flex-direction: column;
-	min-height: 100px;
+	min-height: 120px;
 	justify-content: center;
 	align-items: center;
 	text-align: center;
 
 	gap: 2px;
-	transform: translateX(-50%); /* またがるように表示する */
+	transform: translateX(50%); /* またがるように表示する */
 }
 
 .context-scale-panel--dummy {
@@ -298,6 +302,35 @@ button {
 	max-width: 100%;
 }
 
+.add-context-scale-button {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	min-height: 120px;
+	width: var(--progression-card-width);
+	transform: translateX(50%); /* またがるように表示する(context-scale-panelと同じ位置合わせ) */
+	border: 2px dashed var(--color-border);
+	border-radius: var(--radius-card);
+	background: transparent;
+	color: var(--color-muted);
+}
+
+.add-context-scale-button:hover {
+	background: rgba(var(--color-ink-rgb), 0.05);
+}
+
+.add-context-scale-button__icon {
+	width: 40px;
+	height: 40px;
+}
+
+.add-context-scale-button__label {
+	font-size: 14px;
+	font-weight: 600;
+}
+
 .context-scale-panel__select {
 	min-width: 0;
 	padding: 2px 4px;
@@ -325,13 +358,14 @@ button {
 }
 
 .icon-button {
-	display: inline-flex;
+	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	padding: 6px 10px;
+	width: 32px;
+	height: 32px;
 	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
+	border-radius: 50%;
 	background: var(--color-surface);
 	color: var(--color-ink);
 	font-size: 13px;
@@ -351,6 +385,10 @@ button {
 
 .icon-button__label {
 	white-space: nowrap;
+}
+
+.chord-panel__delete-button {
+	border-color: var(--color-danger);
 }
 
 .chord-panel__delete-button:hover {
@@ -557,12 +595,8 @@ button {
 }
 
 .add-chord-panel {
-	display: flex;
+	position: relative;
 	flex-grow: 1;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
 	width: var(--progression-card-width);
 	min-height: var(--progression-card-min-height);
 	border: 2px dashed var(--color-border);
@@ -571,7 +605,27 @@ button {
 	color: var(--color-muted);
 }
 
-.add-chord-panel:hover {
+.add-chord-panel__controls {
+	position: absolute;
+	top: 8px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.add-chord-panel__body {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	background: transparent;
+	color: inherit;
+}
+
+.add-chord-panel:has(.add-chord-panel__body:hover) {
 	background: rgba(var(--color-ink-rgb), 0.05);
 }
 
