@@ -3,20 +3,24 @@ import { IconButton } from "../parts/iconButton";
 type AddChordPanelProps = {
 	readonly onClick: () => void;
 	// 配列上の実体を持つプレースホルダーの場合のみ渡される。渡されなければ(末尾の追加専用スロットでは)shiftボタンを出さない
-	readonly onShift?: () => void;
+	readonly onShiftBefore?: () => void;
+	readonly onShiftAfter?: () => void;
 };
 
 // 追加系のコードとして、他のパネルとは意味合いが異なる。まだ何も追加されていないので、
 // 実体のあるパネル群(白背景・実線)とは違い、枠のみ(破線・背景なし)で表示する。
 export function AddChordPanel(props: AddChordPanelProps) {
-	const { onClick, onShift } = props;
+	const { onClick, onShiftBefore, onShiftAfter } = props;
 	return (
-		<div className="add-chord-panel">
-			{onShift && (
-				<div className="add-chord-panel__controls">
-					<IconButton icon="icons/shift.svg" label="Shift" className="add-chord-panel__shift-button" onClick={onShift} />
-				</div>
-			)}
+		<div className="progression-editor__placeholder add-chord-panel">
+			<div className="add-chord-panel__controls">
+				{onShiftBefore && (
+					<IconButton icon="icons/shift.svg" label="Shift before" className="add-chord-panel__shift-button" onClick={onShiftBefore} />
+				)}
+				{onShiftAfter && (
+					<IconButton icon="icons/shift.svg" label="Shift after" className="add-chord-panel__shift-button" onClick={onShiftAfter} />
+				)}
+			</div>
 			<button type="button" className="add-chord-panel__body" onClick={onClick}>
 				<img className="add-chord-panel__icon" src="icons/add.svg" alt="" />
 				<span className="add-chord-panel__label">Add chord</span>

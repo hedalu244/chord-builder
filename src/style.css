@@ -276,6 +276,9 @@ button {
 	justify-content: center;
 	align-items: center;
 	text-align: center;
+	width: var(--progression-card-width);
+	padding: 12px;
+	border-radius: var(--radius-card);
 
 	gap: 8px;
 	transform: translateX(50%); /* またがるように表示する */
@@ -284,10 +287,6 @@ button {
 .context-scale-panel--dummy {
 	background: transparent;
 	border: 0;
-}
-
-.context-scale-panel--auto {
-	background: var(--color-bg);
 }
 
 /* context-scale-panel(メインの進行表示)ではnexus-blockをより大きく表示する */
@@ -309,6 +308,16 @@ button {
 	max-width: 100%;
 }
 
+/* 実体を持たない/未確定のパネル群で共通の見た目(枠のみ・破線・背景なし)。
+   実体のあるパネル群(.progression-editor__card: 白背景・実線)と対になる */
+.progression-editor__placeholder {
+	position: relative;
+	border: 2px dashed var(--color-border);
+	border-radius: var(--radius-card);
+	background: transparent;
+	color: var(--color-muted);
+}
+
 .add-context-scale-button {
 	display: flex;
 	flex-direction: column;
@@ -318,10 +327,6 @@ button {
 	min-height: var(--context-scale-panel-min-height);
 	width: var(--progression-card-width);
 	transform: translateX(50%); /* またがるように表示する(context-scale-panelと同じ位置合わせ) */
-	border: 2px dashed var(--color-border);
-	border-radius: var(--radius-card);
-	background: transparent;
-	color: var(--color-muted);
 }
 
 .add-context-scale-button:hover {
@@ -546,28 +551,20 @@ button {
 	}
 }
 
-.progression-editor__add-item {
-	position: relative;
-	z-index: -1;
-	min-width: var(--progression-card-width);
-}
-
 .add-chord-panel {
 	position: relative;
 	width: var(--progression-card-width);
 	height: 100%;
 	min-height: var(--progression-card-min-height);
-	border: 2px dashed var(--color-border);
-	border-radius: var(--radius-card);
-	background: transparent;
-	color: var(--color-muted);
 }
 
 .add-chord-panel__controls {
 	position: absolute;
 	top: 8px;
-	left: 50%;
-	transform: translateX(-50%);
+	left: 8px;
+	right: 8px;
+	display: flex;
+	justify-content: space-between;
 }
 
 .add-chord-panel__body {

@@ -7,7 +7,7 @@ type AddContextScaleButtonProps = {
 export function AddContextScaleButton(props: AddContextScaleButtonProps) {
 	const { onClick } = props;
 	return (
-		<button type="button" className="add-context-scale-button" onClick={onClick}>
+		<button type="button" className="progression-editor__placeholder add-context-scale-button" onClick={onClick}>
 			<img className="add-context-scale-button__icon" src="icons/add.svg" alt="" />
 			<span className="add-context-scale-button__label">Add scale</span>
 		</button>

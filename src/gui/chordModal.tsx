@@ -24,6 +24,10 @@ function directButtonClassName(active: boolean): string {
 	return active ? "chord-modal__direct-button chord-modal__direct-button--active" : "chord-modal__direct-button";
 }
 
+function setEquals(a: ReadonlySet<number>, b: ReadonlySet<number>): boolean {
+	return a.size === b.size && [...a].every(value => b.has(value));
+}
+
 type ChordModalProps = {
 	readonly trigger: ChordEditTrigger;
 	// nullの場合は「まだ何も選択していない」状態でモーダルを開く(挿入操作向け)
@@ -39,8 +43,16 @@ export function ChordModal(props: ChordModalProps) {
 		() => new Set((initialChord?.chordTones ?? []).map(tone => tone.value))
 	);
 
-	// トライアドの選び直しでは構成音の選択に触れない。デフォルトに戻したい場合は明示的にリセットボタンを押す
+	// トライアドの選び直しでは基本的に構成音の選択に触れない（デフォルトに戻したい場合は明示的にリセットボタンを押す）が、
+	// 未選択状態からの初回選択時と、現在の構成音が選択中トライアドのデフォルトと完全に一致している時は自動的にリセットする
 	const handleSelectTriad = (candidate: Triad): void => {
+		const matchesCurrentTriadTones = triad !== null && setEquals(
+			activeValues,
+			new Set(triad.getChordTones().map(tone => tone.value))
+		);
+		if (triad === null || matchesCurrentTriadTones) {
+			setActiveValues(new Set(candidate.getChordTones().map(tone => tone.value)));
+		}
 		setTriad(candidate);
 	};
 

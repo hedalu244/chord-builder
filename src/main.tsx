@@ -4,7 +4,7 @@ import { Interval, PitchClass } from "./basics/pitch";
 import { ProgressionEditor } from "./gui/progressionEditor";
 import { ChordEntry } from "./basics/chordEntry";
 import { Chord } from "./basics/chord";
-import { ProgressionValue } from "./basics/progression";
+import { ProgressionValue } from "./editor/progression";
 import { Triad } from "./basics/triad";
 import { colorSchemeClassName } from "./gui/colorScheme/colorSchemeSelect";
 import { ColorSchemeProvider, useColorScheme } from "./gui/colorScheme/colorSchemeContext";
