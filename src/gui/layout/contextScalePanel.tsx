@@ -1,11 +1,11 @@
-import { BasicChord } from "../../basics/basicChord";
+import { Triad } from "../../basics/triad";
 import { ContextScale } from "../../basics/contextScale";
 import { IconButton } from "../parts/iconButton";
 import { ScaleNexusBlock } from "../parts/nexusBlock";
 
 type ContextScalePanelProps = {
-	readonly formerChord: BasicChord | undefined;
-	readonly latterChord: BasicChord | undefined;
+	readonly formerChord: Triad | undefined;
+	readonly latterChord: Triad | undefined;
 	readonly contextScale: ContextScale | undefined;
 	readonly onChange: (contextScale: ContextScale | undefined) => void;
 	readonly onEdit: () => void;

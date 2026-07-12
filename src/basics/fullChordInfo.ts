@@ -1,15 +1,15 @@
-import { BasicChord } from "./basicChord";
+import { Triad } from "./triad";
 import { ChordQualityId, findChordQuality } from "./chordQuality";
 import { Interval, PitchClass } from "./pitch";
 import { Scale } from "./scale";
 
 export class FullChordInfo {
-	readonly chord: BasicChord;
+	readonly chord: Triad;
 	readonly qualityId: ChordQualityId | undefined;
 	// undefined(または空配列) = デフォルトスケール(コード構成音のみ)。それ以外はコード構成音に追加する音(スケールルートからの半音値)
 	readonly extraScaleTones: readonly Interval[] | undefined;
 
-	constructor(chord: BasicChord, qualityId: ChordQualityId | undefined, extraScaleTones: readonly Interval[] | undefined = undefined) {
+	constructor(chord: Triad, qualityId: ChordQualityId | undefined, extraScaleTones: readonly Interval[] | undefined = undefined) {
 		this.chord = chord;
 		this.qualityId = qualityId;
 		this.extraScaleTones = extraScaleTones;
@@ -32,7 +32,7 @@ export class FullChordInfo {
 
 	// コードの変更。モードに互換性があれば(=ルートのみの変更とみなし)クオリティ・スケールの形を維持し、
 	// モードが変わる場合は(コード自体が別物になったとみなし)クオリティ・スケールをデフォルトにリセットする
-	withChord(chord: BasicChord): FullChordInfo {
+	withChord(chord: Triad): FullChordInfo {
 		if (chord.mode === this.chord.mode) {
 			return new FullChordInfo(chord, this.qualityId, this.extraScaleTones);
 		}
@@ -49,7 +49,7 @@ export class FullChordInfo {
 		return new FullChordInfo(this.chord, this.qualityId, extraScaleTones);
 	}
 
-	// スケールのルート。basicChordのルートではなく、Quality.getRootで得られるルート
+	// スケールのルート。triadのルートではなく、Quality.getRootで得られるルート
 	getChordRoot(): PitchClass {
 		if (this.qualityId === undefined) {
 			return this.chord.root;

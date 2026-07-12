@@ -1,4 +1,4 @@
-import { BasicChord } from "./basicChord";
+import { Triad } from "./triad";
 import { Interval, PitchClass } from "./pitch";
 import { Scale } from "./scale";
 
@@ -23,7 +23,7 @@ export const knownScaleNames: readonly string[] = knownScales.map(({ name }) => 
 
 // former/latterの構成音(合計6音、重複はそのまま数える)のうち、スケールに含まれる音の数が最も多くなる
 // キー・スケールを推定する。同点の場合はキーの昇順→knownScalesの定義順で最初に見つかったものを採用する
-export function estimateContextScale(former: BasicChord, latter: BasicChord): ContextScale {
+export function estimateContextScale(former: Triad, latter: Triad): ContextScale {
     const chordTones = [...former.getChordTones(), ...latter.getChordTones()];
 
     let best: ContextScale = { key: PitchClass.all[0], name: knownScales[0].name };

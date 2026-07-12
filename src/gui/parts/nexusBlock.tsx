@@ -1,12 +1,12 @@
-import { BasicChord } from "../../basics/basicChord";
+import { Triad } from "../../basics/triad";
 import { ContextScale, estimateContextScale } from "../../basics/contextScale";
 import { calcDegreeNexus, DegreeNexus } from "../../basics/nexus";
 import { PitchClass } from "../../basics/pitch";
 
 type ScaleNexusBlockProps = {
 	readonly contextScale: ContextScale | undefined;
-	readonly formerChord: BasicChord | undefined;
-	readonly latterChord: BasicChord | undefined;
+	readonly formerChord: Triad | undefined;
+	readonly latterChord: Triad | undefined;
 };
 
 // contextScale未指定の場合、前後のコードが両方揃っていれば推定値をフォールバックとして使う。

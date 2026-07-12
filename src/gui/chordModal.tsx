@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { allBasicChords, BasicChord } from "../basics/basicChord";
+import { allTriads, Triad } from "../basics/triad";
 import { Modal } from "./parts/modal";
 import { ChordTones } from "./parts/chordTones";
 import { ChordEditTrigger } from "./progressionEditor";
@@ -15,32 +15,32 @@ function confirmButtonLabel(trigger: ChordEditTrigger): string {
 }
 
 function directButtonClassName(active: boolean): string {
-	return active ? "basic-chord-modal__direct-button basic-chord-modal__direct-button--active" : "basic-chord-modal__direct-button";
+	return active ? "chord-modal__direct-button chord-modal__direct-button--active" : "chord-modal__direct-button";
 }
 
-type BasicChordModalProps = {
+type ChordModalProps = {
 	readonly trigger: ChordEditTrigger;
 	// nullの場合は「まだ何も選択していない」状態でモーダルを開く(挿入操作向け)
-	readonly initialChord: BasicChord | null;
-	readonly onConfirm: (chord: BasicChord) => void;
+	readonly initialChord: Triad | null;
+	readonly onConfirm: (chord: Triad) => void;
 	readonly onCancel: () => void;
 };
 
-export function BasicChordModal(props: BasicChordModalProps) {
+export function ChordModal(props: ChordModalProps) {
 	const { trigger, initialChord, onConfirm, onCancel } = props;
-	const [chord, setChord] = useState<BasicChord | null>(initialChord);
+	const [chord, setChord] = useState<Triad | null>(initialChord);
 
 	return (
 		<Modal
-			className="basic-chord-modal"
+			className="chord-modal"
 			title={modalTitle(trigger)}
 			onCancel={onCancel}
 			onConfirm={() => chord && onConfirm(chord)}
 			confirmLabel={confirmButtonLabel(trigger)}
 			confirmDisabled={chord === null}
 		>
-			<div className="basic-chord-modal__direct-grid">
-				{allBasicChords().map(candidate => (
+			<div className="chord-modal__direct-grid">
+				{allTriads().map(candidate => (
 					<button
 						type="button"
 						key={candidate.toString()}

@@ -1,4 +1,4 @@
-import { BasicChord, Mode, ChordDegree } from "./basicChord";
+import { Triad, Mode, TriadDegree } from "./triad";
 import { ContextScale } from "./contextScale";
 import { Degree, Interval } from "./pitch";
 
@@ -20,7 +20,7 @@ export class RelativeNexus {
     }
 
     // former→latterの実際のコードを、このrelativeNexusとして解釈して矛盾しないか
-    match(former: BasicChord, latter: BasicChord): boolean {
+    match(former: Triad, latter: Triad): boolean {
         return this.formerMode === former.mode &&
             this.latterMode === latter.mode &&
             this.rootMotion.equals(latter.root.delta(former.root));
@@ -32,10 +32,10 @@ export class RelativeNexus {
 }
 
 // contextScaleのキーを基準に、former→latterのDegreeNexusを求める
-export function calcDegreeNexus(former: BasicChord, latter: BasicChord, contextScale: ContextScale): DegreeNexus {
+export function calcDegreeNexus(former: Triad, latter: Triad, contextScale: ContextScale): DegreeNexus {
     return new DegreeNexus(
-        new ChordDegree(former.root.getDegree(contextScale.key), former.mode),
-        new ChordDegree(latter.root.getDegree(contextScale.key), latter.mode)
+        new TriadDegree(former.root.getDegree(contextScale.key), former.mode),
+        new TriadDegree(latter.root.getDegree(contextScale.key), latter.mode)
     );
 }
 
@@ -43,7 +43,7 @@ export class DegreeNexus {
     readonly relativeNexus: RelativeNexus;
     private _formerRootDegree: Degree;
 
-    constructor(former: ChordDegree, latter: ChordDegree) {
+    constructor(former: TriadDegree, latter: TriadDegree) {
         this._formerRootDegree = former.degree;
         const rootMotion = latter.degree.delta(former.degree);
         this.relativeNexus = new RelativeNexus(former.mode, latter.mode, rootMotion);
@@ -55,7 +55,7 @@ export class DegreeNexus {
 
     // former→latterの実際のコードを、このdegreeNexusとして解釈して矛盾しないか
     // (formerRootDegreeはキーが定まって初めて絶対音高と結びつくため、ここではrelativeNexusの整合性のみが判定対象になる)
-    match(former: BasicChord, latter: BasicChord): boolean {
+    match(former: Triad, latter: Triad): boolean {
         return this.relativeNexus.match(former, latter);
     }
 
@@ -65,11 +65,11 @@ export class DegreeNexus {
     }
 
     
-    private get formerChordDegree(): ChordDegree {
-        return new ChordDegree(this.formerRootDegree, this.relativeNexus.formerMode);
+    private get formerChordDegree(): TriadDegree {
+        return new TriadDegree(this.formerRootDegree, this.relativeNexus.formerMode);
     }
-    private get latterChordDegree(): ChordDegree {
-        return new ChordDegree(this.latterRootDegree, this.relativeNexus.latterMode);
+    private get latterChordDegree(): TriadDegree {
+        return new TriadDegree(this.latterRootDegree, this.relativeNexus.latterMode);
     }
 
     toString(): string {

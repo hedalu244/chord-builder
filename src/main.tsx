@@ -3,16 +3,16 @@ import { createRoot } from "react-dom/client";
 import { PitchClass } from "./basics/pitch";
 import { ProgressionEditor } from "./gui/progressionEditor";
 import { FullChordInfo } from "./basics/fullChordInfo";
-import { BasicChord } from "./basics/basicChord";
+import { Triad } from "./basics/triad";
 import { colorSchemeClassName } from "./gui/colorScheme/colorSchemeSelect";
 import { ColorSchemeProvider, useColorScheme } from "./gui/colorScheme/colorSchemeContext";
 import { ColorSchemeSelect } from "./gui/colorScheme/colorSchemeSelect";
 
 function createInitialProgression(): (FullChordInfo | undefined)[] {
 	return [
-		new FullChordInfo(new BasicChord(new PitchClass(0), "M"), "major7"),
-		new FullChordInfo(new BasicChord(new PitchClass(9), "m"), "minor7"),
-		new FullChordInfo(new BasicChord(new PitchClass(7), "M"), "dominant7")
+		new FullChordInfo(new Triad(new PitchClass(0), "M"), "major7"),
+		new FullChordInfo(new Triad(new PitchClass(9), "m"), "minor7"),
+		new FullChordInfo(new Triad(new PitchClass(7), "M"), "dominant7")
 	];
 }
 

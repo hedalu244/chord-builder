@@ -1,12 +1,12 @@
 import { AnimationEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AddChordPanel } from "./layout/addChordPanel";
 import { AddContextScaleButton } from "./layout/addContextScaleButton";
-import { BasicChordModal } from "./basicChordModal";
-import { ChordPanel } from "./layout/chordPanel";
+import { ChordModal } from "./chordModal";
+import { FullChordPanel } from "./layout/fullChordPanel";
 import { ContextScaleModal } from "./contextScaleModal";
 import { ContextScalePanel, DummyContextScalePanel } from "./layout/contextScalePanel";
 import { FullChordInfo } from "../basics/fullChordInfo";
-import { BasicChord } from "../basics/basicChord";
+import { Triad } from "../basics/triad";
 import { ContextScale, estimateContextScale, knownScaleNames } from "../basics/contextScale";
 import { PitchClass } from "../basics/pitch";
 import { Progression } from "../basics/progression";
@@ -25,16 +25,16 @@ type ShiftAnimationState = {
 	readonly targetIndex: number;
 } | null;
 
-// 末尾のAddChordPanel(配列外)からの新規追加。BasicChordModalをaddトリガーで開く
+// 末尾のAddChordPanel(配列外)からの新規追加。ChordModalをaddトリガーで開く
 type PendingChordAppend = {
 	readonly index: number;
 } | null;
 
-// BasicChordModalをchangeChord/addトリガーで開く。既存コードの変更ならinitialChordが存在し、
+// ChordModalをchangeChord/addトリガーで開く。既存コードの変更ならinitialChordが存在し、
 // プレースホルダーへの新規設定ならinitialChordはnullになる
 type PendingChordEdit = {
 	readonly index: number;
-	readonly initialChord: BasicChord | null;
+	readonly initialChord: Triad | null;
 } | null;
 
 // ContextScaleModalをchangeトリガーで開く。.context-scale-panelはtransformを持ち、position:fixedの
@@ -111,7 +111,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		setShiftAnimation({ kind: "delete-shift", targetIndex: index });
 	};
 
-	const handleChangeChord = (index: number, initialChord: BasicChord): void => {
+	const handleChangeChord = (index: number, initialChord: Triad): void => {
 		setPendingChordEdit({ index, initialChord });
 	};
 
@@ -171,7 +171,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 									/>)
 									: (<AddContextScaleButton onClick={() => handleAddContextScale(index)} />)}
 								{chordInfo !== undefined ? (
-									<ChordPanel
+									<FullChordPanel
 										value={chordInfo}
 										onChange={nextValue => handleChordInfoChange(index, nextValue)}
 										onInsertBefore={() => handleInsertBefore(index)}
@@ -192,7 +192,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 				</div>
 			</div>
 			{pendingChordAppend && (
-				<BasicChordModal
+				<ChordModal
 					trigger="add"
 					initialChord={null}
 					onConfirm={chord => {
@@ -204,7 +204,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 				/>
 			)}
 			{pendingChordEdit && (
-				<BasicChordModal
+				<ChordModal
 					trigger={pendingChordEdit.initialChord === null ? "add" : "changeChord"}
 					initialChord={pendingChordEdit.initialChord}
 					onConfirm={chord => {

@@ -1,4 +1,4 @@
-import { BasicChord } from "./basicChord";
+import { Triad } from "./triad";
 import { ContextScale } from "./contextScale";
 import { FullChordInfo } from "./fullChordInfo";
 
@@ -80,9 +80,9 @@ export class Progression {
 		return new Progression(this.items.map((item, i) => i === index ? { ...item, chordInfo: undefined } : item));
 	}
 
-	// index位置のBasicChordを設定する。既存のコードがあればクオリティ/スケールを維持したまま置き換え、
+	// index位置のTriadを設定する。既存のコードがあればクオリティ/スケールを維持したまま置き換え、
 	// 未選択(プレースホルダー)であれば新規にFullChordInfoを作る
-	setChord(index: number, chord: BasicChord): Progression {
+	setChord(index: number, chord: Triad): Progression {
 		if (index < 0 || index >= this.items.length) {
 			throw new Error(`set index out of range: ${index}`);
 		}
@@ -91,7 +91,7 @@ export class Progression {
 		));
 	}
 
-	// BasicChord以外のプロパティ(クオリティ/スケール)が更新された。コードの実体が変わらないためcontextScaleとの関係にも影響しない。
+	// Triad以外のプロパティ(クオリティ/スケール)が更新された。コードの実体が変わらないためcontextScaleとの関係にも影響しない。
 	updateChordInfo(index: number, chordInfo: FullChordInfo): Progression {
 		if (index < 0 || index >= this.items.length) {
 			throw new Error(`update index out of range: ${index}`);

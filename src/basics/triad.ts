@@ -11,7 +11,7 @@ export function ModeToNotation(mode: Mode): string {
     }
 }
 
-export class BasicChord {
+export class Triad {
     readonly root: PitchClass;
     readonly mode: Mode;
 
@@ -19,7 +19,7 @@ export class BasicChord {
         this.root = root;
         this.mode = mode;
     }
-    equals(other: BasicChord): boolean {
+    equals(other: Triad): boolean {
         return this.root.equals(other.root) && this.mode === other.mode;
     }
 
@@ -27,16 +27,16 @@ export class BasicChord {
         return `${this.root.toString()}${ModeToNotation(this.mode)}`;
     }
 
-    parse(str: string): BasicChord {
+    static parse(str: string): Triad {
         const regex = /^([A-G][#b]?)([Mm]?)$/;
         const match = str.match(regex);
         if (!match) {
-            throw new Error(`Invalid basic chord string: ${str}`);
+            throw new Error(`Invalid triad string: ${str}`);
         }
 
         const root = new PitchClass(PitchClass.parse(match[1]).value);
         const mode = match[2] === "m" ? "m" : "M";
-        return new BasicChord(root, mode);
+        return new Triad(root, mode);
     }
 
     getChordTones(): PitchClass[] {
@@ -50,11 +50,11 @@ export class BasicChord {
 }
 
 // 全ルート×全モードの組み合わせ(24通り)。「直接コードを選ぶ」候補一覧などに使う
-export function allBasicChords(): readonly BasicChord[] {
-    return allModes.flatMap(mode => PitchClass.all.map(root => new BasicChord(root, mode)));
+export function allTriads(): readonly Triad[] {
+    return allModes.flatMap(mode => PitchClass.all.map(root => new Triad(root, mode)));
 }
 
-export class ChordDegree {
+export class TriadDegree {
     readonly degree: Degree;
     readonly mode: Mode;
 
@@ -62,7 +62,7 @@ export class ChordDegree {
         this.degree = degree;
         this.mode = mode;
     }
-    equals(other: ChordDegree): boolean {
+    equals(other: TriadDegree): boolean {
         return this.degree.equals(other.degree) && this.mode === other.mode;
     }
 
@@ -70,15 +70,15 @@ export class ChordDegree {
         return `${this.degree.toString()}${ModeToNotation(this.mode)}`;
     }
 
-    static parse(str: string): ChordDegree {
+    static parse(str: string): TriadDegree {
         const regex = /^([IV]+)([Mm]?)$/;
         const match = str.match(regex);
         if (!match) {
-            throw new Error(`Invalid chord degree string: ${str}`);
+            throw new Error(`Invalid triad degree string: ${str}`);
         }
 
         const degree = Degree.parse(match[1]);
         const mode = match[2] === "m" ? "m" : "M";
-        return new ChordDegree(degree, mode);
+        return new TriadDegree(degree, mode);
     }
 }

@@ -1,31 +1,21 @@
-import { FullChordInfo } from "../../basics/fullChordInfo";
-import { BasicChordPanel } from "./basicChordPanel";
+import { Triad } from "../../basics/triad";
+import { ChordTones } from "../parts/chordTones";
 import { IconButton } from "../parts/iconButton";
-import { QualityPanel } from "./qualityPanel";
-import { ScalePanel } from "./scalePanel";
 
 type ChordPanelProps = {
-	readonly value: FullChordInfo;
-	readonly onChange: (nextValue: FullChordInfo) => void;
-	readonly onInsertBefore: () => void;
-	readonly onInsertAfter: () => void;
+	readonly value: Triad;
 	readonly onChangeChord: () => void;
-	readonly onDelete: () => void;
 };
 
 export function ChordPanel(props: ChordPanelProps) {
-	const { value, onChange, onInsertBefore, onInsertAfter, onChangeChord, onDelete } = props;
+	const { value, onChangeChord } = props;
 
 	return (
-		<div className="progression-editor__card chord-panel">
-			<div className="chord-panel__controls">
-				<IconButton icon="icons/insert-before.svg" label="Insert before" className="chord-panel__insert-before-button" onClick={onInsertBefore} />
-				<IconButton icon="icons/delete.svg" label="Delete" className="icon-button--delete" onClick={onDelete} />
-				<IconButton icon="icons/insert-after.svg" label="Insert after" className="chord-panel__insert-after-button" onClick={onInsertAfter} />
-			</div>
-			<BasicChordPanel value={value.chord} onChangeChord={onChangeChord} />
-			<QualityPanel value={value} onChange={onChange} />
-			<ScalePanel value={value} onChange={onChange} />
+		<div className="chord-panel">
+			<span className="chord-panel__label">Triad</span>
+			<h4 className="chord-panel__name">{value.toString()}</h4>
+			<ChordTones tones={value.getChordTones()} />
+			<IconButton icon="icons/edit.svg" label="Change" onClick={onChangeChord} />
 		</div>
 	);
 }
