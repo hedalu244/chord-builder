@@ -1,4 +1,4 @@
-import { Triad, Mode, TriadDegree } from "./triad";
+import { Triad, Mode, DegreeTriad } from "./triad";
 import { ContextScale } from "./contextScale";
 import { Degree, Interval } from "./pitch";
 
@@ -31,11 +31,21 @@ export class RelativeNexus {
     }
 }
 
+// former→latterの実際のコードから、キーに依存しない相対関係(モードとルート間の音程)を求める
+export function calcRelativeNexus(former: Triad, latter: Triad): RelativeNexus {
+    return new RelativeNexus(former.mode, latter.mode, latter.root.delta(former.root));
+}
+
+// contextScaleのキーを基準に、単一のTriadを度数表記に変換する
+export function calcTriadDegree(chord: Triad, contextScale: ContextScale): DegreeTriad {
+    return new DegreeTriad(chord.root.getDegree(contextScale.key), chord.mode);
+}
+
 // contextScaleのキーを基準に、former→latterのDegreeNexusを求める
 export function calcDegreeNexus(former: Triad, latter: Triad, contextScale: ContextScale): DegreeNexus {
     return new DegreeNexus(
-        new TriadDegree(former.root.getDegree(contextScale.key), former.mode),
-        new TriadDegree(latter.root.getDegree(contextScale.key), latter.mode)
+        calcTriadDegree(former, contextScale),
+        calcTriadDegree(latter, contextScale)
     );
 }
 
@@ -43,7 +53,7 @@ export class DegreeNexus {
     readonly relativeNexus: RelativeNexus;
     private _formerRootDegree: Degree;
 
-    constructor(former: TriadDegree, latter: TriadDegree) {
+    constructor(former: DegreeTriad, latter: DegreeTriad) {
         this._formerRootDegree = former.degree;
         const rootMotion = latter.degree.delta(former.degree);
         this.relativeNexus = new RelativeNexus(former.mode, latter.mode, rootMotion);
@@ -63,13 +73,12 @@ export class DegreeNexus {
     get latterRootDegree(): Degree {
         return new Degree(this._formerRootDegree.value + this.relativeNexus.rootMotion.value);
     }
-
     
-    private get formerChordDegree(): TriadDegree {
-        return new TriadDegree(this.formerRootDegree, this.relativeNexus.formerMode);
+    private get formerChordDegree(): DegreeTriad {
+        return new DegreeTriad(this.formerRootDegree, this.relativeNexus.formerMode);
     }
-    private get latterChordDegree(): TriadDegree {
-        return new TriadDegree(this.latterRootDegree, this.relativeNexus.latterMode);
+    private get latterChordDegree(): DegreeTriad {
+        return new DegreeTriad(this.latterRootDegree, this.relativeNexus.latterMode);
     }
 
     toString(): string {

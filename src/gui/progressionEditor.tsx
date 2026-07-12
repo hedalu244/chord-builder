@@ -81,7 +81,8 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		const formerChord = progression.chords.array[index].value?.chord.triad;
 		const latterChord = progression.chords.array[index + 1]?.value?.chord.triad;
 		const initialValue = contextScale
-			?? (formerChord && latterChord ? estimateContextScale(formerChord, latterChord) : new ContextScale(PitchClass.all[0], knownScaleNames[0]));
+			?? estimateContextScale(formerChord, latterChord)
+			?? new ContextScale(PitchClass.all[0], knownScaleNames[0]);
 		setPendingContextScaleEdit({ index, initialValue });
 	};
 

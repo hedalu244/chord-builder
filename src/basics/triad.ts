@@ -54,7 +54,7 @@ export function allTriads(): readonly Triad[] {
     return allModes.flatMap(mode => PitchClass.all.map(root => new Triad(root, mode)));
 }
 
-export class TriadDegree {
+export class DegreeTriad {
     readonly degree: Degree;
     readonly mode: Mode;
 
@@ -62,7 +62,7 @@ export class TriadDegree {
         this.degree = degree;
         this.mode = mode;
     }
-    equals(other: TriadDegree): boolean {
+    equals(other: DegreeTriad): boolean {
         return this.degree.equals(other.degree) && this.mode === other.mode;
     }
 
@@ -70,7 +70,7 @@ export class TriadDegree {
         return `${this.degree.toString()}${ModeToNotation(this.mode)}`;
     }
 
-    static parse(str: string): TriadDegree {
+    static parse(str: string): DegreeTriad {
         const regex = /^([IV]+)([Mm]?)$/;
         const match = str.match(regex);
         if (!match) {
@@ -79,6 +79,6 @@ export class TriadDegree {
 
         const degree = Degree.parse(match[1]);
         const mode = match[2] === "m" ? "m" : "M";
-        return new TriadDegree(degree, mode);
+        return new DegreeTriad(degree, mode);
     }
 }

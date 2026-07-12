@@ -1,6 +1,6 @@
-import { Triad } from "../../basics/triad";
+import { Triad, DegreeTriad } from "../../basics/triad";
 import { ContextScale, estimateContextScale } from "../../basics/contextScale";
-import { calcDegreeNexus, DegreeNexus } from "../../basics/nexus";
+import { calcRelativeNexus, calcTriadDegree, RelativeNexus } from "../../basics/nexus";
 import { PitchClass } from "../../basics/pitch";
 
 type ScaleNexusBlockProps = {
@@ -10,27 +10,31 @@ type ScaleNexusBlockProps = {
 };
 
 // contextScale未指定の場合、前後のコードが両方揃っていれば推定値をフォールバックとして使う。
-// 前後どちらかのコードが未選択(プレースホルダー)の場合はunknown表示にフォールする
+// スケールが定まらなくても、片側のコードだけでその側のDegreeは表示できる
 export function ScaleNexusBlock(props: ScaleNexusBlockProps) {
 	const { contextScale, formerChord, latterChord } = props;
-	const resolvedContextScale = contextScale ?? (formerChord && latterChord ? estimateContextScale(formerChord, latterChord) : undefined);
-	const degreeNexus = (resolvedContextScale && formerChord && latterChord) ? calcDegreeNexus(formerChord, latterChord, resolvedContextScale) : undefined;
-	return <NexusBlock degreeNexus={degreeNexus} keyLabel={resolvedContextScale?.key} />;
+	const resolved = contextScale ?? estimateContextScale(formerChord, latterChord);
+	const former = (formerChord && resolved) ? calcTriadDegree(formerChord, resolved) : undefined;
+	const latter = (latterChord && resolved) ? calcTriadDegree(latterChord, resolved) : undefined;
+	const relative = (formerChord && latterChord) ? calcRelativeNexus(formerChord, latterChord) : undefined;
+	return <NexusBlock former={former} latter={latter} relative={relative} keyLabel={resolved?.key} />;
 }
 
 // NOTE: keyLabelという名前は、JSXのspread先で予約語のkeyと衝突するのを避けるため
 type NexusBlockProps = {
-	readonly degreeNexus: DegreeNexus | undefined;
+	readonly former: DegreeTriad | undefined;
+	readonly latter: DegreeTriad | undefined;
+	readonly relative: RelativeNexus | undefined;
 	readonly keyLabel: PitchClass | undefined;
 };
 
-// nexusの相対/度数/キー説明を表示する。
+// nexusの相対/度数/キー説明を表示する。前後のDegreeは独立に表示するため、片側のみでも表示できる。
 export function NexusBlock(props: NexusBlockProps) {
-	const { degreeNexus, keyLabel } = props;
+	const { former, latter, relative, keyLabel } = props;
 	return (
 		<>
-			<div className="nexus-block__relative">{degreeNexus ? degreeNexus.relativeNexus.toString() : "-"}</div>
-			<div className="nexus-block__degree">{degreeNexus ? degreeNexus.toString() : "unknown"}</div>
+			<div className="nexus-block__relative">{relative ? relative.toString() : "-"}</div>
+			<div className="nexus-block__degree">{former ? former.toString() : "_"} → {latter ? latter.toString() : "_"}</div>
 			<div className="nexus-block__key">{keyLabel ? `in key=${keyLabel.toString()}` : "-"}</div>
 		</>
 	);
