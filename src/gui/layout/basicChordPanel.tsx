@@ -15,7 +15,7 @@ export function BasicChordPanel(props: BasicChordPanelProps) {
 			<span className="basic-chord-panel__label">Basic Chord</span>
 			<h4 className="basic-chord-panel__name">{value.toString()}</h4>
 			<ChordTones tones={value.getChordTones()} />
-			<IconButton icon="icons/edit.svg" label="Change" className="basic-chord-panel__change-button" onClick={onChangeChord} />
+			<IconButton icon="icons/edit.svg" label="Change" onClick={onChangeChord} />
 		</div>
 	);
 }

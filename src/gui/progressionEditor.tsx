@@ -3,10 +3,11 @@ import { AddChordPanel } from "./layout/addChordPanel";
 import { AddContextScaleButton } from "./layout/addContextScaleButton";
 import { BasicChordModal } from "./basicChordModal";
 import { ChordPanel } from "./layout/chordPanel";
+import { ContextScaleModal } from "./contextScaleModal";
 import { ContextScalePanel, DummyContextScalePanel } from "./layout/contextScalePanel";
 import { FullChordInfo } from "../basics/fullChordInfo";
 import { BasicChord } from "../basics/basicChord";
-import { ContextScale, knownScaleNames } from "../basics/contextScale";
+import { ContextScale, estimateContextScale, knownScaleNames } from "../basics/contextScale";
 import { PitchClass } from "../basics/pitch";
 import { Progression } from "../basics/progression";
 
@@ -36,6 +37,13 @@ type PendingChordEdit = {
 	readonly initialChord: BasicChord | null;
 } | null;
 
+// ContextScaleModalをchangeトリガーで開く。.context-scale-panelはtransformを持ち、position:fixedの
+// 包含ブロックになってしまうため、モーダルはPanelの外(ProgressionEditor)側で開閉する必要がある
+type PendingContextScaleEdit = {
+	readonly index: number;
+	readonly initialValue: ContextScale;
+} | null;
+
 export function ProgressionEditor(props: ProgressionEditorProps) {
 	const { value, onChange } = props;
 	const nextIdRef = useRef(0);
@@ -50,6 +58,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	const [shiftAnimation, setShiftAnimation] = useState<ShiftAnimationState>(null);
 	const [pendingChordEdit, setPendingChordEdit] = useState<PendingChordEdit>(null);
 	const [pendingChordAppend, setPendingChordAppend] = useState<PendingChordAppend>(null);
+	const [pendingContextScaleEdit, setPendingContextScaleEdit] = useState<PendingContextScaleEdit>(null);
 
 	useEffect(() => {
 		setProgression(current => current.sync(value, createId));
@@ -62,6 +71,16 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 
 	const handleContextScaleChange = (index: number, contextScale: ContextScale | undefined): void => {
 		setProgression(progression.setContextScale(index, contextScale));
+	};
+
+	// 手動設定値があればそれを、なければ前後のコードから自動計算した値をモーダルの初期状態にする
+	const handleEditContextScale = (index: number): void => {
+		const contextScale = progression.items[index].contextScale;
+		const formerChord = progression.items[index].chordInfo?.chord;
+		const latterChord = progression.items[index + 1]?.chordInfo?.chord;
+		const initialValue = contextScale
+			?? (formerChord && latterChord ? estimateContextScale(formerChord, latterChord) : { key: PitchClass.all[0], name: knownScaleNames[0] });
+		setPendingContextScaleEdit({ index, initialValue });
 	};
 
 	// 前後のコードが揃っていない箇所でcontextScaleを手動で設定し始める(初期値は先頭のキー/スケール)
@@ -148,6 +167,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 										latterChord={nextChordInfo?.chord}
 										contextScale={contextScale}
 										onChange={cs => handleContextScaleChange(index, cs)}
+										onEdit={() => handleEditContextScale(index)}
 									/>)
 									: (<AddContextScaleButton onClick={() => handleAddContextScale(index)} />)}
 								{chordInfo !== undefined ? (
@@ -192,6 +212,16 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 						setPendingChordEdit(null);
 					}}
 					onCancel={() => setPendingChordEdit(null)}
+				/>
+			)}
+			{pendingContextScaleEdit && (
+				<ContextScaleModal
+					value={pendingContextScaleEdit.initialValue}
+					onConfirm={contextScale => {
+						handleContextScaleChange(pendingContextScaleEdit.index, contextScale);
+						setPendingContextScaleEdit(null);
+					}}
+					onCancel={() => setPendingContextScaleEdit(null)}
 				/>
 			)}
 		</div>

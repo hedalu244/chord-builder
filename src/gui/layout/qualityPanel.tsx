@@ -22,7 +22,7 @@ export function QualityPanel(props: QualityPanelProps) {
 			<span className="quality-panel__label">Quality</span>
 			<h4 className="quality-panel__section-title">{value.toString()}</h4>
 			<ChordTones tones={tones} />
-			<IconButton icon="icons/edit.svg" label="Change quality" className="quality-panel__edit-button" onClick={() => setIsEditing(true)} />
+			<IconButton icon="icons/edit.svg" label="Change quality" onClick={() => setIsEditing(true)} />
 			{isEditing && (
 				<QualityModal
 					value={value}

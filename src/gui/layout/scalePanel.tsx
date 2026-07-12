@@ -21,7 +21,7 @@ export function ScalePanel(props: ScalePanelProps) {
 			<span className="scale-panel__label">Scale</span>
 			<ScaleAnalysis chordInfo={value} root={root} scale={scale} />
 			<ChordTones tones={scale.getPitchClasses(root)} />
-			<IconButton icon="icons/edit.svg" label="Edit scale" className="scale-panel__edit-button" onClick={() => setIsEditing(true)} />
+			<IconButton icon="icons/edit.svg" label="Edit scale" onClick={() => setIsEditing(true)} />
 			{isEditing && (
 				<ChordScaleModal
 					chordInfo={value}

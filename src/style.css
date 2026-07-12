@@ -234,6 +234,7 @@ button {
 .progression-editor {
 	--progression-card-width: 200px;
 	--progression-card-min-height: 400px;
+	--context-scale-panel-min-height: 150px;
 	--progression-gap: 12px;
 	--progression-shift: calc(var(--progression-card-width) + var(--progression-gap));
 
@@ -265,12 +266,12 @@ button {
 .context-scale-panel {
 	display: flex;
 	flex-direction: column;
-	min-height: 120px;
+	min-height: var(--context-scale-panel-min-height);
 	justify-content: center;
 	align-items: center;
 	text-align: center;
 
-	gap: 2px;
+	gap: 8px;
 	transform: translateX(50%); /* またがるように表示する */
 }
 
@@ -298,7 +299,7 @@ button {
 
 .context-scale-panel__controls {
 	display: flex;
-	gap: 4px;
+	gap: 16px;
 	max-width: 100%;
 }
 
@@ -308,7 +309,7 @@ button {
 	align-items: center;
 	justify-content: center;
 	gap: 4px;
-	min-height: 120px;
+	min-height: var(--context-scale-panel-min-height);
 	width: var(--progression-card-width);
 	transform: translateX(50%); /* またがるように表示する(context-scale-panelと同じ位置合わせ) */
 	border: 2px dashed var(--color-border);
@@ -329,16 +330,6 @@ button {
 .add-context-scale-button__label {
 	font-size: 14px;
 	font-weight: 600;
-}
-
-.context-scale-panel__select {
-	min-width: 0;
-	padding: 2px 4px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
-	color: var(--color-ink);
-	font-size: 11px;
 }
 
 .chord-panel {
@@ -387,11 +378,11 @@ button {
 	white-space: nowrap;
 }
 
-.chord-panel__delete-button {
+.icon-button--delete {
 	border-color: var(--color-danger);
 }
 
-.chord-panel__delete-button:hover {
+.icon-button--delete:hover {
 	background: var(--color-danger-surface);
 	border-color: var(--color-danger);
 }
@@ -758,6 +749,21 @@ button {
 	border-color: var(--color-ink);
 	border-width: var(--border-width-active);
 	background: var(--color-highlight);
+}
+
+.context-scale-modal__controls {
+	display: flex;
+	gap: 8px;
+}
+
+.context-scale-modal__select {
+	min-width: 0;
+	padding: 4px 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	font-size: 13px;
 }
 
 .chord-scale-modal {
