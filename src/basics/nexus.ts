@@ -1,5 +1,6 @@
 import { BasicChord, Mode, ChordDegree } from "./basicChord";
-import { Degree, Interval, PitchClass } from "./pitch";
+import { ContextScale } from "./contextScale";
+import { Degree, Interval } from "./pitch";
 
 export class RelativeNexus {
     readonly formerMode: Mode;
@@ -30,9 +31,12 @@ export class RelativeNexus {
     }
 }
 
-export function calcRelativeNexus(former: BasicChord, latter: BasicChord): RelativeNexus {
-    const rootMotion = latter.root.delta(former.root);
-    return new RelativeNexus(former.mode, latter.mode, rootMotion);
+// contextScaleのキーを基準に、former→latterのDegreeNexusを求める
+export function calcDegreeNexus(former: BasicChord, latter: BasicChord, contextScale: ContextScale): DegreeNexus {
+    return new DegreeNexus(
+        new ChordDegree(former.root.getDegree(contextScale.key), former.mode),
+        new ChordDegree(latter.root.getDegree(contextScale.key), latter.mode)
+    );
 }
 
 export class DegreeNexus {
@@ -67,69 +71,8 @@ export class DegreeNexus {
     private get latterChordDegree(): ChordDegree {
         return new ChordDegree(this.latterRootDegree, this.relativeNexus.latterMode);
     }
-    /*
-    // 接続元のコードから、この接続に従った接続先のコードを求める
-    private resolveLatterChord(formerChord: BasicChord): BasicChord {
-        const latterRoot = formerChord.root.add(this.relativeNexus.rootMotion);
-        return new BasicChord(latterRoot, this.relativeNexus.latterMode);
-    }
-    // 接続先のコードから、この接続に従った接続元のコードを求める
-    private resolveFormerChord(latterChord: BasicChord): BasicChord {
-        const formerRoot = latterChord.root.sub(this.relativeNexus.rootMotion);
-        return new BasicChord(formerRoot, this.relativeNexus.formerMode);
-    }*/
-
-    // 接続元の絶対ルートが、この接続における接続元のdegreeとなるようなキーを求める
-    private resolveKeyFromFormer(formerChord: BasicChord): PitchClass {
-        return formerChord.root.getKey(this.formerRootDegree);
-    }
-    // 接続先の絶対ルートが、この接続における接続先のdegreeとなるようなキーを求める
-    private resolveKeyFromLatter(latterChord: BasicChord): PitchClass {
-        return latterChord.root.getKey(this.latterRootDegree);
-    }
-
-    resolveFromKey(key: PitchClass): KeyNexus {
-        return new KeyNexus(key, this);
-    }
-    resolveFromFormerChord(formerChord: BasicChord): KeyNexus {
-        const key = this.resolveKeyFromFormer(formerChord);
-        return new KeyNexus(key, this);
-    }
-    resolveFromLatterChord(latterChord: BasicChord): KeyNexus {
-        const key = this.resolveKeyFromLatter(latterChord);
-        return new KeyNexus(key, this);
-    }
 
     toString(): string {
         return `${this.formerChordDegree.toString()} → ${this.latterChordDegree.toString()}`;
-    }
-}
-
-export class KeyNexus {
-    readonly key: PitchClass
-    readonly degreeNexus: DegreeNexus;
-
-    constructor(key: PitchClass, degreeNexus: DegreeNexus) {
-        this.key = key;
-        this.degreeNexus = degreeNexus;
-    }
-
-    get relativeNexus(): RelativeNexus {
-        return this.degreeNexus.relativeNexus;
-    }
-
-    get formerChord(): BasicChord {
-        const formerRoot = this.degreeNexus.formerRootDegree.toPitchClass(this.key);
-        return new BasicChord(formerRoot, this.degreeNexus.relativeNexus.formerMode);
-    }
-
-    get latterChord(): BasicChord {
-        const latterRoot = this.degreeNexus.latterRootDegree.toPitchClass(this.key);
-        return new BasicChord(latterRoot, this.degreeNexus.relativeNexus.latterMode);
-    }
-
-    // former→latterの実際のコードを、このkeyNexusとして解釈して矛盾しないか
-    match(former: BasicChord, latter: BasicChord): boolean {
-        return this.formerChord.equals(former) && this.latterChord.equals(latter);
     }
 }

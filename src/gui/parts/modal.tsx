@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 type ModalProps = {
-	// 個々のモーダル固有の見た目調整用クラス名(例: "quality-modal")。method-tab系のモーダルは"method-tab-modal"も併記する
+	// 個々のモーダル固有の見た目調整用クラス名(例: "quality-modal")
 	readonly className?: string;
 	readonly title: string;
 	readonly children: ReactNode;
