@@ -1,4 +1,4 @@
-import { AnimationEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { AnimationEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { ChordModal } from "./chordModal";
 import { ChordEntryPanel } from "./layout/chordEntryPanel";
 import { ContextScaleModal } from "./contextScaleModal";
@@ -7,23 +7,13 @@ import { Chord } from "../basics/chord";
 import { ChordEntry } from "../basics/chordEntry";
 import { ContextScale, knownScaleNames } from "../basics/contextScale";
 import { Interval, PitchClass } from "../basics/pitch";
-import { ChordWithId, ContextWithId, estimateContextScale, Progression, ProgressionValue } from "../editor/progression";
+import { estimateContextScale, Progression, ProgressionValue } from "../editor/progression";
 import { AddChordPanel } from "./layout/addChordPanel";
-
-export type ChordEditTrigger = "add" | "changeChord";
 
 type ProgressionEditorProps = {
 	readonly value: ProgressionValue;
 	readonly onChange?: (next: ProgressionValue) => void;
 };
-
-// chordsとcontextsは独立に動くため、実際にアニメーションさせるべき位置(PlaceholderArrayWithIdが
-// 実際に操作した位置)もそれぞれ別のindexになりうる。progression.insertが
-// 返すchordIndex/contextIndexをそのまま保持する
-type InsertAnimationState = {
-	readonly chordIndex: number;
-	readonly contextIndex: number;
-} | null;
 
 // shiftで取り除かれた直後の要素は、配列からは既に消えているが、フェードアウト+幅つぶれの
 // アニメーションが終わるまでは見た目上その場に残しておきたい。取り除かれる直前の見た目を
@@ -35,14 +25,14 @@ type ExitGhost = {
 	readonly node: ReactNode;
 } | null;
 
-// ChordModalをchangeChord/addトリガーで開く。既存コードの変更ならinitialChordが存在し、
+// ChordModalを開いている間の状態。既存コードの変更ならinitialChordが存在し、
 // プレースホルダーへの新規設定ならinitialChordはnullになる
 type PendingChordEdit = {
 	readonly index: number;
 	readonly initialChord: Chord | null;
 } | null;
 
-// ContextScaleModalをchangeトリガーで開く。.context-scale-panelはtransformを持ち、position:fixedの
+// ContextScaleModalを開いている間の状態。.context-scale-panelはtransformを持ち、position:fixedの
 // 包含ブロックになってしまうため、モーダルはPanelの外(ProgressionEditor)側で開閉する必要がある
 type PendingContextScaleEdit = {
 	readonly index: number;
@@ -60,7 +50,9 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	};
 
 	const [progression, setProgression] = useState<Progression>(() => Progression.create(value, createId));
-	const [insertAnimation, setInsertAnimation] = useState<InsertAnimationState>(null);
+	// 直近のinsertで挿入されたスロットのindex。挿入直後のプッシュアニメーションの対象を表す
+	// (entry・contextとも同じindexに挿入される)
+	const [insertAnimationIndex, setInsertAnimationIndex] = useState<number | null>(null);
 	const [chordExitGhost, setChordExitGhost] = useState<ExitGhost>(null);
 	const [contextExitGhost, setContextExitGhost] = useState<ExitGhost>(null);
 	const [pendingChordEdit, setPendingChordEdit] = useState<PendingChordEdit>(null);
@@ -93,40 +85,30 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	};
 
 	// 未選択(プレースホルダー)を挿入する。実体の選択はAddChordPanelから別途行う。
-	// 実際に挿入された位置はPlaceholderArrayWithId側の都合で要求したindexとずれうるため、
-	// アニメーション対象はprogression側が返すchordIndex/contextIndexを使う。
 	// before/afterのボタンはカード・プレースホルダーどちらでも同じ左右の位置にあり、どちらも
 	// このinsertだけを呼ぶ(右側はindex + 1を渡すことで「afterへの挿入」を表す)。
-	const handleInsertBefore = (index: number): void => {
-		const { progression: next, chordIndex, contextIndex } = progression.insert(index, createId);
-		applyProgression(next);
-		setInsertAnimation({ chordIndex, contextIndex });
-	};
-
-	const handleInsertAfter = (index: number): void => {
-		const { progression: next, chordIndex, contextIndex } = progression.insert(index + 1, createId);
-		applyProgression(next);
-		setInsertAnimation({ chordIndex, contextIndex });
+	const handleInsert = (index: number): void => {
+		applyProgression(progression.insert(index, createId));
+		setInsertAnimationIndex(index);
 	};
 
 	// 配列のシフトは行わず、未選択(プレースホルダー)に戻すだけ
 	const handleDelete = (index: number): void => {
-		applyProgression(progression.deleteChord(index, createId));
+		applyProgression(progression.deleteEntry(index, createId));
 	};
 
-	// プレースホルダーそのものを取り除く。あわせて直前のcontext(chords[index-1]とchords[index]の関係)を取り除く。
-	// 取り除かれる直前の見た目をExitGhostとしてスナップショットしてから、実際にprogressionを更新する
+	// プレースホルダーそのものを取り除く。あわせてcontexts[index](entries[index]とentries[index+1]の関係)も
+	// 取り除かれる。取り除かれる直前の見た目をExitGhostとしてスナップショットしてから、実際にprogressionを更新する
 	const handleShift = (index: number): void => {
-		const removedChord = progression.chords.array[index];
+		const removedEntry = progression.entries.array[index];
 		const removedContext = progression.contexts.array[index];
 
-		setChordExitGhost({ id: removedChord.id, index, node: renderChordContent(removedChord, index) });
+		setChordExitGhost({ id: removedEntry.id, index, node: renderChordContent(index) });
 		setContextExitGhost(
-			removedContext ? { id: removedContext.id, index, node: renderContextContent(removedContext, index) } : null
+			removedContext ? { id: removedContext.id, index, node: renderContextContent(index) } : null
 		);
 
-		const { progression: next } = progression.shift(index, createId);
-		applyProgression(next);
+		applyProgression(progression.shift(index, createId));
 	};
 
 	const handleChangeChord = (index: number, initialChord: Chord): void => {
@@ -138,15 +120,15 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	};
 
 	const handleExtraChordScaleTonesChange = (index: number, chord: Chord, nextExtraChordScaleTones: readonly Interval[] | undefined): void => {
-		applyProgression(progression.setChord(index, new ChordEntry(chord, nextExtraChordScaleTones), createId));
-		setInsertAnimation(null);
+		applyProgression(progression.setEntry(index, new ChordEntry(chord, nextExtraChordScaleTones), createId));
+		setInsertAnimationIndex(null);
 	};
 
 	const handleSlotAnimationEnd = (event: AnimationEvent<HTMLDivElement>): void => {
 		if (event.currentTarget !== event.target) {
 			return;
 		}
-		setInsertAnimation(null);
+		setInsertAnimationIndex(null);
 	};
 
 	const handleGhostAnimationEnd = (row: "chord" | "context") => (event: AnimationEvent<HTMLDivElement>): void => {
@@ -160,50 +142,44 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		}
 	};
 
-	const getSlotClassName = useMemo(
-		() => (row: "chord" | "context", slotIndex: number, baseClassName: string): string => {
-			const classNames = ["progression-editor__slot", baseClassName];
-			const targetIndex = row === "chord" ? insertAnimation?.chordIndex : insertAnimation?.contextIndex;
-			if (insertAnimation !== null && targetIndex === slotIndex) {
-				classNames.push("progression-editor__slot--insert-push");
-			}
-			return classNames.join(" ");
-		},
-		[insertAnimation]
-	);
+	const getSlotClassName = (slotIndex: number): string => {
+		return insertAnimationIndex === slotIndex
+			? "progression-editor__slot progression-editor__slot--insert-push"
+			: "progression-editor__slot";
+	};
 
-	// カードとプレースホルダーどちらの中身を表示するかは、chords行の描画と(shift時の)ExitGhostの
+	// カードとプレースホルダーどちらの中身を表示するかは、chord行の描画と(shift時の)ExitGhostの
 	// スナップショット取得の両方で使うため、共通の関数として切り出す
-	const renderChordContent = (chord: ChordWithId, index: number): ReactNode => {
-		const entry = chord.value;
+	const renderChordContent = (index: number): ReactNode => {
+		const entry = progression.entries.array[index].value;
 		return entry !== undefined ? (
 			<ChordEntryPanel
 				entry={entry}
 				onChange={next => handleExtraChordScaleTonesChange(index, entry.chord, next)}
-				onInsertBefore={() => handleInsertBefore(index)}
-				onInsertAfter={() => handleInsertAfter(index)}
+				onInsertBefore={() => handleInsert(index)}
+				onInsertAfter={() => handleInsert(index + 1)}
 				onChangeChord={() => handleChangeChord(index, entry.chord)}
 				onDelete={() => handleDelete(index)}
 			/>
 		) : (
 			<AddChordPanel
 				onClick={() => handleFillPlaceholder(index)}
-				onInsertBefore={() => handleInsertBefore(index)}
-				onInsertAfter={index < progression.chords.array.length - 1 ? () => handleInsertAfter(index) : undefined}
+				onInsertBefore={() => handleInsert(index)}
+				onInsertAfter={index < progression.entries.array.length - 1 ? () => handleInsert(index + 1) : undefined}
 				onShift={progression.canShift(index) ? () => handleShift(index) : undefined}
 			/>
 		);
 	};
 
-	// 同上の理由でcontexts行の中身も共通の関数として切り出す
-	const renderContextContent = (context: ContextWithId, index: number): ReactNode => {
-		const entry = progression.chords.array[index]?.value;
-		const nextEntry = progression.chords.array[index + 1]?.value;
-		const contextScale = context.value;
+	// 同上の理由でcontext行の中身も共通の関数として切り出す
+	const renderContextContent = (index: number): ReactNode => {
+		const formerEntry = progression.entries.array[index]?.value;
+		const latterEntry = progression.entries.array[index + 1]?.value;
+		const contextScale = progression.contexts.array[index].value;
 		return contextScale !== undefined ? (
 			<ContextScalePanel
-				formerChord={entry?.chord.triad}
-				latterChord={nextEntry?.chord.triad}
+				formerTriad={formerEntry?.chord.triad}
+				latterTriad={latterEntry?.chord.triad}
 				contextScale={contextScale}
 				onDelete={index === 0 ? undefined : () => handleContextScaleChange(index, undefined)}
 				onEdit={() => handleEditContextScale(index)}
@@ -212,87 +188,63 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 			<AutoContextScalePanel
 				progression={progression}
 				index={index}
-				formerChord={entry?.chord.triad}
-				latterChord={nextEntry?.chord.triad}
+				formerTriad={formerEntry?.chord.triad}
+				latterTriad={latterEntry?.chord.triad}
 				onEdit={() => handleEditContextScale(index)}
 			/>
 		);
 	};
 
-	const contextRowNodes: ReactNode[] = [];
-	progression.contexts.array.forEach((context, index) => {
-		if (contextExitGhost && contextExitGhost.index === index) {
-			contextRowNodes.push(
-				<div
-					key={`ghost-${contextExitGhost.id}`}
-					className="progression-editor__slot progression-editor__scale-item progression-editor__slot--exiting"
-					onAnimationEnd={handleGhostAnimationEnd("context")}
-				>
-					{contextExitGhost.node}
-				</div>
-			);
-		}
-		contextRowNodes.push(
-			<div key={context.id} className={getSlotClassName("context", index, "progression-editor__scale-item")} onAnimationEnd={handleSlotAnimationEnd}>
-				{renderContextContent(context, index)}
-			</div>
-		);
-	});
-	if (contextExitGhost && contextExitGhost.index === progression.contexts.array.length) {
-		contextRowNodes.push(
+	// 1行分のスロット列を組み立てる。ExitGhostはghost.indexの位置(または末尾)に、
+	// 通常のスロットと同じ見た目で差し込む
+	const buildRowNodes = (
+		items: readonly { readonly id: number }[],
+		ghost: ExitGhost,
+		row: "chord" | "context",
+		renderContent: (index: number) => ReactNode
+	): ReactNode[] => {
+		const renderGhost = (currentGhost: NonNullable<ExitGhost>): ReactNode => (
 			<div
-				key={`ghost-${contextExitGhost.id}`}
-				className="progression-editor__slot progression-editor__scale-item progression-editor__slot--exiting"
-				onAnimationEnd={handleGhostAnimationEnd("context")}
+				key={`ghost-${currentGhost.id}`}
+				className="progression-editor__slot progression-editor__slot--exiting"
+				onAnimationEnd={handleGhostAnimationEnd(row)}
 			>
-				{contextExitGhost.node}
+				{currentGhost.node}
 			</div>
 		);
-	}
 
-	const chordRowNodes: ReactNode[] = [];
-	progression.chords.array.forEach((chord, index) => {
-		if (chordExitGhost && chordExitGhost.index === index) {
-			chordRowNodes.push(
-				<div
-					key={`ghost-${chordExitGhost.id}`}
-					className="progression-editor__slot progression-editor__chord-item progression-editor__slot--exiting"
-					onAnimationEnd={handleGhostAnimationEnd("chord")}
-				>
-					{chordExitGhost.node}
+		const nodes: ReactNode[] = [];
+		items.forEach((item, index) => {
+			if (ghost && ghost.index === index) {
+				nodes.push(renderGhost(ghost));
+			}
+			nodes.push(
+				<div key={item.id} className={getSlotClassName(index)} onAnimationEnd={handleSlotAnimationEnd}>
+					{renderContent(index)}
 				</div>
 			);
+		});
+		if (ghost && ghost.index === items.length) {
+			nodes.push(renderGhost(ghost));
 		}
-		chordRowNodes.push(
-			<div key={chord.id} className={getSlotClassName("chord", index, "progression-editor__chord-item")} onAnimationEnd={handleSlotAnimationEnd}>
-				{renderChordContent(chord, index)}
-			</div>
-		);
-	});
-	if (chordExitGhost && chordExitGhost.index === progression.chords.array.length) {
-		chordRowNodes.push(
-			<div
-				key={`ghost-${chordExitGhost.id}`}
-				className="progression-editor__slot progression-editor__chord-item progression-editor__slot--exiting"
-				onAnimationEnd={handleGhostAnimationEnd("chord")}
-			>
-				{chordExitGhost.node}
-			</div>
-		);
-	}
+		return nodes;
+	};
 
 	return (
 		<div className="progression-editor">
 			<div className="progression-editor__scroll-area">
-				<div className="progression-editor__scale-row">{contextRowNodes}</div>
-				<div className="progression-editor__chord-row">{chordRowNodes}</div>
+				<div className="progression-editor__scale-row">
+					{buildRowNodes(progression.contexts.array, contextExitGhost, "context", renderContextContent)}
+				</div>
+				<div className="progression-editor__chord-row">
+					{buildRowNodes(progression.entries.array, chordExitGhost, "chord", renderChordContent)}
+				</div>
 			</div>
 			{pendingChordEdit && (
 				<ChordModal
-					trigger={pendingChordEdit.initialChord === null ? "add" : "changeChord"}
 					initialChord={pendingChordEdit.initialChord}
 					onConfirm={chord => {
-						applyProgression(progression.setChord(pendingChordEdit.index, new ChordEntry(chord, undefined), createId));
+						applyProgression(progression.setEntry(pendingChordEdit.index, new ChordEntry(chord, undefined), createId));
 						setPendingChordEdit(null);
 					}}
 					onCancel={() => setPendingChordEdit(null)}

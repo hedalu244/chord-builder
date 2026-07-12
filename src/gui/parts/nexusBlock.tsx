@@ -5,20 +5,20 @@ import { PitchClass } from "../../basics/pitch";
 
 type ScaleNexusBlockProps = {
 	readonly contextScale: ContextScale | undefined;
-	readonly formerChord: Triad | undefined;
-	readonly latterChord: Triad | undefined;
+	readonly formerTriad: Triad | undefined;
+	readonly latterTriad: Triad | undefined;
 };
 
 // スケールが定まらなくても、片側のコードだけでその側のDegreeは表示できる
 export function ScaleNexusBlock(props: ScaleNexusBlockProps) {
-	const { contextScale, formerChord, latterChord } = props;
-	const former = (formerChord && contextScale) ? calcTriadDegree(formerChord, contextScale) : undefined;
-	const latter = (latterChord && contextScale) ? calcTriadDegree(latterChord, contextScale) : undefined;
-	const relative = (formerChord && latterChord) ? calcRelativeNexus(formerChord, latterChord) : undefined;
+	const { contextScale, formerTriad, latterTriad } = props;
+	const former = (formerTriad && contextScale) ? calcTriadDegree(formerTriad, contextScale) : undefined;
+	const latter = (latterTriad && contextScale) ? calcTriadDegree(latterTriad, contextScale) : undefined;
+	const relative = (formerTriad && latterTriad) ? calcRelativeNexus(formerTriad, latterTriad) : undefined;
 	return <NexusBlock former={former} latter={latter} relative={relative} keyLabel={contextScale?.key} />;
 }
 
-// NOTE: keyLabelという名前は、JSXのspread先で予約語のkeyと衝突するのを避けるため
+// NOTE: keyLabelという名前は、Reactの予約propsであるkeyと衝突するのを避けるため
 type NexusBlockProps = {
 	readonly former: DegreeTriad | undefined;
 	readonly latter: DegreeTriad | undefined;
@@ -27,7 +27,7 @@ type NexusBlockProps = {
 };
 
 // nexusの相対/度数/キー説明を表示する。前後のDegreeは独立に表示するため、片側のみでも表示できる。
-export function NexusBlock(props: NexusBlockProps) {
+function NexusBlock(props: NexusBlockProps) {
 	const { former, latter, relative, keyLabel } = props;
 	return (
 		<>

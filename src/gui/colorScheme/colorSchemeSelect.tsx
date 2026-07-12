@@ -17,9 +17,8 @@ export function ColorSchemeSelect() {
 	const { colorScheme, setColorScheme } = useColorScheme();
 	return (
 		<label className="color-scheme-select">
-			<span className="color-scheme-select__label">Color Scheme</span>
+			<span>Color Scheme</span>
 			<select
-				className="color-scheme-select__control"
 				value={colorScheme}
 				onChange={event => setColorScheme(event.target.value as ColorSchemeId)}
 			>

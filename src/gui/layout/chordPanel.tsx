@@ -13,7 +13,7 @@ export function ChordPanel(props: ChordPanelProps) {
 	return (
 		<div className="chord-panel">
 			<span className="chord-panel__label">Chord</span>
-			<h4 className="chord-panel__name">{value.getSyntheticNotation()}</h4>
+			<h4>{value.getSyntheticNotation()}</h4>
 			<ChordTones tones={value.chordTones} />
 			<IconButton icon="icons/edit.svg" label="Change" onClick={onChangeChord} />
 		</div>

@@ -19,9 +19,9 @@ export function ChordEntryPanel(props: ChordEntryPanelProps) {
 	return (
 		<div className="progression-editor__card chord-entry-panel">
 			<div className="progression-editor__card-controls">
-				<IconButton icon="icons/insert-before.svg" label="Insert before" className="chord-entry-panel__insert-before-button" onClick={onInsertBefore} />
+				<IconButton icon="icons/insert-before.svg" label="Insert before" onClick={onInsertBefore} />
 				<IconButton icon="icons/delete.svg" label="Delete" className="icon-button--delete" onClick={onDelete} />
-				<IconButton icon="icons/insert-after.svg" label="Insert after" className="chord-entry-panel__insert-after-button" onClick={onInsertAfter} />
+				<IconButton icon="icons/insert-after.svg" label="Insert after" onClick={onInsertAfter} />
 			</div>
 			<ChordPanel value={entry.chord} onChangeChord={onChangeChord} />
 			<ScalePanel entry={entry} onChange={onChange} />

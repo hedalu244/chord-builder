@@ -1,3 +1,7 @@
+/* ==========================================================================
+   デザイントークン
+   ========================================================================== */
+
 :root {
 	/* テキスト・枠線の強調度 (強い順: ink > muted > faint) */
 	--color-ink: #1f2933;
@@ -34,131 +38,78 @@
 
 /* ==========================================================================
    構成音の配色 (Pitch Class Colors)
-   PitchClass.value (0-11) ごとに --pc-{n}-light / -basic / -dark を定義する。
-   3つのクラスはいずれも中身がCSS変数の定義のみで、アプリルート(.app)に
-   このうちどれか1つを付与することで、構成音を表示する側(chord-tones,
-   chord-scale-modal)の配色がまとめて切り替わる。
+   アプリルート(.app)にカラースキームクラスのどれか1つを付与することで、構成音を
+   表示する側(chord-tones, tone-row)の配色がまとめて切り替わる。
+   各スキームはPitchClass.value (0-11) ごとの色相 --pc-{n}-h のみを定義し、
+   実際に参照される --pc-{n}-light / -basic / -dark は共通ルールで色相から生成する。
    ========================================================================== */
+
+.color-scheme-chromatic,
+.color-scheme-fifths,
+.color-scheme-axisSystem {
+	--pc-0-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-0-h));
+	--pc-0-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-0-h));
+	--pc-0-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-0-h));
+	--pc-1-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-1-h));
+	--pc-1-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-1-h));
+	--pc-1-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-1-h));
+	--pc-2-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-2-h));
+	--pc-2-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-2-h));
+	--pc-2-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-2-h));
+	--pc-3-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-3-h));
+	--pc-3-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-3-h));
+	--pc-3-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-3-h));
+	--pc-4-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-4-h));
+	--pc-4-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-4-h));
+	--pc-4-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-4-h));
+	--pc-5-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-5-h));
+	--pc-5-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-5-h));
+	--pc-5-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-5-h));
+	--pc-6-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-6-h));
+	--pc-6-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-6-h));
+	--pc-6-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-6-h));
+	--pc-7-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-7-h));
+	--pc-7-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-7-h));
+	--pc-7-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-7-h));
+	--pc-8-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-8-h));
+	--pc-8-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-8-h));
+	--pc-8-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-8-h));
+	--pc-9-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-9-h));
+	--pc-9-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-9-h));
+	--pc-9-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-9-h));
+	--pc-10-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-10-h));
+	--pc-10-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-10-h));
+	--pc-10-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-10-h));
+	--pc-11-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) var(--pc-11-h));
+	--pc-11-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) var(--pc-11-h));
+	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) var(--pc-11-h));
+}
 
 /* ① クロマチック順: PitchClass.value の順に色相を等間隔配置 (30deg刻み) */
 .color-scheme-chromatic {
-	--pc-0-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
-	--pc-0-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
-	--pc-0-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
-	--pc-1-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 30deg);
-	--pc-1-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 30deg);
-	--pc-1-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 30deg);
-	--pc-2-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 60deg);
-	--pc-2-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 60deg);
-	--pc-2-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 60deg);
-	--pc-3-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 90deg);
-	--pc-3-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 90deg);
-	--pc-3-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 90deg);
-	--pc-4-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
-	--pc-4-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
-	--pc-4-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
-	--pc-5-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 150deg);
-	--pc-5-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 150deg);
-	--pc-5-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 150deg);
-	--pc-6-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 180deg);
-	--pc-6-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 180deg);
-	--pc-6-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 180deg);
-	--pc-7-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 210deg);
-	--pc-7-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 210deg);
-	--pc-7-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 210deg);
-	--pc-8-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
-	--pc-8-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
-	--pc-8-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
-	--pc-9-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 270deg);
-	--pc-9-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 270deg);
-	--pc-9-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 270deg);
-	--pc-10-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 300deg);
-	--pc-10-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 300deg);
-	--pc-10-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 300deg);
-	--pc-11-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 330deg);
-	--pc-11-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 330deg);
-	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 330deg);
+	--pc-0-h: 0deg; --pc-1-h: 30deg; --pc-2-h: 60deg; --pc-3-h: 90deg;
+	--pc-4-h: 120deg; --pc-5-h: 150deg; --pc-6-h: 180deg; --pc-7-h: 210deg;
+	--pc-8-h: 240deg; --pc-9-h: 270deg; --pc-10-h: 300deg; --pc-11-h: 330deg;
 }
 
 /* ② 五度圏順: (PitchClass.value * 7) % 12 の順に色相を等間隔配置 */
 .color-scheme-fifths {
-	--pc-0-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
-	--pc-0-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
-	--pc-0-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
-	--pc-1-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 210deg);
-	--pc-1-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 210deg);
-	--pc-1-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 210deg);
-	--pc-2-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 60deg);
-	--pc-2-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 60deg);
-	--pc-2-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 60deg);
-	--pc-3-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 270deg);
-	--pc-3-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 270deg);
-	--pc-3-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 270deg);
-	--pc-4-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
-	--pc-4-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
-	--pc-4-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
-	--pc-5-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 330deg);
-	--pc-5-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 330deg);
-	--pc-5-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 330deg);
-	--pc-6-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 180deg);
-	--pc-6-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 180deg);
-	--pc-6-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 180deg);
-	--pc-7-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 30deg);
-	--pc-7-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 30deg);
-	--pc-7-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 30deg);
-	--pc-8-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
-	--pc-8-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
-	--pc-8-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
-	--pc-9-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 90deg);
-	--pc-9-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 90deg);
-	--pc-9-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 90deg);
-	--pc-10-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 300deg);
-	--pc-10-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 300deg);
-	--pc-10-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 300deg);
-	--pc-11-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 150deg);
-	--pc-11-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 150deg);
-	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 150deg);
+	--pc-0-h: 0deg; --pc-1-h: 210deg; --pc-2-h: 60deg; --pc-3-h: 270deg;
+	--pc-4-h: 120deg; --pc-5-h: 330deg; --pc-6-h: 180deg; --pc-7-h: 30deg;
+	--pc-8-h: 240deg; --pc-9-h: 90deg; --pc-10-h: 300deg; --pc-11-h: 150deg;
 }
 
 /* ③ Axis System: PitchClass.value % 3 に応じて色相を割り当て(3系統のAxisを塗り分け) */
 .color-scheme-axisSystem {
-	--pc-0-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
-	--pc-0-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
-	--pc-0-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
-	--pc-1-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
-	--pc-1-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
-	--pc-1-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
-	--pc-2-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
-	--pc-2-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
-	--pc-2-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
-	--pc-3-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
-	--pc-3-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
-	--pc-3-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
-	--pc-4-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
-	--pc-4-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
-	--pc-4-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
-	--pc-5-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
-	--pc-5-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
-	--pc-5-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
-	--pc-6-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
-	--pc-6-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
-	--pc-6-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
-	--pc-7-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
-	--pc-7-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
-	--pc-7-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
-	--pc-8-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
-	--pc-8-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
-	--pc-8-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
-	--pc-9-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 0deg);
-	--pc-9-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 0deg);
-	--pc-9-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 0deg);
-	--pc-10-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 120deg);
-	--pc-10-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 120deg);
-	--pc-10-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 120deg);
-	--pc-11-light: oklch(var(--pc-lightness-light) var(--pc-chroma-light) 240deg);
-	--pc-11-basic: oklch(var(--pc-lightness-basic) var(--pc-chroma-basic) 240deg);
-	--pc-11-dark: oklch(var(--pc-lightness-dark) var(--pc-chroma-dark) 240deg);
+	--pc-0-h: 0deg; --pc-1-h: 120deg; --pc-2-h: 240deg;
+	--pc-3-h: 0deg; --pc-4-h: 120deg; --pc-5-h: 240deg;
+	--pc-6-h: 0deg; --pc-7-h: 120deg; --pc-8-h: 240deg;
+	--pc-9-h: 0deg; --pc-10-h: 120deg; --pc-11-h: 240deg;
 }
+
+/* ==========================================================================
+   要素ベーススタイル
+   ========================================================================== */
 
 * {
 	box-sizing: border-box;
@@ -181,12 +132,40 @@ button {
 	cursor: pointer;
 }
 
+/* select(ヘッダーのカラースキーム選択・ContextScaleModal)は全て同じ標準の見た目 */
+select {
+	min-width: 0;
+	padding: 4px 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+	color: var(--color-ink);
+	font-family: inherit;
+	font-size: 13px;
+}
+
+/* h4はコード表記の大見出し(ChordPanel/ScaleAnalysis/ChordModal)としてのみ使う。
+   supはテンション表記(9, 11, 13など)の添え字 */
+h4 {
+	margin: 0;
+	font-size: 30px;
+	font-weight: 600;
+	text-align: center;
+}
+
+h4 sup {
+	font-size: 0.5em;
+}
+
+/* ==========================================================================
+   アプリ全体レイアウト
+   ========================================================================== */
+
 .app-root {
 	height: 100%;
 }
 
 .app {
-	box-sizing: border-box;
 	height: 100%;
 	padding: 16px;
 	display: flex;
@@ -194,16 +173,16 @@ button {
 	gap: 12px;
 }
 
-.app__title {
-	margin: 0;
-	font-size: 24px;
-}
-
 .app__header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
+}
+
+.app__title {
+	margin: 0;
+	font-size: 24px;
 }
 
 .color-scheme-select {
@@ -214,193 +193,31 @@ button {
 	color: var(--color-muted);
 }
 
-.color-scheme-select__control {
-	padding: 4px 6px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
-	color: var(--color-ink);
-	font-size: 13px;
-}
+/* ==========================================================================
+   汎用パーツ
+   ========================================================================== */
 
-.progression-editor__scroll-area {
-	box-sizing: border-box;
-	height: 100%;
-	overflow-x: auto;
-	overflow-y: auto;
-	padding-bottom: 8px;
-
-	/* scale-rowとchord-rowをまとめて1つの領域としてスクロールさせる(行ごとに独立してスクロールさせない) */
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	/* align-items:stretch(既定)のままだとscale-row/chord-rowの幅がこのスクロール領域の幅に
-	   合わせて縮められてしまい、カード幅の合計がそれを超えたときにカードそのものが潰れてしまう。
-	   flex-startにして行を内容量(max-content)で幅取りさせ、はみ出した分はoverflow-xでスクロールさせる */
-	align-items: flex-start;
-}
-
-.progression-editor {
-	--progression-card-width: 200px;
-	--progression-card-min-height: 400px;
-	--context-scale-panel-min-height: 150px;
-	--progression-gap: 12px;
-	--progression-shift: calc(var(--progression-card-width) + var(--progression-gap));
-
-	flex: 1 1 auto;
-	min-height: 0;
-}
-
-/* scale-row/chord-rowは列数・列幅(--progression-card-width)・列間隔(--progression-gap)を揃えることで、
-   互いに独立したReact配列(Progression.contexts/chords)でありながら見た目上は縦に揃って見える */
-.progression-editor__scale-row,
-.progression-editor__chord-row {
-	display: flex;
-	align-items: stretch;
-	gap: var(--progression-gap);
-	isolation: isolate;
-}
-
-.progression-editor__slot {
-	display: block;
-	/* placeholder(破線)とcard(実体)がアニメーションで重なる際、cardが手前・placeholderが背面になるようにする。
-	   slotはchord-row/scale-row内のflexアイテムなのでposition指定なしでもz-indexが有効。 */
-	z-index: 0;
-}
-
-.progression-editor__slot:has(.progression-editor__card) {
-	z-index: 1;
-}
-
-.progression-editor__card {
-	border: 0;
-	border-radius: var(--radius-card);
-	padding: 12px;
-	background: var(--color-surface);
-	box-shadow: 0 5px 10px rgba(var(--color-ink-rgb), 0.2), 0 15px 20px rgba(var(--color-ink-rgb), 0.1);
-	width: var(--progression-card-width);
-}
-
-.context-scale-panel {
-	display: flex;
-	flex-direction: column;
-	min-height: var(--context-scale-panel-min-height);
-	justify-content: center;
-	align-items: center;
-	text-align: center;
-	width: var(--progression-card-width);
-	padding: 12px;
-	border-radius: var(--radius-card);
-
-	gap: 8px;
-	transform: translateX(50%); /* またがるように表示する */
-}
-
-.context-scale-panel--dummy {
-	background: transparent;
-	box-shadow: none;
-}
-
-/* context-scale-panel(メインの進行表示)ではnexus-blockをより大きく表示する */
-.context-scale-panel .nexus-block__relative {
-	font-size: 13px;
-}
-
-.context-scale-panel .nexus-block__degree {
-	font-size: 20px;
-}
-
-.context-scale-panel .nexus-block__key {
-	font-size: 16px;
-}
-
-.context-scale-panel__controls {
-	display: flex;
-	gap: 16px;
-	max-width: 100%;
-}
-
-/* 実体を持たない/未確定のパネル群で共通の見た目(枠のみ・破線・背景なし)。
-   実体のあるパネル群(.progression-editor__card: 白背景・実線)と対になる */
-.progression-editor__placeholder {
-	position: relative;
-	border: 2px dashed var(--color-border);
-	border-radius: var(--radius-card);
-	background: transparent;
-	color: var(--color-muted);
-}
-
-.add-context-scale-button {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 4px;
-	min-height: var(--context-scale-panel-min-height);
-	width: var(--progression-card-width);
-	transform: translateX(50%); /* またがるように表示する(context-scale-panelと同じ位置合わせ) */
-}
-
-.add-context-scale-button:hover {
-	background: rgba(var(--color-ink-rgb), 0.05);
-}
-
-.add-context-scale-button__icon {
-	width: 40px;
-	height: 40px;
-}
-
-.add-context-scale-button__label {
-	font-size: 14px;
-	font-weight: 600;
-}
-
-.chord-entry-panel {
-	position: relative;
-	display: flex;
-	flex-wrap: wrap;
-	align-content: flex-start;
-	gap: 24px;
-	height: 100%;
-}
-
-/* chord-panelはcontrols(position: absoluteでカード左上に重なる)の下からはみ出さないよう、
-   controlsの高さぶんmargin-topで避ける */
-.chord-entry-panel > .chord-panel {
-	margin-top: 36px;
-}
-
-/* カード(chord-entry-panel)・プレースホルダー(add-chord-panel)どちらの左上にも重ねて表示する
-   insert/delete等のコントロール行。flexで場所を取ると個々のpadding差で位置がずれるため、
-   両者ともposition: absoluteで揃える */
-.progression-editor__card-controls {
-	position: absolute;
-	top: 10px;
-	left: 8px;
-	right: 8px;
-	display: flex;
-	justify-content: space-between;
-}
-.progression-editor__placeholder .progression-editor__card-controls {
-	top: 8px; /*border分調整*/
-}
+/* --- アイコンボタン --- */
 
 .icon-button {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 6px;
 	width: 32px;
 	height: 32px;
 	border: 1px solid var(--color-border);
 	border-radius: 50%;
 	background: transparent;
-	color: var(--color-ink);
-	font-size: 13px;
+}
+
+/* 透明背景のボタン類で共通のhover背景。add-chord-panelの本体(__body)もbutton要素であり、
+   同じ扱いにする(hover色を破線枠の内側いっぱいに塗るため、:hasで親パネル側に付けている) */
+.icon-button:hover,
+.add-chord-panel:has(.add-chord-panel__body:hover) {
+	background: rgba(var(--color-ink-rgb), 0.05);
 }
 
 .icon-button:hover {
-	background: rgba(var(--color-ink-rgb), 0.05);
 	border-color: var(--color-faint);
 }
 
@@ -409,10 +226,6 @@ button {
 	flex: 0 0 auto;
 	width: 16px;
 	height: 16px;
-}
-
-.icon-button__label {
-	white-space: nowrap;
 }
 
 .icon-button--delete {
@@ -424,65 +237,7 @@ button {
 	border-color: var(--color-danger);
 }
 
-.chord-panel,
-.scale-panel {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 8px;
-	flex-basis: 100%;
-}
-
-.chord-panel__label,
-.scale-panel__label {
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--color-muted);
-	text-align: center;
-}
-
-.chord-panel__name {
-	margin: 0;
-	font-size: 30px;
-	font-weight: 600;
-	text-align: center;
-}
-
-.scale-analysis {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 2px;
-}
-
-.scale-analysis__tension {
-	margin: 0;
-	font-size: 30px;
-	font-weight: 600;
-	text-align: center;
-}
-
-.scale-analysis__tension sup {
-	font-size: 0.5em;
-}
-
-.scale-analysis__alt-notations {
-	font-size: 13px;
-	color: var(--color-muted);
-	text-align: center;
-}
-
-.scale-analysis__name {
-	font-size: 13px;
-	font-weight: 600;
-	text-align: center;
-}
-
-.scale-analysis__origin {
-	font-size: 13px;
-	color: var(--color-muted);
-	text-align: center;
-}
+/* --- 構成音チップ (chordTones.tsx) --- */
 
 .chord-tones {
 	display: flex;
@@ -500,8 +255,10 @@ button {
 	font-size: 12px;
 }
 
-/* 12音を横並びに表示する汎用UI(toneRow.tsx)。ToneRow(読み取り専用)とEditableToneRow(チェックボックス編集)は
+/* --- 12音の横並び表示 (toneRow.tsx) ---
+   ToneRow(読み取り専用)とEditableToneRow(チェックボックス編集)は
    見た目を揃えることが重要なため、同じクラスを共有する */
+
 .tone-row {
 	--tone-cell-width: 40px;
 	--tone-cell-height: 28px;
@@ -514,7 +271,6 @@ button {
 
 .tone-row__cell {
 	position: relative;
-	box-sizing: border-box;
 	flex: 0 0 var(--tone-cell-width);
 	width: var(--tone-cell-width);
 	height: var(--tone-cell-height);
@@ -547,6 +303,149 @@ button {
 	border-width: var(--border-width-active);
 	font-weight: 600;
 }
+
+/* --- 補足テキスト(複数のパネル・モーダルで共通) --- */
+
+/* コードの別表記リスト (chord.getKnownNotations) */
+.alt-notations {
+	font-size: 13px;
+	color: var(--color-muted);
+	text-align: center;
+}
+
+/* 既知スケールの名前と由来 (getKnownScaleInfo) */
+.scale-name {
+	font-size: 13px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.scale-origin {
+	font-size: 13px;
+	color: var(--color-muted);
+	text-align: center;
+}
+
+/* --- スケール分析 (scaleAnalysis.tsx) ---
+   表記・別表記・スケール名・由来の縦積み。ChordScaleModalの候補ボタン内ヘッダーも同じレイアウト */
+
+.scale-analysis,
+.chord-scale-modal__candidate-header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+/* --- nexus表示 (nexusBlock.tsx) --- */
+
+.nexus-block__relative {
+	font-size: 9px;
+	color: var(--color-faint);
+	text-align: center;
+}
+
+.nexus-block__degree {
+	font-size: 14px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.nexus-block__key {
+	font-size: 11px;
+	color: var(--color-muted);
+	text-align: center;
+}
+
+/* ==========================================================================
+   コード進行エディタ (progressionEditor.tsx)
+   ========================================================================== */
+
+.progression-editor {
+	--progression-card-width: 200px;
+	--progression-card-min-height: 400px;
+	--context-scale-panel-min-height: 150px;
+	--progression-gap: 12px;
+	--progression-shift: calc(var(--progression-card-width) + var(--progression-gap));
+
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+.progression-editor__scroll-area {
+	height: 100%;
+	overflow-x: auto;
+	overflow-y: auto;
+	padding-bottom: 8px;
+
+	/* scale-rowとchord-rowをまとめて1つの領域としてスクロールさせる(行ごとに独立してスクロールさせない) */
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	/* align-items:stretch(既定)のままだとscale-row/chord-rowの幅がこのスクロール領域の幅に
+	   合わせて縮められてしまい、カード幅の合計がそれを超えたときにカードそのものが潰れてしまう。
+	   flex-startにして行を内容量(max-content)で幅取りさせ、はみ出した分はoverflow-xでスクロールさせる */
+	align-items: flex-start;
+}
+
+/* scale-row/chord-rowは列数・列幅(--progression-card-width)・列間隔(--progression-gap)を揃えることで、
+   互いに独立したReact配列(Progression.contexts/entries)でありながら見た目上は縦に揃って見える */
+.progression-editor__scale-row,
+.progression-editor__chord-row {
+	display: flex;
+	align-items: stretch;
+	gap: var(--progression-gap);
+	isolation: isolate;
+}
+
+.progression-editor__slot {
+	display: block;
+	/* placeholder(破線)とcard(実体)がアニメーションで重なる際、cardが手前・placeholderが背面になるようにする。
+	   slotはchord-row/scale-row内のflexアイテムなのでposition指定なしでもz-indexが有効。 */
+	z-index: 0;
+}
+
+.progression-editor__slot:has(.progression-editor__card) {
+	z-index: 1;
+}
+
+/* 実体のあるパネル群で共通の見た目(白背景・影つきカード) */
+.progression-editor__card {
+	border: 0;
+	border-radius: var(--radius-card);
+	padding: 12px;
+	background: var(--color-surface);
+	box-shadow: 0 5px 10px rgba(var(--color-ink-rgb), 0.2), 0 15px 20px rgba(var(--color-ink-rgb), 0.1);
+	width: var(--progression-card-width);
+}
+
+/* 実体を持たない/未確定のパネル群で共通の見た目(枠のみ・破線・背景なし)。
+   実体のあるパネル群(.progression-editor__card)と対になる */
+.progression-editor__placeholder {
+	position: relative;
+	border: 2px dashed var(--color-border);
+	border-radius: var(--radius-card);
+	background: transparent;
+	color: var(--color-muted);
+}
+
+/* カード(chord-entry-panel)・プレースホルダー(add-chord-panel)どちらの左上にも重ねて表示する
+   insert/delete等のコントロール行。flexで場所を取ると個々のpadding差で位置がずれるため、
+   両者ともposition: absoluteで揃える */
+.progression-editor__card-controls {
+	position: absolute;
+	top: 10px;
+	left: 8px;
+	right: 8px;
+	display: flex;
+	justify-content: space-between;
+}
+
+.progression-editor__placeholder .progression-editor__card-controls {
+	top: 8px; /*border分調整*/
+}
+
+/* --- 挿入/削除アニメーション --- */
 
 @keyframes progression-editor-insert {
 	from { margin-right: calc(-1 * var(--progression-shift)); opacity: 0; }
@@ -587,6 +486,43 @@ button {
 	}
 }
 
+/* ==========================================================================
+   コードカード (chordEntryPanel.tsx / addChordPanel.tsx)
+   ========================================================================== */
+
+.chord-entry-panel {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	gap: 24px;
+	height: 100%;
+}
+
+/* chord-panelはcontrols(position: absoluteでカード左上に重なる)の下からはみ出さないよう、
+   controlsの高さぶんmargin-topで避ける */
+.chord-entry-panel > .chord-panel {
+	margin-top: 36px;
+}
+
+/* カード内のセクション(Chord/Scale)は同じ縦積みレイアウト */
+.chord-panel,
+.scale-panel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	flex-basis: 100%;
+}
+
+.chord-panel__label,
+.scale-panel__label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--color-muted);
+	text-align: center;
+}
+
 .add-chord-panel {
 	position: relative;
 	width: var(--progression-card-width);
@@ -607,10 +543,6 @@ button {
 	color: inherit;
 }
 
-.add-chord-panel:has(.add-chord-panel__body:hover) {
-	background: rgba(var(--color-ink-rgb), 0.05);
-}
-
 .add-chord-panel__icon {
 	width: 40px;
 	height: 40px;
@@ -620,6 +552,48 @@ button {
 	font-size: 14px;
 	font-weight: 600;
 }
+
+/* ==========================================================================
+   コンテキストスケールパネル (contextScalePanel.tsx)
+   ========================================================================== */
+
+.context-scale-panel {
+	display: flex;
+	flex-direction: column;
+	min-height: var(--context-scale-panel-min-height);
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	width: var(--progression-card-width);
+	padding: 12px;
+	border-radius: var(--radius-card);
+
+	gap: 8px;
+	transform: translateX(50%); /* コードとコードにまたがるように表示する */
+}
+
+.context-scale-panel__controls {
+	display: flex;
+	gap: 16px;
+	max-width: 100%;
+}
+
+/* context-scale-panel(メインの進行表示)ではnexus-blockをより大きく表示する */
+.context-scale-panel .nexus-block__relative {
+	font-size: 13px;
+}
+
+.context-scale-panel .nexus-block__degree {
+	font-size: 20px;
+}
+
+.context-scale-panel .nexus-block__key {
+	font-size: 16px;
+}
+
+/* ==========================================================================
+   モーダル
+   ========================================================================== */
 
 /* モーダル一般に共通する要素(背景・カード・確定/取消ボタン)。個々のモーダルはサイズやコンテンツのみを上書きする */
 .modal__backdrop {
@@ -646,7 +620,7 @@ button {
 	font-size: 12px;
 	font-weight: 600;
 	text-align: left;
-	width:100%;
+	width: 100%;
 	color: var(--color-muted);
 }
 
@@ -656,8 +630,10 @@ button {
 	gap: 16px;
 }
 
+/* モーダル内の標準の押しボタン(確定・取消・リセット) */
 .modal__cancel-button,
-.modal__confirm-button {
+.modal__confirm-button,
+.chord-modal__reset-button {
 	padding: 6px 16px;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-control);
@@ -675,39 +651,24 @@ button {
 	cursor: default;
 }
 
-.nexus-block__chords {
-	font-size: 16px;
-	font-weight: 600;
+/* 候補の一覧から1つ選ぶボタン(ChordModalのトライアド・ChordScaleModalのスケール候補で共通)。
+   選択中はインクの太枠+ハイライト背景で示す */
+.option-button {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
 }
 
-.nexus-block__chord--muted {
-	font-weight: 400;
-	color: var(--color-faint);
+.option-button--selected {
+	border-color: var(--color-ink);
+	border-width: var(--border-width-active);
+	background: var(--color-highlight);
 }
 
-.nexus-block__arrow {
-	font-weight: 400;
-	color: var(--color-faint);
-	margin: 0 2px;
-}
-
-.nexus-block__relative {
-	font-size: 9px;
-	color: var(--color-faint);
-	text-align: center;
-}
-
-.nexus-block__degree {
-	font-size: 14px;
-	font-weight: 600;
-	text-align: center;
-}
-
-.nexus-block__key {
-	font-size: 11px;
-	color: var(--color-muted);
-	text-align: center;
-}
+/* --- ChordModal --- */
 
 .chord-modal {
 	width: 560px;
@@ -725,24 +686,12 @@ button {
 	height: 320px;
 }
 
-.chord-modal__direct-button {
-	display: flex;
-	flex-direction: column;
+.chord-modal__direct-grid .option-button {
 	justify-content: center;
-	align-items: center;
 	gap: 2px;
 	padding: 6px 2px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
 	font-size: 15px;
 	font-weight: 600;
-}
-
-.chord-modal__direct-button--active {
-	border-color: var(--color-ink);
-	border-width: var(--border-width-active);
-	background: var(--color-highlight);
 }
 
 .chord-modal__tones {
@@ -752,48 +701,24 @@ button {
 	gap: 8px;
 }
 
-.chord-modal__notation {
-	margin: 0;
-	font-size: 30px;
-	font-weight: 600;
-	text-align: center;
-}
-
-.chord-modal__alt-notations {
-	font-size: 13px;
-	color: var(--color-muted);
-	text-align: center;
-}
-
 .chord-modal__reset-button {
-	padding: 6px 16px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
 	font-size: 13px;
 }
+
+/* --- ContextScaleModal --- */
 
 .context-scale-modal__controls {
 	display: flex;
 	gap: 8px;
 }
 
-.context-scale-modal__select {
-	min-width: 0;
-	padding: 4px 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
-	color: var(--color-ink);
-	font-size: 13px;
-}
+/* --- ChordScaleModal --- */
 
 .chord-scale-modal {
 	align-items: center;
 	max-height: calc(100vh - 64px);
 	overflow-y: auto;
 }
-
 
 .chord-scale-modal__candidate-list {
 	display: flex;
@@ -802,6 +727,12 @@ button {
 	width: 100%;
 	height: 320px;
 	overflow-y: auto;
+}
+
+.chord-scale-modal__candidate-list .option-button {
+	gap: 6px;
+	width: 100%;
+	padding: 8px;
 }
 
 .chord-scale-modal__candidate-placeholder {
@@ -813,41 +744,3 @@ button {
 	font-size: 13px;
 	text-align: center;
 }
-
-.chord-scale-modal__candidate-button {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 6px;
-	width: 100%;
-	padding: 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-control);
-	background: var(--color-surface);
-}
-
-.chord-scale-modal__candidate-button--exact {
-	border-color: var(--color-ink);
-	border-width: var(--border-width-active);
-	background: var(--color-highlight);
-}
-
-.chord-scale-modal__candidate-header {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 2px;
-}
-
-.chord-scale-modal__candidate-name {
-	font-size: 13px;
-	font-weight: 600;
-	text-align: center;
-}
-
-.chord-scale-modal__candidate-origin {
-	font-size: 13px;
-	color: var(--color-muted);
-	text-align: center;
-}
-

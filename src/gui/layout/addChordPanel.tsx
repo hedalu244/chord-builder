@@ -15,12 +15,12 @@ export function AddChordPanel(props: AddChordPanelProps) {
 	return (
 		<div className="progression-editor__placeholder add-chord-panel">
 			<div className="progression-editor__card-controls">
-				<IconButton icon="icons/insert-before.svg" label="Insert before" className="add-chord-panel__insert-before-button" onClick={onInsertBefore} />
+				<IconButton icon="icons/insert-before.svg" label="Insert before" onClick={onInsertBefore} />
 				{onShift && (
-					<IconButton icon="icons/shift.svg" label="Shift" className="add-chord-panel__shift-button" onClick={onShift} />
+					<IconButton icon="icons/shift.svg" label="Shift" onClick={onShift} />
 				)}
 				{onInsertAfter && (
-					<IconButton icon="icons/insert-after.svg" label="Insert after" className="add-chord-panel__insert-after-button" onClick={onInsertAfter} />
+					<IconButton icon="icons/insert-after.svg" label="Insert after" onClick={onInsertAfter} />
 				)}
 			</div>
 			<button type="button" className="add-chord-panel__body" onClick={onClick}>

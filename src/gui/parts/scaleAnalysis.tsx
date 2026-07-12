@@ -20,15 +20,15 @@ export function ScaleAnalysis(props: ScaleAnalysisProps) {
 
 	return (
 		<div className="scale-analysis">
-			<h4 className="scale-analysis__tension">
+			<h4>
 				{chord.getSyntheticNotation()}
 				{tensionNames.length > 0 && <sup> ({tensionNames.join(", ")})</sup>}
 			</h4>
 			{knownNotations.length > 0 && (
-				<span className="scale-analysis__alt-notations">{knownNotations.join(" / ")}</span>
+				<span className="alt-notations">{knownNotations.join(" / ")}</span>
 			)}
-			<span className="scale-analysis__name">{description.name}</span>
-			<span className="scale-analysis__origin">{description.description}</span>
+			<span className="scale-name">{description.name}</span>
+			<span className="scale-origin">{description.description}</span>
 		</div>
 	);
 }

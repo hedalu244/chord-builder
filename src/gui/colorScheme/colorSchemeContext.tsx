@@ -1,11 +1,11 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { ColorSchemeId } from "./colorSchemeSelect";
+import { COLOR_SCHEMES, ColorSchemeId } from "./colorSchemeSelect";
 
 const STORAGE_KEY = "chord-builder:color-scheme";
 const DEFAULT_SCHEME: ColorSchemeId = "chromatic";
 
 function isColorSchemeId(value: string | null): value is ColorSchemeId {
-	return value === "chromatic" || value === "fifths" || value === "axisSystem";
+	return COLOR_SCHEMES.some(scheme => scheme.id === value);
 }
 
 function loadStoredScheme(): ColorSchemeId {

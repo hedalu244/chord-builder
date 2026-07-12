@@ -19,7 +19,6 @@ export function ContextScaleModal(props: ContextScaleModalProps) {
 		<Modal className="context-scale-modal" title="Edit Context Scale" onCancel={onCancel} onConfirm={() => onConfirm(new ContextScale(key, name))}>
 			<div className="context-scale-modal__controls">
 				<select
-					className="context-scale-modal__select"
 					value={String(key.value)}
 					onChange={event => setKey(PitchClass.all[Number(event.target.value)])}
 				>
@@ -28,7 +27,6 @@ export function ContextScaleModal(props: ContextScaleModalProps) {
 					))}
 				</select>
 				<select
-					className="context-scale-modal__select"
 					value={name}
 					onChange={event => setName(event.target.value)}
 				>

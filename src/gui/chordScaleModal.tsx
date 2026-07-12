@@ -27,15 +27,19 @@ function CandidateList(props: CandidateListProps) {
 	return (
 		<div className="chord-scale-modal__candidate-list">
 			{candidates.map((knownScale, index) => {
-				const classNames = ["chord-scale-modal__candidate-button"];
-				if (knownScale.scale.equals(currentScale)) classNames.push("chord-scale-modal__candidate-button--exact");
+				const selected = knownScale.scale.equals(currentScale);
 				const description = getKnownScaleInfo(knownScale, root);
 
 				return (
-					<button type="button" key={index} className={classNames.join(" ")} onClick={() => onSelect(knownScale.scale)}>
+					<button
+						type="button"
+						key={index}
+						className={selected ? "option-button option-button--selected" : "option-button"}
+						onClick={() => onSelect(knownScale.scale)}
+					>
 						<div className="chord-scale-modal__candidate-header">
-							<span className="chord-scale-modal__candidate-name">{description.name}</span>
-							<span className="chord-scale-modal__candidate-origin">{description.description}</span>
+							<span className="scale-name">{description.name}</span>
+							<span className="scale-origin">{description.description}</span>
 						</div>
 						<ToneRow root={root} tones={knownScale.scale.getPitchClasses(root)} />
 					</button>

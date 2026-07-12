@@ -9,12 +9,10 @@
   "scripts": {
     "debug": "concurrently \"tsc -w --noEmit\" \"esbuild src/main.tsx --bundle --outfile=docs/main.js --sourcemap --watch\" \"node scripts/watchStatic.cjs\"",
     "copy:static": "node scripts/copyStatic.cjs",
-    "build": "npm run copy:static && esbuild src/main.tsx --bundle --outfile=docs/main.js --minify",
-    "build:pathfinder-tester": "npm run copy:static && esbuild src/pathfinderTester.ts --bundle --outfile=docs/pathfinderTester.js --minify"
+    "build": "npm run copy:static && esbuild src/main.tsx --bundle --outfile=docs/main.js --minify"
   },
   "keywords": [],
   "devDependencies": {
-    "@types/p5": "^1.7.7",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.3"
