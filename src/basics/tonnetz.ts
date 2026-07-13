@@ -1,7 +1,7 @@
 import { PitchClass } from "./pitch";
 import { allModes, Mode, Triad } from "./triad";
 import {
-    apply, boundsOfPoints, distance, inverse, mat2, Mat2, Rect, rectContains, rectsOverlap, Vec2, vec2,
+    add, apply, boundsOfPoints, distance, inverse, mat2, Mat2, Rect, rectContains, rectsOverlap, Vec2, vec2,
 } from "./vec2";
 
 // トネッツ図: 完全五度(+7)と長三度(+4)の2ベクトルの整数結合で表せる格子点に
@@ -158,4 +158,52 @@ export function triangleAtPoint(w: Vec2): TonnetzTriangle {
     const t = Math.floor(l.y);
     const mode: Mode = (l.x - f) + (l.y - t) < 1 ? "M" : "m";
     return { fifths: f, thirds: t, mode };
+}
+
+// --- 内心 ---
+
+// 三角形の内心(内接円の中心 = 3辺から等距離の点)。頂点よりも「三角形の中身」を代表する点として、
+// ラベルの配置と最寄り三角形のクリック判定に使う
+function incenterOf(vertices: readonly Vec2[]): Vec2 {
+    const [a, b, c] = vertices;
+    const la = distance(b, c); // 頂点aの対辺の長さ
+    const lb = distance(c, a);
+    const lc = distance(a, b);
+    const sum = la + lb + lc;
+    return vec2(
+        (la * a.x + lb * b.x + lc * c.x) / sum,
+        (la * a.y + lb * b.y + lc * c.y) / sum
+    );
+}
+
+// 三角形は2種(major/minor)の平行移動しか存在しないため、セル原点(f,t)からの
+// 内心のオフセットをモードごとに事前計算して記憶しておく
+const INCENTER_OFFSETS: Readonly<Record<Mode, Vec2>> = {
+    M: incenterOf(triangleVertices({ fifths: 0, thirds: 0, mode: "M" }).map(latticeToWorld)),
+    m: incenterOf(triangleVertices({ fifths: 0, thirds: 0, mode: "m" }).map(latticeToWorld)),
+};
+
+export function triangleIncenter(tri: TonnetzTriangle): Vec2 {
+    return add(latticeToWorld(latticePoint(tri.fifths, tri.thirds)), INCENTER_OFFSETS[tri.mode]);
+}
+
+// ワールド座標wに内心が最も近い三角形。modeを指定するとそのモードの三角形に限定する。
+// 三角形タイリングに対して内心がつくるボロノイ分割はもとの三角形分割とほぼ一致するため、
+// モード指定なしではtriangleAtPointとほぼ同じ結果になり、クリック判定はこちらに一本化できる
+export function nearestTriangle(w: Vec2, mode?: Mode): TonnetzTriangle {
+    const l = worldToLattice(w);
+    const f = Math.floor(l.x);
+    const t = Math.floor(l.y);
+    const candidates: TonnetzTriangle[] = [];
+    for (let df = -1; df <= 1; df++) {
+        for (let dt = -1; dt <= 1; dt++) {
+            for (const m of allModes) {
+                if (mode !== undefined && m !== mode) continue;
+                candidates.push({ fifths: f + df, thirds: t + dt, mode: m });
+            }
+        }
+    }
+    return candidates.reduce((best, tri) =>
+        distance(triangleIncenter(tri), w) < distance(triangleIncenter(best), w) ? tri : best
+    );
 }

@@ -1,4 +1,5 @@
 import { Chord } from "../../basics/chord";
+import { ChordNotation } from "./chordNotation";
 import { findKnownScale, getKnownScaleInfo } from "../../basics/knownScale";
 import { PitchClass } from "../../basics/pitch";
 import { Scale } from "../../basics/scale";
@@ -21,7 +22,7 @@ export function ScaleAnalysis(props: ScaleAnalysisProps) {
 	return (
 		<div className="scale-analysis">
 			<h4>
-				{chord.getSyntheticNotation()}
+				<ChordNotation chord={chord} />
 				{tensionNames.length > 0 && <sup> ({tensionNames.join(", ")})</sup>}
 			</h4>
 			{knownNotations.length > 0 && (

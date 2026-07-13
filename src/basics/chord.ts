@@ -1,6 +1,6 @@
 import { Interval, PitchClass } from "./pitch";
 import { allTriads, ModeToNotation, Triad } from "./triad";
-import { knownQualities } from "./knownQuality";
+import { knownQualities, qualityTones } from "./knownQuality";
 import { getOmittedDegreeNames, getTensionNames } from "./tensions";
 
 export class Chord {
@@ -33,8 +33,9 @@ export class Chord {
 
     // トライアドのルートを固定し、triadの構成音との差分(省略/追加)を逐一書き足して表記を組み立てる。
     // 6th/7th/M7thはモード直後に括弧なしで付く特殊な表記のため先に判定し、9/11/13系のテンションと省略はその後の差分として扱う。
-    // 6thは7th/M7thと共存できず、その場合は13としてテンション側に回る
-    getSyntheticNotation(): string {
+    // 6thは7th/M7thと共存できず、その場合は13としてテンション側に回る。
+    // テンション・省略の括弧書きは添え字(sup)として小さく表示できるよう、本体と分けたパーツで返す
+    getSyntheticNotationParts(): { base: string; tension: string; omit: string } {
         const root = this.triad.root;
         const triadTones = this.triad.getChordTones();
         const triadRelativeTones = triadTones.map(tone => tone.delta(root));
@@ -58,10 +59,16 @@ export class Chord {
         const extraTones = relativeTones.filter(interval => !anchorValues.has(interval.value));
         const tensionNames = getTensionNames(extraTones, anchorTones);
 
-        const tensionNotation = tensionNames.length > 0 ? `(${tensionNames.join(", ")})` : "";
-        const omitNotation = omittedNames.length > 0 ? `(omit ${omittedNames.join(", ")})` : "";
+        return {
+            base: `${root.toString()}${ModeToNotation(this.triad.mode)}${headlineNotation}`,
+            tension: tensionNames.length > 0 ? `(${tensionNames.join(", ")})` : "",
+            omit: omittedNames.length > 0 ? `(omit ${omittedNames.join(", ")})` : "",
+        };
+    }
 
-        return `${root.toString()}${ModeToNotation(this.triad.mode)}${headlineNotation}${tensionNotation}${omitNotation}`;
+    getSyntheticNotation(): string {
+        const parts = this.getSyntheticNotationParts();
+        return `${parts.base}${parts.tension}${parts.omit}`;
     }
 
     // ルートを変えてでも、選ばれた構成音とちょうど一致する既知の形(トライアド/knownQuality)の候補を挙げる。
@@ -75,8 +82,8 @@ export class Chord {
 
         const qualityNotations = PitchClass.all.flatMap(root =>
             knownQualities
-                .filter(quality => this.hasSameTones(quality.intervals.map(interval => root.add(interval))))
-                .map(quality => `${root.add(quality.intervals[0]).toString()}${quality.notation}`)
+                .filter(quality => this.hasSameTones(qualityTones(root, quality)))
+                .map(quality => `${root.toString()}${quality.notation}`)
         );
 
         const candidates = Array.from(new Set([...triadNotations, ...qualityNotations]));

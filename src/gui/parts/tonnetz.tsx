@@ -3,14 +3,15 @@ import { PitchClass } from "../../basics/pitch";
 import { Triad } from "../../basics/triad";
 import {
 	edgesInRect, LatticeEdge, latticePitchClass, LatticePoint, latticePointsInRect, latticeToWorld,
-	nearestLatticePoint, TonnetzTriangle, triangleAtPoint, trianglesInRect, triangleTriad, triangleVertices,
+	nearestLatticePoint, nearestTriangle, TonnetzTriangle, triangleIncenter, trianglesInRect,
+	triangleTriad, triangleVertices,
 } from "../../basics/tonnetz";
 import { add, expandRect, Rect, scale, sub, Vec2, vec2 } from "../../basics/vec2";
 
 // 1格子単位(完全五度)あたりの描画ピクセル数と、viewBoxの論理サイズ
 const UNIT = 64;
 const VIEW_WIDTH = 520;
-const VIEW_HEIGHT = 320;
+const VIEW_HEIGHT = 400;
 const NODE_RADIUS = 13;
 // クリック位置がこの半径の内側ならノードへの操作、外側なら三角形への操作とみなす(円より少し甘め)
 const NODE_HIT_RADIUS = NODE_RADIUS + 3;
@@ -25,15 +26,20 @@ export type TonnetzLayer = {
 	readonly className: string;
 	// 強調するノード
 	readonly pitchClasses?: readonly PitchClass[];
-	// trueなら、強調ノード同士が隣接している辺も強調する(スケールの形の表示に使う)
+	// trueなら、強調ノード同士が隣接している辺も強調する(スケールやコードの形の表示に使う)。
+	// 強調された辺の下にはデフォルトの格子線を描かない(半透明の強調線が背景線と二重に見えないように)
 	readonly connect?: boolean;
+	// trueなら、3頂点すべてが強調ノードに含まれる三角形も塗る(スケールに含まれるトライアドの表示に使う)
+	readonly fillContained?: boolean;
 	// 強調する三角形
 	readonly triads?: readonly Triad[];
 };
 
 // クリック/ホバー位置の解釈結果。ノード上かどうかの使い分け(コード選択)も、
-// 常に最寄りノードを使う使い方(スケールのスナップ)も、呼び出し側で選べるように両方を持たせる
+// 常に最寄りノードを使う使い方(スケールのスナップ)も、呼び出し側で選べるように両方を持たせる。
+// worldは生のワールド座標(格子単位)で、呼び出し側が独自の判定(モード限定の最寄り三角形など)に使える
 export type TonnetzTarget = {
+	readonly world: Vec2;
 	readonly nearestPoint: LatticePoint;
 	readonly nearestPitchClass: PitchClass;
 	readonly onNode: boolean;
@@ -44,6 +50,8 @@ export type TonnetzTarget = {
 type TonnetzProps = {
 	// 下に指定されたものから順に重ねて描画される
 	readonly layers: readonly TonnetzLayer[];
+	// trueなら各三角形の重心にトライアド名(C/Cmなど)を表示する(コード選択UI向け)
+	readonly showTriadLabels?: boolean;
 	// クリック(パンを伴わないポインタ操作)時に呼ばれる
 	readonly onTap?: (target: TonnetzTarget) => void;
 	// ポインタ移動のたびに呼ばれる。図から離れたときはnull
@@ -78,14 +86,6 @@ function triangleKey(tri: TonnetzTriangle): string {
 	return `${tri.fifths},${tri.thirds},${tri.mode}`;
 }
 
-function edgeDirectionName(edge: LatticeEdge): string {
-	const df = edge.to.fifths - edge.from.fifths;
-	const dt = edge.to.thirds - edge.from.thirds;
-	if (df === 1 && dt === 0) return "fifth";
-	if (df === 0 && dt === 1) return "third";
-	return "minor-third";
-}
-
 function toPx(p: LatticePoint): Vec2 {
 	return scale(latticeToWorld(p), UNIT);
 }
@@ -107,8 +107,10 @@ function clientToWorld(svg: SVGSVGElement, clientX: number, clientY: number, vie
 function targetAt(world: Vec2): TonnetzTarget {
 	const nearestPoint = nearestLatticePoint(world);
 	const offset = sub(scale(world, UNIT), toPx(nearestPoint));
-	const triangle = triangleAtPoint(world);
+	// 三角形の判定は「内心が最も近い三角形」に一本化(内心のボロノイ分割≒三角形分割)
+	const triangle = nearestTriangle(world);
 	return {
+		world,
 		nearestPoint,
 		nearestPitchClass: latticePitchClass(nearestPoint),
 		onNode: Math.hypot(offset.x, offset.y) <= NODE_HIT_RADIUS,
@@ -118,7 +120,7 @@ function targetAt(world: Vec2): TonnetzTarget {
 }
 
 export function Tonnetz(props: TonnetzProps) {
-	const { layers, onTap, onHover } = props;
+	const { layers, showTriadLabels, onTap, onHover } = props;
 	// viewBoxの左上のワールド座標(px単位)。初期状態は原点(C)が中央に来る位置
 	const [viewMin, setViewMin] = useState<Vec2>(() => vec2(-VIEW_WIDTH / 2, -VIEW_HEIGHT / 2));
 	const dragRef = useRef<DragState | null>(null);
@@ -184,6 +186,26 @@ export function Tonnetz(props: TonnetzProps) {
 		triadKeys: new Set((layer.triads ?? []).map(triad => triad.toString())),
 	}));
 
+	const isConnectedEdge = (pcValues: ReadonlySet<number>, edge: LatticeEdge): boolean =>
+		pcValues.has(latticePitchClass(edge.from).value) && pcValues.has(latticePitchClass(edge.to).value);
+
+	// いずれかのレイヤの強調線に覆われる辺。デフォルトの格子線の描画から除外する
+	const coveredEdgeKeys = new Set(
+		layerData
+			.filter(({ layer }) => layer.connect)
+			.flatMap(({ pcValues }) => edges.filter(edge => isConnectedEdge(pcValues, edge)).map(edgeKey))
+	);
+
+	// レイヤが塗る三角形: 明示指定(triads)と、fillContained時の「3頂点すべてが強調ノード」の三角形
+	const highlightTriangles = (data: (typeof layerData)[number]): TonnetzTriangle[] => {
+		const { layer, pcValues, triadKeys } = data;
+		return triangles.filter(tri =>
+			triadKeys.has(triangleTriad(tri).toString()) ||
+			(layer.fillContained === true &&
+				triangleVertices(tri).every(vertex => pcValues.has(latticePitchClass(vertex).value)))
+		);
+	};
+
 	return (
 		<svg
 			className="tonnetz"
@@ -194,55 +216,66 @@ export function Tonnetz(props: TonnetzProps) {
 			onPointerCancel={handlePointerCancel}
 			onPointerLeave={handlePointerLeave}
 		>
-			{/* 背景: メジャー/マイナーの三角形の塗り分けと格子線 */}
-			{triangles.map(tri => (
-				<polygon
-					key={triangleKey(tri)}
-					className={`tonnetz__triangle tonnetz__triangle--${tri.mode === "M" ? "major" : "minor"}`}
-					points={trianglePointsAttr(tri)}
-				/>
+			{/* fillとstrokeは別で管理する: すべての塗り(三角形)をレイヤ順に描いたあと、
+			    すべての線(格子線→強調線)を上に重ねる。塗りが線を隠さないようにするため。
+			    ノードの強調はノード自身へのクラス付与で行う */}
+			{layerData.map((data, layerIndex) => (
+				<g key={layerIndex}>
+					{highlightTriangles(data).map(tri => (
+						<polygon
+							key={triangleKey(tri)}
+							className={`tonnetz__triangle-highlight tonnetz__triangle-highlight--${data.layer.className}`}
+							style={pitchClassColorVars(triangleTriad(tri).root.value)}
+							points={trianglePointsAttr(tri)}
+						/>
+					))}
+				</g>
 			))}
-			{edges.map(edge => {
+			{/* 背景の格子線。三角形と逆三角形の区別は形状から自明なため、背景の塗り分けはしない。
+			    強調線に覆われる辺は描かない(排他) */}
+			{edges.filter(edge => !coveredEdgeKeys.has(edgeKey(edge))).map(edge => {
 				const from = toPx(edge.from);
 				const to = toPx(edge.to);
 				return (
 					<line
 						key={edgeKey(edge)}
-						className={`tonnetz__edge tonnetz__edge--${edgeDirectionName(edge)}`}
+						className="tonnetz__edge"
 						x1={from.x} y1={from.y} x2={to.x} y2={to.y}
 					/>
 				);
 			})}
-			{/* 強調レイヤ: 三角形と辺。ノードの強調はノード自身へのクラス付与で行う */}
-			{layerData.map(({ layer, pcValues, triadKeys }, layerIndex) => (
+			{/* 強調線(スケールの形・構成音の連結など) */}
+			{layerData.map((data, layerIndex) => (
 				<g key={layerIndex}>
-					{triadKeys.size > 0 && triangles
-						.filter(tri => triadKeys.has(triangleTriad(tri).toString()))
-						.map(tri => (
-							<polygon
-								key={triangleKey(tri)}
-								className={`tonnetz__triangle-highlight tonnetz__triangle-highlight--${layer.className}`}
-								style={pitchClassColorVars(triangleTriad(tri).root.value)}
-								points={trianglePointsAttr(tri)}
-							/>
-						))}
-					{layer.connect && edges
-						.filter(edge =>
-							pcValues.has(latticePitchClass(edge.from).value) &&
-							pcValues.has(latticePitchClass(edge.to).value))
+					{data.layer.connect && edges
+						.filter(edge => isConnectedEdge(data.pcValues, edge))
 						.map(edge => {
 							const from = toPx(edge.from);
 							const to = toPx(edge.to);
 							return (
 								<line
 									key={edgeKey(edge)}
-									className={`tonnetz__edge-highlight tonnetz__edge-highlight--${layer.className}`}
+									className={`tonnetz__edge-highlight tonnetz__edge-highlight--${data.layer.className}`}
 									x1={from.x} y1={from.y} x2={to.x} y2={to.y}
 								/>
 							);
 						})}
 				</g>
 			))}
+			{/* トライアド名ラベル(各三角形の内心) */}
+			{showTriadLabels && triangles.map(tri => {
+				const centroid = scale(triangleIncenter(tri), UNIT);
+				return (
+					<text
+						key={triangleKey(tri)}
+						className="tonnetz__triangle-label"
+						x={centroid.x}
+						y={centroid.y}
+					>
+						{triangleTriad(tri).toString()}
+					</text>
+				);
+			})}
 			{/* ノード(円と音名ラベル) */}
 			{points.map(p => {
 				const pitchClass = latticePitchClass(p);

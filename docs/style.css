@@ -145,7 +145,8 @@ select {
 }
 
 /* h4はコード表記の大見出し(ChordPanel/ScaleAnalysis/ChordModal)としてのみ使う。
-   supはテンション表記(9, 11, 13など)の添え字 */
+   supはテンション表記(9, 11, 13など)の添え字。コード表記(chord-notation)はどのサイズで
+   置かれても添え字が相対的に小さくなるよう、共通でemベースの縮小をかける */
 h4 {
 	margin: 0;
 	font-size: 30px;
@@ -153,7 +154,8 @@ h4 {
 	text-align: center;
 }
 
-h4 sup {
+h4 sup,
+.chord-notation sup {
 	font-size: 0.5em;
 }
 
@@ -630,10 +632,9 @@ h4 sup {
 	gap: 16px;
 }
 
-/* モーダル内の標準の押しボタン(確定・取消・リセット) */
+/* モーダル内の標準の押しボタン(確定・取消) */
 .modal__cancel-button,
-.modal__confirm-button,
-.chord-modal__reset-button {
+.modal__confirm-button {
 	padding: 6px 16px;
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-control);
@@ -671,44 +672,205 @@ h4 sup {
 /* --- ChordModal --- */
 
 .chord-modal {
-	width: 560px;
-	align-items: center;
+	width: min(1080px, calc(100vw - 32px));
 	max-height: calc(100vh - 64px);
 	overflow-y: auto;
+}
+
+/* 左に大きくトネッツ図、右に詳細UI。幅が足りない環境(モバイル等)では縦並びに切り替える */
+.chord-modal__body {
+	display: flex;
+	gap: 20px;
+	width: 100%;
+	min-height: 0;
+}
+
+.chord-modal__tonnetz-pane {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.chord-modal__detail-pane {
+	flex: 0 0 400px;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+}
+
+@media (max-width: 920px) {
+	.chord-modal__body {
+		flex-direction: column;
+	}
+
+	.chord-modal__detail-pane {
+		flex: 1 1 auto;
+		width: 100%;
+	}
+}
+
+/* 前後関係の帯: 上段にcontextScale(コードとコードの中間に置く)、下段に前後のコードと編集中コード */
+.chord-modal__context-strip {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	row-gap: 4px;
+	align-items: end;
+	width: 100%;
+}
+
+.chord-modal__context-cell {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	min-width: 0;
+	text-align: center;
+}
+
+.chord-modal__context-cell--scale {
+	grid-row: 1;
+	font-size: 11px;
+	color: var(--color-muted);
+}
+
+.chord-modal__context-cell--before { grid-column: 2 / span 2; }
+.chord-modal__context-cell--after { grid-column: 4 / span 2; }
+
+.chord-modal__context-cell--chord {
+	grid-row: 2;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--color-muted);
+}
+
+.chord-modal__context-cell--prev { grid-column: 1 / span 2; }
+.chord-modal__context-cell--next { grid-column: 5 / span 2; }
+
+/* 編集中のコード名は帯の中で最も大きく表示する */
+.chord-modal__context-cell--current {
+	grid-row: 2;
+	grid-column: 3 / span 2;
+	font-size: 28px;
+	font-weight: 600;
+	color: var(--color-ink);
+}
+
+.chord-modal__context-value {
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* 参照オーバーレイの表示切替(目のアイコン)。OFFはグレーアウトで示す */
+.chord-modal__overlay-toggle {
+	padding: 2px;
+	border: 0;
+	border-radius: var(--radius-control);
+	background: transparent;
+	line-height: 0;
+}
+
+.chord-modal__overlay-toggle:hover {
+	background: rgba(var(--color-ink-rgb), 0.05);
+}
+
+.chord-modal__overlay-toggle img {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+
+.chord-modal__overlay-toggle:not(.chord-modal__overlay-toggle--on) {
+	opacity: 0.45;
+}
+
+/* --- ChordModalのタブ(quick/direct) --- */
+
+.chord-modal__tabs {
+	display: flex;
+	width: 100%;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.chord-modal__tab {
+	padding: 6px 20px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-muted);
+}
+
+.chord-modal__tab--active {
+	color: var(--color-ink);
+	border-bottom-color: var(--color-ink);
+}
+
+.chord-modal__quick {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.chord-modal__quick-controls {
+	display: flex;
+	justify-content: center;
+	gap: 16px;
+}
+
+.chord-modal__quick-controls label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--color-muted);
+}
+
+.chord-modal__hint {
+	margin: 0;
+	font-size: 12px;
+	color: var(--color-faint);
+	text-align: center;
+}
+
+.chord-modal__direct {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
 }
 
 .chord-modal__direct-grid {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
 	grid-auto-flow: row;
-	grid-template-rows: repeat(4, 1fr);
-	gap: 6px;
-	height: 320px;
+	gap: 4px;
+	width: 100%;
 }
 
 .chord-modal__direct-grid .option-button {
 	justify-content: center;
-	gap: 2px;
-	padding: 6px 2px;
-	font-size: 15px;
+	padding: 5px 2px;
+	font-size: 13px;
 	font-weight: 600;
 }
 
-.chord-modal__tones {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 8px;
-}
-
-.chord-modal__reset-button {
-	font-size: 13px;
+/* 右カラムの幅に収まるよう、モーダル内の12音表示は小さめのセルにする */
+.chord-modal .tone-row {
+	--tone-cell-width: 28px;
+	--tone-cell-height: 26px;
 }
 
 /* --- ContextScaleModal --- */
 
 .context-scale-modal {
-	width: 560px;
+	width: min(760px, calc(100vw - 32px));
 	max-height: calc(100vh - 64px);
 	overflow-y: auto;
 }
@@ -774,33 +936,35 @@ h4 sup {
 	cursor: grabbing;
 }
 
-/* 背景: メジャー/マイナーの三角形を交互の濃淡で塗り分ける */
-.tonnetz__triangle--major {
-	fill: rgba(var(--color-ink-rgb), 0.06);
-}
-
-.tonnetz__triangle--minor {
-	fill: rgba(var(--color-ink-rgb), 0.015);
-}
-
-/* 背景の格子線。完全五度の軸だけ少し強調する */
+/* 背景の格子線。向きによらず同じ線で描く */
 .tonnetz__edge {
 	stroke: var(--color-border);
 	stroke-width: 1;
 }
 
-.tonnetz__edge--fifth {
-	stroke: var(--color-faint);
-	stroke-width: 1.5;
+/* 各三角形の重心に置くトライアド名(C/Cmなど) */
+.tonnetz__triangle-label {
+	fill: rgba(var(--color-ink-rgb), 0.35);
+	font-size: 10px;
+	font-weight: 600;
+	text-anchor: middle;
+	dominant-baseline: central;
+	pointer-events: none;
 }
 
 /* --- 参照用オーバーレイ(操作対象ではない、前後のコード・contextScale) --- */
 
-/* contextScaleの参照表示: スケールの形を薄い線とノードの輪で敷く */
+/* contextScaleの参照表示: スケールの形を半透明の線・塗り・ノードの輪で敷く。
+   スケールに含まれる辺・トライアドは半透明のグレーで表し(下のデフォルト格子線は
+   Tonnetz側で描画されない)、2つのスケールが表示されて重なった箇所は自然に濃くなる */
 .tonnetz__edge-highlight--context {
 	stroke: rgba(var(--color-ink-rgb), 0.18);
 	stroke-width: 5;
 	stroke-linecap: round;
+}
+
+.tonnetz__triangle-highlight--context {
+	fill: rgba(var(--color-ink-rgb), 0.055);
 }
 
 .tonnetz__node--context circle {
@@ -808,23 +972,12 @@ h4 sup {
 	stroke-width: 3;
 }
 
-/* 前後のコードのトライアドの参照表示 */
+/* 前後のコードのトライアドの参照表示(ContextScaleModal) */
 .tonnetz__triangle-highlight--neighbor {
 	fill: var(--pc-light);
 	stroke: var(--pc-basic);
 	stroke-width: 2;
 	stroke-dasharray: 5 4;
-	stroke-linejoin: round;
-}
-
-/* --- 操作対象の強調 --- */
-
-/* 選択中トライアドの三角形(周期的に現れるすべての箇所) */
-.tonnetz__triangle-highlight--triad {
-	fill: var(--pc-basic);
-	fill-opacity: 0.45;
-	stroke: var(--pc-dark);
-	stroke-width: 3;
 	stroke-linejoin: round;
 }
 
@@ -842,9 +995,10 @@ h4 sup {
 	stroke-linecap: round;
 }
 
-/* ノードの既定の見た目と強調時の見た目 */
+/* ノードの既定の見た目と強調時の見た目。
+   未選択のノードもカラースキームに従った色で薄く塗る */
 .tonnetz__node circle {
-	fill: var(--color-surface);
+	fill: var(--pc-light);
 	stroke: var(--color-border);
 	stroke-width: 1.5;
 }
@@ -864,14 +1018,57 @@ h4 sup {
 	stroke-dasharray: 4 3;
 }
 
-/* 選択中の構成音(コード編集)・スケール構成音(スケール編集)は塗りつぶす */
-.tonnetz__node--tone circle,
+/* 選択中スケールの構成音(スケール編集)は塗りつぶす */
 .tonnetz__node--scale circle {
 	fill: var(--pc-basic);
 	stroke: var(--pc-dark);
 }
 
-.tonnetz__node--tone text,
 .tonnetz__node--scale text {
+	fill: var(--color-surface);
+}
+
+/* --- コードの表示(トライアドの塗り・構成音ノード・構成音同士を結ぶ辺の一式) ---
+   強調優先度は faint(薄く: 前後のコード・ホバープレビュー) / normal(通常: 編集中のコード) の2段階。
+   faintはデフォルトの格子線・ノードより濃く、normalより薄い。
+   同じ要素が両方の強度に該当したときにnormalが勝つよう、faint→normalの順に定義する。
+   ノードの下には格子線・強調線が通るため、faintのノードを半透明にすると線が透けて
+   視認性が落ちる。半透明ではなく不透明色の明度(色の混合)で薄さを表す */
+
+.tonnetz__triangle-highlight--chord-faint {
+	fill: var(--pc-basic);
+	fill-opacity: 0.16;
+}
+
+.tonnetz__edge-highlight--chord-faint {
+	stroke: rgba(var(--color-ink-rgb), 0.3);
+	stroke-width: 4;
+	stroke-linecap: round;
+}
+
+.tonnetz__node--chord-faint circle {
+	fill: color-mix(in oklab, var(--pc-basic) 50%, var(--color-surface));
+	stroke: var(--pc-basic);
+	stroke-width: 1.5;
+}
+
+.tonnetz__triangle-highlight--chord-normal {
+	fill: var(--pc-basic);
+	fill-opacity: 0.45;
+}
+
+.tonnetz__edge-highlight--chord-normal {
+	stroke: var(--color-ink);
+	stroke-width: 4;
+	stroke-linecap: round;
+}
+
+.tonnetz__node--chord-normal circle {
+	fill: var(--pc-basic);
+	stroke: var(--pc-dark);
+	stroke-width: 1.5;
+}
+
+.tonnetz__node--chord-normal text {
 	fill: var(--color-surface);
 }
