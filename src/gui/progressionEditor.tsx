@@ -1,29 +1,21 @@
-import { AnimationEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { ChordModal } from "./chordModal";
 import { ChordEntryPanel } from "./layout/chordEntryPanel";
 import { ContextScaleModal } from "./contextScaleModal";
 import { AutoContextScalePanel, ContextScalePanel } from "./layout/contextScalePanel";
 import { Chord } from "../basics/chord";
-import { ChordEntry } from "../basics/chordEntry";
-import { ContextScale, knownScaleNames } from "../basics/contextScale";
+import { ChordEntry } from "../editor/chordEntry";
+import { ScaleInfo } from "../basics/scaleInfo";
+import { contextScaleNames } from "../basics/scaleDictionary";
 import { Interval, PitchClass } from "../basics/pitch";
-import { estimateContextScale, Progression, ProgressionValue } from "../editor/progression";
+import { estimateScale, Progression, ProgressionValue } from "../editor/progression";
 import { AddChordPanel } from "./layout/addChordPanel";
+import { ExitGhost, SlotRow } from "./slotRow";
 
 type ProgressionEditorProps = {
 	readonly value: ProgressionValue;
 	readonly onChange?: (next: ProgressionValue) => void;
 };
-
-// shiftで取り除かれた直後の要素は、配列からは既に消えているが、フェードアウト+幅つぶれの
-// アニメーションが終わるまでは見た目上その場に残しておきたい。取り除かれる直前の見た目を
-// (非操作的なコピーとして)スナップショットして保持し、アニメーション終了で消し去る。
-// indexは取り除かれた(=今はその位置に後続の要素が詰めてきている)位置を指す。
-type ExitGhost = {
-	readonly id: number;
-	readonly index: number;
-	readonly node: ReactNode;
-} | null;
 
 // ChordModalを開いている間の状態。既存コードの変更ならinitialChordが存在し、
 // プレースホルダーへの新規設定ならinitialChordはnullになる
@@ -34,9 +26,9 @@ type PendingChordEdit = {
 
 // ContextScaleModalを開いている間の状態。.context-scale-panelはtransformを持ち、position:fixedの
 // 包含ブロックになってしまうため、モーダルはPanelの外(ProgressionEditor)側で開閉する必要がある
-type PendingContextScaleEdit = {
+type PendingScaleEdit = {
 	readonly index: number;
-	readonly initialValue: ContextScale;
+	readonly initialValue: ScaleInfo;
 } | null;
 
 export function ProgressionEditor(props: ProgressionEditorProps) {
@@ -51,12 +43,12 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 
 	const [progression, setProgression] = useState<Progression>(() => Progression.create(value, createId));
 	// 直近のinsertで挿入されたスロットのindex。挿入直後のプッシュアニメーションの対象を表す
-	// (entry・contextとも同じindexに挿入される)
+	// (entry・scaleとも同じindexに挿入される)
 	const [insertAnimationIndex, setInsertAnimationIndex] = useState<number | null>(null);
 	const [chordExitGhost, setChordExitGhost] = useState<ExitGhost>(null);
-	const [contextExitGhost, setContextExitGhost] = useState<ExitGhost>(null);
+	const [scaleExitGhost, setScaleExitGhost] = useState<ExitGhost>(null);
 	const [pendingChordEdit, setPendingChordEdit] = useState<PendingChordEdit>(null);
-	const [pendingContextScaleEdit, setPendingContextScaleEdit] = useState<PendingContextScaleEdit>(null);
+	const [pendingScaleEdit, setPendingScaleEdit] = useState<PendingScaleEdit>(null);
 
 	useEffect(() => {
 		setProgression(current => current.sync(value, createId));
@@ -67,21 +59,21 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		onChange?.(next.value);
 	};
 
-	const handleContextScaleChange = (index: number, contextScale: ContextScale | undefined): void => {
-		setProgression(
-			contextScale === undefined
-				? progression.deleteContextScale(index, createId)
-				: progression.setContextScale(index, contextScale, createId)
+	const handleScaleChange = (index: number, scale: ScaleInfo | undefined): void => {
+		applyProgression(
+			scale === undefined
+				? progression.deleteScale(index, createId)
+				: progression.setScale(index, scale, createId)
 		);
 	};
 
 	// 手動設定値があればそれを、なければ直前から継承した値をモーダルの初期状態にする
-	const handleEditContextScale = (index: number): void => {
-		const contextScale = progression.contexts.array[index].value;
-		const initialValue = contextScale
-			?? estimateContextScale(progression, index)
-			?? new ContextScale(PitchClass.all[0], knownScaleNames[0]);
-		setPendingContextScaleEdit({ index, initialValue });
+	const handleEditScale = (index: number): void => {
+		const scale = progression.scales.array[index].value;
+		const initialValue = scale
+			?? estimateScale(progression, index)
+			?? new ScaleInfo(PitchClass.all[0], contextScaleNames[0], 0);
+		setPendingScaleEdit({ index, initialValue });
 	};
 
 	// 未選択(プレースホルダー)を挿入する。実体の選択はAddChordPanelから別途行う。
@@ -97,15 +89,15 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		applyProgression(progression.deleteEntry(index, createId));
 	};
 
-	// プレースホルダーそのものを取り除く。あわせてcontexts[index](entries[index]とentries[index+1]の関係)も
+	// プレースホルダーそのものを取り除く。あわせてscales[index](entries[index]とentries[index+1]の関係)も
 	// 取り除かれる。取り除かれる直前の見た目をExitGhostとしてスナップショットしてから、実際にprogressionを更新する
 	const handleShift = (index: number): void => {
 		const removedEntry = progression.entries.array[index];
-		const removedContext = progression.contexts.array[index];
+		const removedScale = progression.scales.array[index];
 
 		setChordExitGhost({ id: removedEntry.id, index, node: renderChordContent(index) });
-		setContextExitGhost(
-			removedContext ? { id: removedContext.id, index, node: renderContextContent(index) } : null
+		setScaleExitGhost(
+			removedScale ? { id: removedScale.id, index, node: renderScaleContent(index) } : null
 		);
 
 		applyProgression(progression.shift(index, createId));
@@ -122,30 +114,6 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 	const handleExtraChordScaleTonesChange = (index: number, chord: Chord, nextExtraChordScaleTones: readonly Interval[] | undefined): void => {
 		applyProgression(progression.setEntry(index, new ChordEntry(chord, nextExtraChordScaleTones), createId));
 		setInsertAnimationIndex(null);
-	};
-
-	const handleSlotAnimationEnd = (event: AnimationEvent<HTMLDivElement>): void => {
-		if (event.currentTarget !== event.target) {
-			return;
-		}
-		setInsertAnimationIndex(null);
-	};
-
-	const handleGhostAnimationEnd = (row: "chord" | "context") => (event: AnimationEvent<HTMLDivElement>): void => {
-		if (event.currentTarget !== event.target) {
-			return;
-		}
-		if (row === "chord") {
-			setChordExitGhost(null);
-		} else {
-			setContextExitGhost(null);
-		}
-	};
-
-	const getSlotClassName = (slotIndex: number): string => {
-		return insertAnimationIndex === slotIndex
-			? "progression-editor__slot progression-editor__slot--insert-push"
-			: "progression-editor__slot";
 	};
 
 	// カードとプレースホルダーどちらの中身を表示するかは、chord行の描画と(shift時の)ExitGhostの
@@ -171,18 +139,18 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		);
 	};
 
-	// 同上の理由でcontext行の中身も共通の関数として切り出す
-	const renderContextContent = (index: number): ReactNode => {
+	// 同上の理由でscale行の中身も共通の関数として切り出す
+	const renderScaleContent = (index: number): ReactNode => {
 		const formerEntry = progression.entries.array[index]?.value;
 		const latterEntry = progression.entries.array[index + 1]?.value;
-		const contextScale = progression.contexts.array[index].value;
-		return contextScale !== undefined ? (
+		const scale = progression.scales.array[index].value;
+		return scale !== undefined ? (
 			<ContextScalePanel
 				formerTriad={formerEntry?.chord.triad}
 				latterTriad={latterEntry?.chord.triad}
-				contextScale={contextScale}
-				onDelete={index === 0 ? undefined : () => handleContextScaleChange(index, undefined)}
-				onEdit={() => handleEditContextScale(index)}
+				contextScale={scale}
+				onDelete={index === 0 ? undefined : () => handleScaleChange(index, undefined)}
+				onEdit={() => handleEditScale(index)}
 			/>
 		) : (
 			<AutoContextScalePanel
@@ -190,64 +158,41 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 				index={index}
 				formerTriad={formerEntry?.chord.triad}
 				latterTriad={latterEntry?.chord.triad}
-				onEdit={() => handleEditContextScale(index)}
+				onEdit={() => handleEditScale(index)}
 			/>
 		);
-	};
-
-	// 1行分のスロット列を組み立てる。ExitGhostはghost.indexの位置(または末尾)に、
-	// 通常のスロットと同じ見た目で差し込む
-	const buildRowNodes = (
-		items: readonly { readonly id: number }[],
-		ghost: ExitGhost,
-		row: "chord" | "context",
-		renderContent: (index: number) => ReactNode
-	): ReactNode[] => {
-		const renderGhost = (currentGhost: NonNullable<ExitGhost>): ReactNode => (
-			<div
-				key={`ghost-${currentGhost.id}`}
-				className="progression-editor__slot progression-editor__slot--exiting"
-				onAnimationEnd={handleGhostAnimationEnd(row)}
-			>
-				{currentGhost.node}
-			</div>
-		);
-
-		const nodes: ReactNode[] = [];
-		items.forEach((item, index) => {
-			if (ghost && ghost.index === index) {
-				nodes.push(renderGhost(ghost));
-			}
-			nodes.push(
-				<div key={item.id} className={getSlotClassName(index)} onAnimationEnd={handleSlotAnimationEnd}>
-					{renderContent(index)}
-				</div>
-			);
-		});
-		if (ghost && ghost.index === items.length) {
-			nodes.push(renderGhost(ghost));
-		}
-		return nodes;
 	};
 
 	return (
 		<div className="progression-editor">
 			<div className="progression-editor__scroll-area">
-				<div className="progression-editor__scale-row">
-					{buildRowNodes(progression.contexts.array, contextExitGhost, "context", renderContextContent)}
-				</div>
-				<div className="progression-editor__chord-row">
-					{buildRowNodes(progression.entries.array, chordExitGhost, "chord", renderChordContent)}
-				</div>
+				<SlotRow
+					className="progression-editor__scale-row"
+					items={progression.scales.array}
+					renderContent={renderScaleContent}
+					insertAnimationIndex={insertAnimationIndex}
+					onInsertAnimationEnd={() => setInsertAnimationIndex(null)}
+					ghost={scaleExitGhost}
+					onGhostAnimationEnd={() => setScaleExitGhost(null)}
+				/>
+				<SlotRow
+					className="progression-editor__chord-row"
+					items={progression.entries.array}
+					renderContent={renderChordContent}
+					insertAnimationIndex={insertAnimationIndex}
+					onInsertAnimationEnd={() => setInsertAnimationIndex(null)}
+					ghost={chordExitGhost}
+					onGhostAnimationEnd={() => setChordExitGhost(null)}
+				/>
 			</div>
 			{pendingChordEdit && (
 				<ChordModal
 					initialChord={pendingChordEdit.initialChord}
-					prevChord={progression.entries.array[pendingChordEdit.index - 1]?.value?.chord}
-					nextChord={progression.entries.array[pendingChordEdit.index + 1]?.value?.chord}
+					formerChord={progression.entries.array[pendingChordEdit.index - 1]?.value?.chord}
+					latterChord={progression.entries.array[pendingChordEdit.index + 1]?.value?.chord}
 					// 前後のcontextScaleは、手動設定がなければ前方から継承した推定値を参照表示する
-					contextBefore={estimateContextScale(progression, pendingChordEdit.index - 1)}
-					contextAfter={estimateContextScale(progression, pendingChordEdit.index)}
+					formerScale={estimateScale(progression, pendingChordEdit.index - 1)}
+					latterScale={estimateScale(progression, pendingChordEdit.index)}
 					onConfirm={chord => {
 						applyProgression(progression.setEntry(pendingChordEdit.index, new ChordEntry(chord, undefined), createId));
 						setPendingChordEdit(null);
@@ -255,20 +200,20 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 					onCancel={() => setPendingChordEdit(null)}
 				/>
 			)}
-			{pendingContextScaleEdit && (
+			{pendingScaleEdit && (
 				<ContextScaleModal
-					value={pendingContextScaleEdit.initialValue}
-					formerChord={progression.entries.array[pendingContextScaleEdit.index]?.value?.chord}
-					latterChord={progression.entries.array[pendingContextScaleEdit.index + 1]?.value?.chord}
+					value={pendingScaleEdit.initialValue}
+					formerChord={progression.entries.array[pendingScaleEdit.index]?.value?.chord}
+					latterChord={progression.entries.array[pendingScaleEdit.index + 1]?.value?.chord}
 					// 前のスケールは編集位置に効いている継承値(推定)を、次のスケールは明示設定されたもののみを見せる
 					// (次を推定すると編集前の自分自身の値が継承されて表示され、紛らわしいため)
-					prevContextScale={estimateContextScale(progression, pendingContextScaleEdit.index - 1)}
-					nextContextScale={progression.contexts.array[pendingContextScaleEdit.index + 1]?.value}
-					onConfirm={contextScale => {
-						handleContextScaleChange(pendingContextScaleEdit.index, contextScale);
-						setPendingContextScaleEdit(null);
+					formerScale={estimateScale(progression, pendingScaleEdit.index - 1)}
+					latterScale={progression.scales.array[pendingScaleEdit.index + 1]?.value}
+					onConfirm={scale => {
+						handleScaleChange(pendingScaleEdit.index, scale);
+						setPendingScaleEdit(null);
 					}}
-					onCancel={() => setPendingContextScaleEdit(null)}
+					onCancel={() => setPendingScaleEdit(null)}
 				/>
 			)}
 		</div>

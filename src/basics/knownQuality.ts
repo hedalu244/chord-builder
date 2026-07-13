@@ -48,15 +48,15 @@ export function qualityTones(root: PitchClass, quality: KnownQuality): PitchClas
 // directモードで作った状態をquickモードの選択済み状態として解釈し直すために使う
 export function findQualityMatch(
     triad: Triad,
-    toneValues: ReadonlySet<number>
+    chordTones: readonly PitchClass[]
 ): { root: PitchClass; qualityIndex: number } | undefined {
     for (let qualityIndex = 0; qualityIndex < knownQualities.length; qualityIndex++) {
         const quality = knownQualities[qualityIndex];
         for (const root of PitchClass.all) {
             if (!qualityTriad(root, quality).equals(triad)) continue;
             const tones = qualityTones(root, quality);
-            if (tones.length !== toneValues.size) continue;
-            if (tones.every(tone => toneValues.has(tone.value))) {
+            if (tones.length !== chordTones.length) continue;
+            if (tones.every(tone => chordTones.some(chordTone => chordTone.equals(tone)))) {
                 return { root, qualityIndex };
             }
         }

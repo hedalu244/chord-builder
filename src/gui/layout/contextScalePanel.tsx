@@ -1,6 +1,6 @@
 import { Triad } from "../../basics/triad";
-import { ContextScale } from "../../basics/contextScale";
-import { Progression, estimateContextScale } from "../../editor/progression";
+import { ScaleInfo } from "../../basics/scaleInfo";
+import { Progression, estimateScale } from "../../editor/progression";
 import { IconButton } from "../parts/iconButton";
 import { ScaleNexusBlock } from "../parts/nexusBlock";
 
@@ -12,10 +12,10 @@ type AutoContextScalePanelProps = {
 	readonly onEdit: () => void;
 };
 
-// 未指定のcontextScaleは、直前に指定された値を継承する(estimateContextScale)
+// 未指定のcontextScaleは、直前に指定された値を継承する(estimateScale)
 export function AutoContextScalePanel(props: AutoContextScalePanelProps) {
 	const { progression, index, formerTriad, latterTriad, onEdit } = props;
-	const resolved = estimateContextScale(progression, index);
+	const resolved = estimateScale(progression, index);
 
 	return (
 		<div className="context-scale-panel progression-editor__placeholder">
@@ -28,10 +28,10 @@ export function AutoContextScalePanel(props: AutoContextScalePanelProps) {
 }
 
 type ContextScalePanelProps = {
-	readonly contextScale: ContextScale;
+	readonly contextScale: ScaleInfo;
 	readonly formerTriad: Triad | undefined;
 	readonly latterTriad: Triad | undefined;
-	// 1つ目のcontextは削除できないため、その場合はonDeleteを渡さずボタン自体を隠す
+	// 1つ目のscaleは削除できないため、その場合はonDeleteを渡さずボタン自体を隠す
 	readonly onDelete?: () => void;
 	readonly onEdit: () => void;
 };

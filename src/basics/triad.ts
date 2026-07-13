@@ -47,6 +47,11 @@ export class Triad {
                 return Interval.map([0, 3, 7]).map(interval => this.root.add(interval));
         }
     }
+
+    // 指定キーを主音とみなした度数表記(ローマ数字)へ変換する
+    degreeIn(key: PitchClass): DegreeTriad {
+        return new DegreeTriad(this.root.getDegree(key), this.mode);
+    }
 }
 
 // 全ルート×全モードの組み合わせ(24通り)。「直接コードを選ぶ」候補一覧などに使う

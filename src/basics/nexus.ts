@@ -1,5 +1,5 @@
 import { Triad, Mode, DegreeTriad } from "./triad";
-import { ContextScale } from "./contextScale";
+import { ScaleInfo } from "./scaleInfo";
 import { Degree, Interval } from "./pitch";
 
 export class RelativeNexus {
@@ -37,12 +37,12 @@ export function calcRelativeNexus(former: Triad, latter: Triad): RelativeNexus {
 }
 
 // contextScaleのキーを基準に、単一のTriadを度数表記に変換する
-export function calcTriadDegree(chord: Triad, contextScale: ContextScale): DegreeTriad {
+export function calcTriadDegree(chord: Triad, contextScale: ScaleInfo): DegreeTriad {
     return new DegreeTriad(chord.root.getDegree(contextScale.key), chord.mode);
 }
 
 // contextScaleのキーを基準に、former→latterのDegreeNexusを求める
-export function calcDegreeNexus(former: Triad, latter: Triad, contextScale: ContextScale): DegreeNexus {
+export function calcDegreeNexus(former: Triad, latter: Triad, contextScale: ScaleInfo): DegreeNexus {
     return new DegreeNexus(
         calcTriadDegree(former, contextScale),
         calcTriadDegree(latter, contextScale)

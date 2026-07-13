@@ -2,10 +2,11 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Interval, PitchClass } from "./basics/pitch";
 import { ProgressionEditor } from "./gui/progressionEditor";
-import { ChordEntry } from "./basics/chordEntry";
+import { ChordEntry } from "./editor/chordEntry";
 import { Chord } from "./basics/chord";
 import { ProgressionValue } from "./editor/progression";
-import { ContextScale, knownScaleNames } from "./basics/contextScale";
+import { ScaleInfo } from "./basics/scaleInfo";
+import { contextScaleNames } from "./basics/scaleDictionary";
 import { Triad } from "./basics/triad";
 import { colorSchemeClassName } from "./gui/colorScheme/colorSchemeSelect";
 import { ColorSchemeProvider, useColorScheme } from "./gui/colorScheme/colorSchemeContext";
@@ -23,9 +24,9 @@ function createInitialProgression(): ProgressionValue {
 		new ChordEntry(createChord(new Triad(new PitchClass(7), "M"), [0, 4, 7, 10]), undefined)
 	];
 	// 1つ目のcontextScaleは削除できないため、初期状態から適当な値を指定しておく
-	const contexts: (ContextScale | undefined)[] = entries.map(() => undefined);
-	contexts[0] = new ContextScale(new PitchClass(0), knownScaleNames[0]);
-	return { entries, contexts };
+	const scales: (ScaleInfo | undefined)[] = entries.map(() => undefined);
+	scales[0] = new ScaleInfo(new PitchClass(0), contextScaleNames[0], 0);
+	return { entries, scales };
 }
 
 function App() {

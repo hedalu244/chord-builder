@@ -6,7 +6,7 @@ export type PlaceholderItem<T> = {
 // id付き要素の非破壊配列。value === undefinedの要素をplaceholder(未選択)として扱う。
 // 常に次の不変条件を保つ:
 // - sparse(emptyを含む状態)にならない。配列外へのsetは間をplaceholderで埋める
-// - 末尾は常にplaceholder(「次に追加できる場所」)
+// - 末尾は常にplaceholder
 // set/deleteでは要素は移動しない(idが動かないため、アニメーションも起きない)。
 // insert/shiftでは操作位置より後ろの要素が移動する。
 export class PlaceholderArray<T> {
@@ -79,17 +79,9 @@ export class PlaceholderArray<T> {
         ]);
     }
 
-    // indexが実データを指しているか、末尾のplaceholderを指している場合はshiftできない
-    // (末尾のplaceholderは常に「次を追加できる場所」として残す必要があるため)。
-    canShift(index: number): boolean {
-        if (index < 0 || index >= this.array.length) return false;
-        if (this.array[index].value !== undefined) return false;
-        if (index === this.array.length - 1) return false;
-        return true;
-    }
-
-    // index位置の要素を1つ取り除き、後続を詰める。可否の判定(canShift)は呼び出し側の責任。
-    shift(index: number): PlaceholderArray<T> {
-        return new PlaceholderArray([...this.array.slice(0, index), ...this.array.slice(index + 1)]);
+    // index位置の要素を1つ取り除き、後続を詰める。末尾がplaceholderでなくなった場合は、末尾にplaceholderを追加する。
+    shift(index: number, createId: () => number): PlaceholderArray<T> {
+        const newArray = new PlaceholderArray([...this.array.slice(0, index), ...this.array.slice(index + 1)]);
+        return newArray.ensureTrailingPlaceholder(createId);
     }
 }

@@ -1,6 +1,6 @@
 import { Chord } from "../../basics/chord";
 import { ChordNotation } from "./chordNotation";
-import { findKnownScale, getKnownScaleInfo } from "../../basics/knownScale";
+import { findScaleInfo } from "../../basics/scaleDictionary";
 import { PitchClass } from "../../basics/pitch";
 import { Scale } from "../../basics/scale";
 import { getExtraTensionNames } from "../../basics/tensions";
@@ -14,8 +14,7 @@ type ScaleAnalysisProps = {
 // スケールパネル/スケールモーダルで共通の、構成音以外の分析情報(名前・ペアレントスケール由来・テンション記法)
 export function ScaleAnalysis(props: ScaleAnalysisProps) {
 	const { chord, root, scale } = props;
-	const known = findKnownScale(scale);
-	const description = getKnownScaleInfo(known, root);
+	const known = findScaleInfo(root, scale);
 	const tensionNames = getExtraTensionNames(scale, chord.getChordToneIntervals());
 	const knownNotations = chord.getKnownNotations();
 
@@ -28,8 +27,8 @@ export function ScaleAnalysis(props: ScaleAnalysisProps) {
 			{knownNotations.length > 0 && (
 				<span className="alt-notations">{knownNotations.join(" / ")}</span>
 			)}
-			<span className="scale-name">{description.name}</span>
-			<span className="scale-origin">{description.description}</span>
+			<span className="scale-name">{known ? known.label() : "Unknown Scale"}</span>
+			<span className="scale-origin">{known ? known.description() : ""}</span>
 		</div>
 	);
 }

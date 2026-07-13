@@ -1,10 +1,10 @@
 import { Triad, DegreeTriad } from "../../basics/triad";
-import { ContextScale } from "../../basics/contextScale";
+import { ScaleInfo } from "../../basics/scaleInfo";
 import { calcRelativeNexus, calcTriadDegree, RelativeNexus } from "../../basics/nexus";
 import { PitchClass } from "../../basics/pitch";
 
 type ScaleNexusBlockProps = {
-	readonly contextScale: ContextScale | undefined;
+	readonly contextScale: ScaleInfo | undefined;
 	readonly formerTriad: Triad | undefined;
 	readonly latterTriad: Triad | undefined;
 };

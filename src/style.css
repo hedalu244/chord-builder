@@ -391,7 +391,7 @@ h4 sup,
 }
 
 /* scale-row/chord-rowは列数・列幅(--progression-card-width)・列間隔(--progression-gap)を揃えることで、
-   互いに独立したReact配列(Progression.contexts/entries)でありながら見た目上は縦に揃って見える */
+   互いに独立したReact配列(Progression.scales/entries)でありながら見た目上は縦に揃って見える */
 .progression-editor__scale-row,
 .progression-editor__chord-row {
 	display: flex;
@@ -509,7 +509,7 @@ h4 sup,
 
 /* カード内のセクション(Chord/Scale)は同じ縦積みレイアウト */
 .chord-panel,
-.scale-panel {
+.chord-scale-panel {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -518,7 +518,7 @@ h4 sup,
 }
 
 .chord-panel__label,
-.scale-panel__label {
+.chord-scale-panel__label {
 	font-size: 12px;
 	font-weight: 600;
 	color: var(--color-muted);
@@ -772,7 +772,7 @@ h4 sup,
 }
 
 /* 参照オーバーレイの表示切替(目のアイコン)。OFFはグレーアウトで示す */
-.overlay-toggle {
+.visibility-toggle {
 	padding: 2px;
 	border: 0;
 	border-radius: var(--radius-control);
@@ -780,29 +780,29 @@ h4 sup,
 	line-height: 0;
 }
 
-.overlay-toggle:hover {
+.visibility-toggle:hover {
 	background: rgba(var(--color-ink-rgb), 0.05);
 }
 
-.overlay-toggle img {
+.visibility-toggle img {
 	display: block;
 	width: 16px;
 	height: 16px;
 }
 
-.overlay-toggle:not(.overlay-toggle--on) {
+.visibility-toggle:not(.visibility-toggle--on) {
 	opacity: 0.45;
 }
 
-/* --- ChordModalのタブ(quick/direct) --- */
+/* --- 汎用のタブUI(parts/tabs.tsx) --- */
 
-.chord-modal__tabs {
+.tabs {
 	display: flex;
 	width: 100%;
 	border-bottom: 1px solid var(--color-border);
 }
 
-.chord-modal__tab {
+.tabs__button {
 	padding: 6px 20px;
 	border: 0;
 	border-bottom: 2px solid transparent;
@@ -812,7 +812,7 @@ h4 sup,
 	color: var(--color-muted);
 }
 
-.chord-modal__tab--active {
+.tabs__button--active {
 	color: var(--color-ink);
 	border-bottom-color: var(--color-ink);
 }
@@ -966,17 +966,17 @@ h4 sup,
 /* contextScaleの参照表示: スケールの形を半透明の線・塗り・ノードの輪で敷く。
    スケールに含まれる辺・トライアドは半透明のグレーで表し(下のデフォルト格子線は
    Tonnetz側で描画されない)、2つのスケールが表示されて重なった箇所は自然に濃くなる */
-.tonnetz__edge-highlight--context {
+.tonnetz__edge-highlight--backdrop {
 	stroke: rgba(var(--color-ink-rgb), 0.18);
 	stroke-width: 5;
 	stroke-linecap: round;
 }
 
-.tonnetz__triangle-highlight--context {
+.tonnetz__triangle-highlight--backdrop {
 	fill: rgba(var(--color-ink-rgb), 0.055);
 }
 
-.tonnetz__node--context circle {
+.tonnetz__node--backdrop circle {
 	stroke: var(--color-faint);
 	stroke-width: 3;
 }
@@ -1051,7 +1051,7 @@ h4 sup,
 	pointer-events: none;
 }
 
-.tonnetz__node-ring--context {
+.tonnetz__node-ring--backdrop {
 	stroke: var(--color-faint);
 }
 

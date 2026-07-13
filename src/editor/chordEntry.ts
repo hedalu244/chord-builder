@@ -1,6 +1,6 @@
-import { Chord } from "./chord";
-import { Interval } from "./pitch";
-import { Scale } from "./scale";
+import { Chord } from "../basics/chord";
+import { Interval } from "../basics/pitch";
+import { Scale } from "../basics/scale";
 
 // Progressionの外部表現(1コード分)。編集セッション中のみ意味を持つid/contextScaleは含まない
 export class ChordEntry {

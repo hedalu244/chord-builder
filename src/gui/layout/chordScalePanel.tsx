@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { ChordEntry } from "../../basics/chordEntry";
+import { ChordEntry } from "../../editor/chordEntry";
 import { Interval } from "../../basics/pitch";
 import { ChordScaleModal } from "../chordScaleModal";
 import { ChordTones } from "../parts/chordTones";
 import { IconButton } from "../parts/iconButton";
 import { ScaleAnalysis } from "../parts/scaleAnalysis";
 
-type ScalePanelProps = {
+type ChordScalePanelProps = {
 	readonly entry: ChordEntry;
 	readonly onChange: (nextExtraChordScaleTones: readonly Interval[] | undefined) => void;
 };
 
-export function ScalePanel(props: ScalePanelProps) {
+export function ChordScalePanel(props: ChordScalePanelProps) {
 	const { entry, onChange } = props;
 	const { chord } = entry;
 	const [isEditing, setIsEditing] = useState(false);
@@ -19,8 +19,8 @@ export function ScalePanel(props: ScalePanelProps) {
 	const scale = entry.getChordScale();
 
 	return (
-		<div className="scale-panel">
-			<span className="scale-panel__label">Scale</span>
+		<div className="chord-scale-panel">
+			<span className="chord-scale-panel__label">Scale</span>
 			<ScaleAnalysis chord={chord} root={root} scale={scale} />
 			<ChordTones tones={scale.getPitchClasses(root)} />
 			<IconButton icon="icons/edit.svg" label="Edit scale" onClick={() => setIsEditing(true)} />

@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { ChordEntry } from "../basics/chordEntry";
-import { Interval, PitchClass } from "../basics/pitch";
+import { ChordEntry } from "../editor/chordEntry";
+import { Interval } from "../basics/pitch";
 import { Scale } from "../basics/scale";
 import { ScaleAnalysis } from "./parts/scaleAnalysis";
-import { KnownScale, findCandidateScales, getKnownScaleInfo } from "../basics/knownScale";
+import { findSuperScaleInfos } from "../basics/scaleDictionary";
 import { Modal } from "./parts/modal";
 import { EditableToneRow, ToneRow } from "./parts/toneRow";
+import { ScaleInfo } from "../basics/scaleInfo";
 
 type CandidateListProps = {
-	readonly root: PitchClass;
-	readonly candidates: readonly KnownScale[];
+	readonly candidates: readonly ScaleInfo[];
 	readonly currentScale: Scale;
 	readonly onSelect: (scale: Scale) => void;
 };
 
 function CandidateList(props: CandidateListProps) {
-	const { root, candidates, currentScale, onSelect } = props;
+	const { candidates, currentScale, onSelect } = props;
 	if (candidates.length === 0) {
 		return (
 			<div className="chord-scale-modal__candidate-list">
@@ -26,22 +26,22 @@ function CandidateList(props: CandidateListProps) {
 
 	return (
 		<div className="chord-scale-modal__candidate-list">
-			{candidates.map((knownScale, index) => {
-				const selected = knownScale.scale.equals(currentScale);
-				const description = getKnownScaleInfo(knownScale, root);
+			{candidates.map((candidate, index) => {
+				const scale = candidate.getScale();
+				const selected = scale.equals(currentScale);
 
 				return (
 					<button
 						type="button"
 						key={index}
 						className={selected ? "option-button option-button--selected" : "option-button"}
-						onClick={() => onSelect(knownScale.scale)}
+						onClick={() => onSelect(scale)}
 					>
 						<div className="chord-scale-modal__candidate-header">
-							<span className="scale-name">{description.name}</span>
-							<span className="scale-origin">{description.description}</span>
+							<span className="scale-name">{candidate.label()}</span>
+							<span className="scale-origin">{candidate.description()}</span>
 						</div>
-						<ToneRow root={root} tones={knownScale.scale.getPitchClasses(root)} />
+						<ToneRow root={candidate.root} tones={candidate.getPitchClasses()} />
 					</button>
 				);
 			})}
@@ -67,7 +67,7 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 	);
 
 	const currentScale = new Scale(Interval.map(Array.from(checkedValues)));
-	const candidates = findCandidateScales(currentScale);
+	const candidates = findSuperScaleInfos(root, currentScale);
 
 	const handleSelectCandidate = (scale: Scale): void => {
 		setCheckedValues(new Set(scale.tones.map(tone => tone.value)));
@@ -84,7 +84,7 @@ export function ChordScaleModal(props: ChordScaleModalProps) {
 		<Modal className="chord-scale-modal" title="Edit Chord Scale" onCancel={onCancel} onConfirm={handleConfirm}>
 			<ScaleAnalysis chord={chord} root={root} scale={currentScale} />
 			<EditableToneRow root={root} activeValues={checkedValues} lockedValues={lockedValues} onChange={setCheckedValues} />
-			<CandidateList root={root} candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />
+			<CandidateList candidates={candidates} currentScale={currentScale} onSelect={handleSelectCandidate} />
 		</Modal>
 	);
 }
