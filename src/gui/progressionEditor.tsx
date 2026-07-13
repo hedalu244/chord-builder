@@ -243,6 +243,11 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 			{pendingChordEdit && (
 				<ChordModal
 					initialChord={pendingChordEdit.initialChord}
+					referenceContextScale={
+						// このコードの直前のcontextScale(手動設定がなければ前方から継承した推定値)を参照表示する
+						estimateContextScale(progression, pendingChordEdit.index - 1)
+							?? estimateContextScale(progression, pendingChordEdit.index)
+					}
 					onConfirm={chord => {
 						applyProgression(progression.setEntry(pendingChordEdit.index, new ChordEntry(chord, undefined), createId));
 						setPendingChordEdit(null);
@@ -253,6 +258,8 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 			{pendingContextScaleEdit && (
 				<ContextScaleModal
 					value={pendingContextScaleEdit.initialValue}
+					formerTriad={progression.entries.array[pendingContextScaleEdit.index]?.value?.chord.triad}
+					latterTriad={progression.entries.array[pendingContextScaleEdit.index + 1]?.value?.chord.triad}
 					onConfirm={contextScale => {
 						handleContextScaleChange(pendingContextScaleEdit.index, contextScale);
 						setPendingContextScaleEdit(null);

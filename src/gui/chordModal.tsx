@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { allTriads, Triad } from "../basics/triad";
 import { Chord } from "../basics/chord";
+import { ContextScale } from "../basics/contextScale";
 import { PitchClass } from "../basics/pitch";
 import { Modal } from "./parts/modal";
 import { ChordTones } from "./parts/chordTones";
 import { EditableToneRow } from "./parts/toneRow";
+import { TonnetzLayer } from "./parts/tonnetz";
+import { TonnetzChordSelector } from "./parts/tonnetzChordSelector";
 
 // 構成音チェックボックスの並びはCに固定し、トライアドを切り替えても位置が動かないようにする
 const TONE_ROW_ROOT = new PitchClass(0);
@@ -20,12 +23,14 @@ function setEquals(a: ReadonlySet<number>, b: ReadonlySet<number>): boolean {
 type ChordModalProps = {
 	// nullの場合は「まだ何も選択していない」状態でモーダルを開く(プレースホルダーへの新規設定向け)
 	readonly initialChord: Chord | null;
+	// 参照表示用: このコードの前後関係を表すcontextScale。あればトネッツ図の下層にオーバーレイ表示する
+	readonly referenceContextScale?: ContextScale;
 	readonly onConfirm: (chord: Chord) => void;
 	readonly onCancel: () => void;
 };
 
 export function ChordModal(props: ChordModalProps) {
-	const { initialChord, onConfirm, onCancel } = props;
+	const { initialChord, referenceContextScale, onConfirm, onCancel } = props;
 	const [triad, setTriad] = useState<Triad | null>(initialChord?.triad ?? null);
 	const [activeValues, setActiveValues] = useState<ReadonlySet<number>>(
 		() => new Set((initialChord?.chordTones ?? []).map(tone => tone.value))
@@ -52,6 +57,21 @@ export function ChordModal(props: ChordModalProps) {
 		setActiveValues(new Set(triad.getChordTones().map(tone => tone.value)));
 	};
 
+	const handleToggleTone = (value: number): void => {
+		const next = new Set(activeValues);
+		if (next.has(value)) next.delete(value);
+		else next.add(value);
+		setActiveValues(next);
+	};
+
+	const referenceLayers: TonnetzLayer[] = referenceContextScale
+		? [{
+			className: "context",
+			pitchClasses: referenceContextScale.getScale().getPitchClasses(referenceContextScale.key),
+			connect: true,
+		}]
+		: [];
+
 	const chord = triad ? new Chord(triad, PitchClass.map(Array.from(activeValues))) : null;
 
 	return (
@@ -63,6 +83,13 @@ export function ChordModal(props: ChordModalProps) {
 			confirmLabel={isNewChord ? "Add" : "OK"}
 			confirmDisabled={chord === null}
 		>
+			<TonnetzChordSelector
+				triad={triad}
+				activeValues={activeValues}
+				onSelectTriad={handleSelectTriad}
+				onToggleTone={handleToggleTone}
+				referenceLayers={referenceLayers}
+			/>
 			<div className="chord-modal__direct-grid">
 				{allTriads().map(candidate => (
 					<button

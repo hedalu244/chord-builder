@@ -707,6 +707,12 @@ h4 sup {
 
 /* --- ContextScaleModal --- */
 
+.context-scale-modal {
+	width: 560px;
+	max-height: calc(100vh - 64px);
+	overflow-y: auto;
+}
+
 .context-scale-modal__controls {
 	display: flex;
 	gap: 8px;
@@ -743,4 +749,129 @@ h4 sup {
 	color: var(--color-faint);
 	font-size: 13px;
 	text-align: center;
+}
+
+/* ==========================================================================
+   トネッツ図 (tonnetz.tsx)
+   各要素のピッチクラスの配色は、要素側がインラインで注入するCSS変数
+   --pc-light / --pc-basic / --pc-dark を通して参照する
+   ========================================================================== */
+
+.tonnetz {
+	display: block;
+	width: 100%;
+	height: auto;
+	flex-shrink: 0;
+	touch-action: none;
+	user-select: none;
+	cursor: grab;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-control);
+	background: var(--color-surface);
+}
+
+.tonnetz:active {
+	cursor: grabbing;
+}
+
+/* 背景: メジャー/マイナーの三角形を交互の濃淡で塗り分ける */
+.tonnetz__triangle--major {
+	fill: rgba(var(--color-ink-rgb), 0.06);
+}
+
+.tonnetz__triangle--minor {
+	fill: rgba(var(--color-ink-rgb), 0.015);
+}
+
+/* 背景の格子線。完全五度の軸だけ少し強調する */
+.tonnetz__edge {
+	stroke: var(--color-border);
+	stroke-width: 1;
+}
+
+.tonnetz__edge--fifth {
+	stroke: var(--color-faint);
+	stroke-width: 1.5;
+}
+
+/* --- 参照用オーバーレイ(操作対象ではない、前後のコード・contextScale) --- */
+
+/* contextScaleの参照表示: スケールの形を薄い線とノードの輪で敷く */
+.tonnetz__edge-highlight--context {
+	stroke: rgba(var(--color-ink-rgb), 0.18);
+	stroke-width: 5;
+	stroke-linecap: round;
+}
+
+.tonnetz__node--context circle {
+	stroke: var(--color-faint);
+	stroke-width: 3;
+}
+
+/* 前後のコードのトライアドの参照表示 */
+.tonnetz__triangle-highlight--neighbor {
+	fill: var(--pc-light);
+	stroke: var(--pc-basic);
+	stroke-width: 2;
+	stroke-dasharray: 5 4;
+	stroke-linejoin: round;
+}
+
+/* --- 操作対象の強調 --- */
+
+/* 選択中トライアドの三角形(周期的に現れるすべての箇所) */
+.tonnetz__triangle-highlight--triad {
+	fill: var(--pc-basic);
+	fill-opacity: 0.45;
+	stroke: var(--pc-dark);
+	stroke-width: 3;
+	stroke-linejoin: round;
+}
+
+/* 選択中スケールの形と、マウス追従のゴースト */
+.tonnetz__edge-highlight--scale {
+	stroke: var(--color-ink);
+	stroke-width: 4;
+	stroke-linecap: round;
+}
+
+.tonnetz__edge-highlight--ghost {
+	stroke: rgba(var(--color-ink-rgb), 0.35);
+	stroke-width: 4;
+	stroke-dasharray: 6 5;
+	stroke-linecap: round;
+}
+
+/* ノードの既定の見た目と強調時の見た目 */
+.tonnetz__node circle {
+	fill: var(--color-surface);
+	stroke: var(--color-border);
+	stroke-width: 1.5;
+}
+
+.tonnetz__node text {
+	fill: var(--color-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-anchor: middle;
+	dominant-baseline: central;
+	pointer-events: none;
+}
+
+.tonnetz__node--ghost circle {
+	stroke: var(--pc-dark);
+	stroke-width: 2.5;
+	stroke-dasharray: 4 3;
+}
+
+/* 選択中の構成音(コード編集)・スケール構成音(スケール編集)は塗りつぶす */
+.tonnetz__node--tone circle,
+.tonnetz__node--scale circle {
+	fill: var(--pc-basic);
+	stroke: var(--pc-dark);
+}
+
+.tonnetz__node--tone text,
+.tonnetz__node--scale text {
+	fill: var(--color-surface);
 }
