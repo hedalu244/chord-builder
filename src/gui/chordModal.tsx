@@ -7,6 +7,7 @@ import { PitchClass } from "../basics/pitch";
 import { nearestTriangle, triangleTriad } from "../basics/tonnetz";
 import { ChordNotation } from "./parts/chordNotation";
 import { Modal } from "./parts/modal";
+import { OverlayToggle } from "./parts/overlayToggle";
 import { EditableToneRow } from "./parts/toneRow";
 import { Tonnetz, TonnetzLayer, TonnetzTarget } from "./parts/tonnetz";
 
@@ -49,7 +50,7 @@ function chordToShape(chord: Chord): ChordShape {
 // コード一式(トライアドの塗り・構成音ノード・構成音同士を結ぶ辺)を1つのレイヤとして表す
 function chordLayer(shape: ChordShape, emphasis: ChordEmphasis): TonnetzLayer {
 	return {
-		className: `chord-${emphasis}`,
+		className: emphasis,
 		triads: shape.triad ? [shape.triad] : [],
 		pitchClasses: PitchClass.map([...shape.toneValues]),
 		connect: true,
@@ -58,23 +59,6 @@ function chordLayer(shape: ChordShape, emphasis: ChordEmphasis): TonnetzLayer {
 
 function optionButtonClassName(selected: boolean): string {
 	return selected ? "option-button option-button--selected" : "option-button";
-}
-
-// 前後のコード・contextScaleのトネッツ図への表示切替(目のアイコンのトグルボタン)。
-// 対象が存在しない位置ではボタンごと表示しない(呼び出し側でundefinedを渡す)
-function OverlayToggle(props: { readonly label: string; readonly visible: boolean; readonly onToggle: () => void }) {
-	const { label, visible, onToggle } = props;
-	return (
-		<button
-			type="button"
-			className={visible ? "chord-modal__overlay-toggle chord-modal__overlay-toggle--on" : "chord-modal__overlay-toggle"}
-			title={visible ? `Hide ${label} on Tonnetz` : `Show ${label} on Tonnetz`}
-			aria-pressed={visible}
-			onClick={onToggle}
-		>
-			<img src={visible ? "icons/eye.svg" : "icons/eye-off.svg"} alt="" />
-		</button>
-	);
 }
 
 type ChordModalProps = {
@@ -218,6 +202,8 @@ export function ChordModal(props: ChordModalProps) {
 		pitchClasses: contextScale.getScale().getPitchClasses(contextScale.key),
 		connect: true,
 		fillContained: true,
+		// スケールの主音は二重ボーダーで区別する
+		rings: [contextScale.key],
 	});
 
 	// コードの表示は「薄く(前後のコード・ホバープレビュー) < 通常(編集中のコード)」の2段階。
@@ -245,11 +231,11 @@ export function ChordModal(props: ChordModalProps) {
 		hoverKey?: Exclude<StripHover, null>
 	): ReactNode => (
 		<div
-			className={`chord-modal__context-cell ${className}`}
+			className={`context-strip__cell ${className}`}
 			onMouseEnter={hoverKey && (() => setStripHover(hoverKey))}
 			onMouseLeave={hoverKey && (() => setStripHover(current => (current === hoverKey ? null : current)))}
 		>
-			<div className="chord-modal__context-value">{content}</div>
+			<div className="context-strip__value">{content}</div>
 			{toggle}
 		</div>
 	);
@@ -263,8 +249,8 @@ export function ChordModal(props: ChordModalProps) {
 			confirmLabel={isNewChord ? "Add" : "OK"}
 			confirmDisabled={chord === null}
 		>
-			<div className="chord-modal__body">
-				<div className="chord-modal__tonnetz-pane">
+			<div className="modal-split">
+				<div className="modal-split__tonnetz-pane">
 					<Tonnetz
 						layers={layers}
 						showTriadLabels
@@ -272,31 +258,31 @@ export function ChordModal(props: ChordModalProps) {
 						onHover={handleTonnetzHover}
 					/>
 				</div>
-				<div className="chord-modal__detail-pane">
+				<div className="modal-split__detail-pane">
 					{/* 前後関係: 上段にcontextScale、下段に前後のコードと編集中コード */}
-					<div className="chord-modal__context-strip">
+					<div className="context-strip">
 						{contextCell(
-							"chord-modal__context-cell--scale chord-modal__context-cell--before",
+							"context-strip__cell--top-left",
 							contextBefore ? `${contextBefore.key.toString()} ${contextBefore.name}` : "–",
 							contextBefore && <OverlayToggle label="previous context scale" visible={showContextBefore} onToggle={() => setShowContextBefore(v => !v)} />
 						)}
 						{contextCell(
-							"chord-modal__context-cell--scale chord-modal__context-cell--after",
+							"context-strip__cell--top-right",
 							contextAfter ? `${contextAfter.key.toString()} ${contextAfter.name}` : "–",
 							contextAfter && <OverlayToggle label="next context scale" visible={showContextAfter} onToggle={() => setShowContextAfter(v => !v)} />
 						)}
 						{contextCell(
-							"chord-modal__context-cell--chord chord-modal__context-cell--prev",
+							"context-strip__cell--left",
 							prevChord ? <ChordNotation chord={prevChord} /> : "–",
 							prevChord && <OverlayToggle label="previous chord" visible={showPrevChord} onToggle={() => setShowPrevChord(v => !v)} />,
 							prevChord && "prev"
 						)}
 						{contextCell(
-							"chord-modal__context-cell--current",
+							"context-strip__cell--current",
 							chord ? <ChordNotation chord={chord} /> : "–"
 						)}
 						{contextCell(
-							"chord-modal__context-cell--chord chord-modal__context-cell--next",
+							"context-strip__cell--right",
 							nextChord ? <ChordNotation chord={nextChord} /> : "–",
 							nextChord && <OverlayToggle label="next chord" visible={showNextChord} onToggle={() => setShowNextChord(v => !v)} />,
 							nextChord && "next"
@@ -353,7 +339,7 @@ export function ChordModal(props: ChordModalProps) {
 									</select>
 								</label>
 							</div>
-							<p className="chord-modal__hint">
+							<p className="modal-split__hint">
 								{quickQualityIndex === null
 									? "Select a quality to enable one-click input on the Tonnetz."
 									: `Click a ${knownQualities[quickQualityIndex].triadMode === "M" ? "major" : "minor"} triad on the Tonnetz to enter the chord there.`}

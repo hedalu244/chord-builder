@@ -33,6 +33,8 @@ export type TonnetzLayer = {
 	readonly fillContained?: boolean;
 	// 強調する三角形
 	readonly triads?: readonly Triad[];
+	// ボーダーを二重にする(ストロークだけの円を内側に重ねる)ノード。スケールの主音の強調に使う
+	readonly rings?: readonly PitchClass[];
 };
 
 // クリック/ホバー位置の解釈結果。ノード上かどうかの使い分け(コード選択)も、
@@ -184,6 +186,7 @@ export function Tonnetz(props: TonnetzProps) {
 		layer,
 		pcValues: new Set((layer.pitchClasses ?? []).map(pc => pc.value)),
 		triadKeys: new Set((layer.triads ?? []).map(triad => triad.toString())),
+		ringValues: new Set((layer.rings ?? []).map(pc => pc.value)),
 	}));
 
 	const isConnectedEdge = (pcValues: ReadonlySet<number>, edge: LatticeEdge): boolean =>
@@ -289,6 +292,17 @@ export function Tonnetz(props: TonnetzProps) {
 				return (
 					<g key={pointKey(p)} className={classNames.join(" ")} style={pitchClassColorVars(pitchClass.value)}>
 						<circle cx={pos.x} cy={pos.y} r={NODE_RADIUS} />
+						{/* 二重ボーダー(スケールの主音など): ストロークだけの円を内側に重ねる */}
+						{layerData
+							.map((data, layerIndex) => ({ data, layerIndex }))
+							.filter(({ data }) => data.ringValues.has(pitchClass.value))
+							.map(({ data, layerIndex }) => (
+								<circle
+									key={layerIndex}
+									className={`tonnetz__node-ring tonnetz__node-ring--${data.layer.className}`}
+									cx={pos.x} cy={pos.y} r={NODE_RADIUS - 3.5}
+								/>
+							))}
 						<text x={pos.x} y={pos.y}>{pitchClass.toString()}</text>
 					</g>
 				);

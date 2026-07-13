@@ -669,28 +669,29 @@ h4 sup,
 	background: var(--color-highlight);
 }
 
-/* --- ChordModal --- */
+/* --- トネッツ図を持つモーダル(ChordModal/ContextScaleModal)共通のパーツ --- */
 
-.chord-modal {
+.chord-modal,
+.context-scale-modal {
 	width: min(1080px, calc(100vw - 32px));
 	max-height: calc(100vh - 64px);
 	overflow-y: auto;
 }
 
 /* 左に大きくトネッツ図、右に詳細UI。幅が足りない環境(モバイル等)では縦並びに切り替える */
-.chord-modal__body {
+.modal-split {
 	display: flex;
 	gap: 20px;
 	width: 100%;
 	min-height: 0;
 }
 
-.chord-modal__tonnetz-pane {
+.modal-split__tonnetz-pane {
 	flex: 1 1 auto;
 	min-width: 0;
 }
 
-.chord-modal__detail-pane {
+.modal-split__detail-pane {
 	flex: 0 0 400px;
 	min-width: 0;
 	display: flex;
@@ -700,18 +701,21 @@ h4 sup,
 }
 
 @media (max-width: 920px) {
-	.chord-modal__body {
+	.modal-split {
 		flex-direction: column;
 	}
 
-	.chord-modal__detail-pane {
+	.modal-split__detail-pane {
 		flex: 1 1 auto;
 		width: 100%;
 	}
 }
 
-/* 前後関係の帯: 上段にcontextScale(コードとコードの中間に置く)、下段に前後のコードと編集中コード */
-.chord-modal__context-strip {
+/* 前後関係の帯: 編集対象(中央下段・最大)と、その前後にあるもの(下段左右)、
+   さらにそれらの中間に位置するもの(上段)を千鳥に並べる。
+   ChordModalでは下段がコード・上段がcontextScale、ContextScaleModalでは立ち位置が逆になり
+   下段がスケール・上段がコードになる */
+.context-strip {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
 	row-gap: 4px;
@@ -719,7 +723,7 @@ h4 sup,
 	width: 100%;
 }
 
-.chord-modal__context-cell {
+.context-strip__cell {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -728,27 +732,31 @@ h4 sup,
 	text-align: center;
 }
 
-.chord-modal__context-cell--scale {
+/* 上段(中間に位置するもの)は小さく */
+.context-strip__cell--top-left,
+.context-strip__cell--top-right {
 	grid-row: 1;
 	font-size: 11px;
 	color: var(--color-muted);
 }
 
-.chord-modal__context-cell--before { grid-column: 2 / span 2; }
-.chord-modal__context-cell--after { grid-column: 4 / span 2; }
+.context-strip__cell--top-left { grid-column: 2 / span 2; }
+.context-strip__cell--top-right { grid-column: 4 / span 2; }
 
-.chord-modal__context-cell--chord {
+/* 下段左右(編集対象の前後にあるもの) */
+.context-strip__cell--left,
+.context-strip__cell--right {
 	grid-row: 2;
 	font-size: 16px;
 	font-weight: 600;
 	color: var(--color-muted);
 }
 
-.chord-modal__context-cell--prev { grid-column: 1 / span 2; }
-.chord-modal__context-cell--next { grid-column: 5 / span 2; }
+.context-strip__cell--left { grid-column: 1 / span 2; }
+.context-strip__cell--right { grid-column: 5 / span 2; }
 
-/* 編集中のコード名は帯の中で最も大きく表示する */
-.chord-modal__context-cell--current {
+/* 編集対象は帯の中で最も大きく表示する */
+.context-strip__cell--current {
 	grid-row: 2;
 	grid-column: 3 / span 2;
 	font-size: 28px;
@@ -756,7 +764,7 @@ h4 sup,
 	color: var(--color-ink);
 }
 
-.chord-modal__context-value {
+.context-strip__value {
 	max-width: 100%;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -764,7 +772,7 @@ h4 sup,
 }
 
 /* 参照オーバーレイの表示切替(目のアイコン)。OFFはグレーアウトで示す */
-.chord-modal__overlay-toggle {
+.overlay-toggle {
 	padding: 2px;
 	border: 0;
 	border-radius: var(--radius-control);
@@ -772,17 +780,17 @@ h4 sup,
 	line-height: 0;
 }
 
-.chord-modal__overlay-toggle:hover {
+.overlay-toggle:hover {
 	background: rgba(var(--color-ink-rgb), 0.05);
 }
 
-.chord-modal__overlay-toggle img {
+.overlay-toggle img {
 	display: block;
 	width: 16px;
 	height: 16px;
 }
 
-.chord-modal__overlay-toggle:not(.chord-modal__overlay-toggle--on) {
+.overlay-toggle:not(.overlay-toggle--on) {
 	opacity: 0.45;
 }
 
@@ -831,7 +839,8 @@ h4 sup,
 	color: var(--color-muted);
 }
 
-.chord-modal__hint {
+/* トネッツ図の操作説明(ChordModal/ContextScaleModal共通) */
+.modal-split__hint {
 	margin: 0;
 	font-size: 12px;
 	color: var(--color-faint);
@@ -868,16 +877,16 @@ h4 sup,
 }
 
 /* --- ContextScaleModal --- */
-
-.context-scale-modal {
-	width: min(760px, calc(100vw - 32px));
-	max-height: calc(100vh - 64px);
-	overflow-y: auto;
-}
+/* サイズ・左右分割・帯は「トネッツ図を持つモーダル共通のパーツ」を使う */
 
 .context-scale-modal__controls {
 	display: flex;
 	gap: 8px;
+}
+
+/* スケール名(C Harmonic Minorなど)はコード名より長いため、中央セルは少し控えめのサイズにする */
+.context-scale-modal .context-strip__cell--current {
+	font-size: 22px;
 }
 
 /* --- ChordScaleModal --- */
@@ -972,29 +981,6 @@ h4 sup,
 	stroke-width: 3;
 }
 
-/* 前後のコードのトライアドの参照表示(ContextScaleModal) */
-.tonnetz__triangle-highlight--neighbor {
-	fill: var(--pc-light);
-	stroke: var(--pc-basic);
-	stroke-width: 2;
-	stroke-dasharray: 5 4;
-	stroke-linejoin: round;
-}
-
-/* 選択中スケールの形と、マウス追従のゴースト */
-.tonnetz__edge-highlight--scale {
-	stroke: var(--color-ink);
-	stroke-width: 4;
-	stroke-linecap: round;
-}
-
-.tonnetz__edge-highlight--ghost {
-	stroke: rgba(var(--color-ink-rgb), 0.35);
-	stroke-width: 4;
-	stroke-dasharray: 6 5;
-	stroke-linecap: round;
-}
-
 /* ノードの既定の見た目と強調時の見た目。
    未選択のノードもカラースキームに従った色で薄く塗る */
 .tonnetz__node circle {
@@ -1012,63 +998,67 @@ h4 sup,
 	pointer-events: none;
 }
 
-.tonnetz__node--ghost circle {
-	stroke: var(--pc-dark);
-	stroke-width: 2.5;
-	stroke-dasharray: 4 3;
-}
-
-/* 選択中スケールの構成音(スケール編集)は塗りつぶす */
-.tonnetz__node--scale circle {
-	fill: var(--pc-basic);
-	stroke: var(--pc-dark);
-}
-
-.tonnetz__node--scale text {
-	fill: var(--color-surface);
-}
-
-/* --- コードの表示(トライアドの塗り・構成音ノード・構成音同士を結ぶ辺の一式) ---
-   強調優先度は faint(薄く: 前後のコード・ホバープレビュー) / normal(通常: 編集中のコード) の2段階。
+/* --- コード/スケールの表示(トライアドの塗り・構成音ノード・構成音同士を結ぶ辺の一式) ---
+   強調優先度は faint(薄く: 前後のコード・ホバープレビュー) / normal(通常: 編集対象) の2段階。
    faintはデフォルトの格子線・ノードより濃く、normalより薄い。
    同じ要素が両方の強度に該当したときにnormalが勝つよう、faint→normalの順に定義する。
    ノードの下には格子線・強調線が通るため、faintのノードを半透明にすると線が透けて
    視認性が落ちる。半透明ではなく不透明色の明度(色の混合)で薄さを表す */
 
-.tonnetz__triangle-highlight--chord-faint {
+.tonnetz__triangle-highlight--faint {
 	fill: var(--pc-basic);
 	fill-opacity: 0.16;
 }
 
-.tonnetz__edge-highlight--chord-faint {
+.tonnetz__edge-highlight--faint {
 	stroke: rgba(var(--color-ink-rgb), 0.3);
 	stroke-width: 4;
 	stroke-linecap: round;
 }
 
-.tonnetz__node--chord-faint circle {
+.tonnetz__node--faint circle {
 	fill: color-mix(in oklab, var(--pc-basic) 50%, var(--color-surface));
 	stroke: var(--pc-basic);
 	stroke-width: 1.5;
 }
 
-.tonnetz__triangle-highlight--chord-normal {
+.tonnetz__triangle-highlight--normal {
 	fill: var(--pc-basic);
 	fill-opacity: 0.45;
 }
 
-.tonnetz__edge-highlight--chord-normal {
+.tonnetz__edge-highlight--normal {
 	stroke: var(--color-ink);
 	stroke-width: 4;
 	stroke-linecap: round;
 }
 
-.tonnetz__node--chord-normal circle {
+.tonnetz__node--normal circle {
 	fill: var(--pc-basic);
 	stroke: var(--pc-dark);
 	stroke-width: 1.5;
 }
 
-.tonnetz__node--chord-normal text {
+.tonnetz__node--normal text {
 	fill: var(--color-surface);
+}
+
+/* --- スケールの主音の強調(二重ボーダー) ---
+   色ではなく、ストロークだけの円をノードの内側に重ねて表す。強度・レイヤごとに線色を合わせる */
+.tonnetz__node-ring {
+	fill: none;
+	stroke-width: 1.5;
+	pointer-events: none;
+}
+
+.tonnetz__node-ring--context {
+	stroke: var(--color-faint);
+}
+
+.tonnetz__node-ring--faint {
+	stroke: var(--pc-basic);
+}
+
+.tonnetz__node-ring--normal {
+	stroke: var(--pc-dark);
 }

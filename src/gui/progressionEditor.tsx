@@ -258,8 +258,12 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 			{pendingContextScaleEdit && (
 				<ContextScaleModal
 					value={pendingContextScaleEdit.initialValue}
-					formerTriad={progression.entries.array[pendingContextScaleEdit.index]?.value?.chord.triad}
-					latterTriad={progression.entries.array[pendingContextScaleEdit.index + 1]?.value?.chord.triad}
+					formerChord={progression.entries.array[pendingContextScaleEdit.index]?.value?.chord}
+					latterChord={progression.entries.array[pendingContextScaleEdit.index + 1]?.value?.chord}
+					// 前のスケールは編集位置に効いている継承値(推定)を、次のスケールは明示設定されたもののみを見せる
+					// (次を推定すると編集前の自分自身の値が継承されて表示され、紛らわしいため)
+					prevContextScale={estimateContextScale(progression, pendingContextScaleEdit.index - 1)}
+					nextContextScale={progression.contexts.array[pendingContextScaleEdit.index + 1]?.value}
 					onConfirm={contextScale => {
 						handleContextScaleChange(pendingContextScaleEdit.index, contextScale);
 						setPendingContextScaleEdit(null);
