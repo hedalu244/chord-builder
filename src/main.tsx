@@ -8,8 +8,7 @@ import { ProgressionValue } from "./editor/progression";
 import { ScaleInfo } from "./basics/scaleInfo";
 import { contextScaleNames } from "./basics/scaleDictionary";
 import { Triad } from "./basics/triad";
-import { colorSchemeClassName } from "./gui/colorScheme/colorSchemeSelect";
-import { ColorSchemeProvider, useColorScheme } from "./gui/colorScheme/colorSchemeContext";
+import { ColorSchemeProvider } from "./gui/colorScheme/colorSchemeContext";
 import { ColorSchemeSelect } from "./gui/colorScheme/colorSchemeSelect";
 
 // triadと、そのrootからの音程値配列(重複可)から初期表示用のChordを作る
@@ -31,10 +30,9 @@ function createInitialProgression(): ProgressionValue {
 
 function App() {
 	const [progression, setProgression] = useState<ProgressionValue>(() => createInitialProgression());
-	const { colorScheme } = useColorScheme();
 
 	return (
-		<main className={`app ${colorSchemeClassName(colorScheme)}`}>
+		<main className="app">
 			<div className="app__header">
 				<h2 className="app__title">Chord Progression Editor</h2>
 				<ColorSchemeSelect />

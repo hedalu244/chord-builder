@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { COLOR_SCHEMES, ColorSchemeId } from "./colorSchemeSelect";
+import { COLOR_SCHEMES, ColorSchemeId, colorSchemeClassName } from "./colorSchemeSelect";
 
 const STORAGE_KEY = "chord-builder:color-scheme";
 const DEFAULT_SCHEME: ColorSchemeId = "chromatic";
@@ -25,6 +25,13 @@ export function ColorSchemeProvider(props: { readonly children: ReactNode }) {
 
 	useEffect(() => {
 		localStorage.setItem(STORAGE_KEY, colorScheme);
+	}, [colorScheme]);
+
+	// カラースキームのCSS変数はbodyに付与する。body直下にポータルで描画されるモーダルにも継承させるため
+	useEffect(() => {
+		const className = colorSchemeClassName(colorScheme);
+		document.body.classList.add(className);
+		return () => document.body.classList.remove(className);
 	}, [colorScheme]);
 
 	return (
