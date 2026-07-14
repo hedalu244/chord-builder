@@ -154,9 +154,26 @@ h4 {
 	text-align: center;
 }
 
+.chord-notation {
+	display: inline-flex;
+}
+
 h4 sup,
-.chord-notation sup {
-	font-size: 0.5em;
+.chord-notation sup,
+.chord-notation sub {
+	font-size: 0.4em;
+}
+
+.chord-notation__annotations {
+	display: inline-grid;
+	justify-items: start;
+	vertical-align: baseline;
+}
+
+.chord-notation__annotations sup,
+.chord-notation__annotations sub {
+	display: block;
+	line-height: 1.1;
 }
 
 /* ==========================================================================
@@ -711,20 +728,31 @@ h4 sup,
 	}
 }
 
-/* 前後関係の帯: 編集対象(中央下段・最大)と、その前後にあるもの(下段左右)、
-   さらにそれらの中間に位置するもの(上段)を千鳥に並べる。
-   ChordModalでは下段がコード・上段がcontextScale、ContextScaleModalでは立ち位置が逆になり
-   下段がスケール・上段がコードになる */
 .context-strip {
-	display: grid;
-	grid-template-columns: repeat(6, 1fr);
-	row-gap: 4px;
-	align-items: end;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 	width: 100%;
+}
+
+.context-strip__row {
+	display: flex;
+	align-items: flex-end;
+	gap: 10px;
+	width: 100%;
+}
+
+.context-strip__row--double {
+	justify-content: space-around;
+}
+
+.context-strip__row--triple {
+	justify-content: space-between;
 }
 
 .context-strip__cell {
 	display: flex;
+	flex: 1 1 0;
 	flex-direction: column;
 	align-items: center;
 	gap: 2px;
@@ -732,43 +760,41 @@ h4 sup,
 	text-align: center;
 }
 
-/* 上段(中間に位置するもの)は小さく */
-.context-strip__cell--top-left,
-.context-strip__cell--top-right {
-	grid-row: 1;
-	font-size: 11px;
-	color: var(--color-muted);
+.context-strip__value {
+	max-width: 100%;
+	overflow-wrap: break-word;
 }
 
-.context-strip__cell--top-left { grid-column: 2 / span 2; }
-.context-strip__cell--top-right { grid-column: 4 / span 2; }
+.context-strip__toggle {
+	min-height: 20px;
+	display: flex;
+	align-items: center;
+}
 
-/* 下段左右(編集対象の前後にあるもの) */
-.context-strip__cell--left,
-.context-strip__cell--right {
-	grid-row: 2;
-	font-size: 16px;
+.context-strip__cell--edge,
+.context-strip__secondary-value {
 	font-weight: 600;
 	color: var(--color-muted);
 }
 
-.context-strip__cell--left { grid-column: 1 / span 2; }
-.context-strip__cell--right { grid-column: 5 / span 2; }
+.context-strip__cell--edge {
+	font-size: 22px;
+}
 
-/* 編集対象は帯の中で最も大きく表示する */
 .context-strip__cell--current {
-	grid-row: 2;
-	grid-column: 3 / span 2;
-	font-size: 28px;
+	flex: 1 1 33%;
+	font-size: 30px;
 	font-weight: 600;
 	color: var(--color-ink);
 }
 
-.context-strip__value {
-	max-width: 100%;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+.context-strip__secondary-value {
+	font-size: 20px;
+}
+
+.context-strip__annotation {
+	font-size: 15px;
+	color: var(--color-faint);
 }
 
 /* 参照オーバーレイの表示切替(目のアイコン)。OFFはグレーアウトで示す */

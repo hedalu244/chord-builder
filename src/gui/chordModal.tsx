@@ -87,6 +87,7 @@ export function ChordModal(props: ChordModalProps) {
 		() => initialChord === null || quickSelectionFor(initialChord) !== null ? "quick" : "direct"
 	);
 	const quickQuality = quickSelectionFor(currentChord);
+	const altNotations = currentChord ? getKnownNotations(currentChord).join(" / ") : "";
 
 	const [stripVisibility, setStripVisibility] = useState<ContextVisibility>({
 		"former-scale": true,
@@ -97,7 +98,7 @@ export function ChordModal(props: ChordModalProps) {
 
 	// トネッツ図のホバー位置でクリックしたときにできるであろうコードのプレビュー
 	const [hoverChord, setHoverChord] = useState<Chord | null>(null);
-	const [stripHoverPosition, setStripHoverPosition] = useState<ContextPosition | undefined>(undefined);
+	const [stripHoverPosition, setStripHoverPosition] = useState<ContextPosition | "current" | undefined>(undefined);
 
 	// 新規設定(initialChordなし)か既存コードの変更かで、タイトルと確定ボタンの表示を分ける
 	const isNewChord = initialChord === null;
@@ -187,9 +188,7 @@ export function ChordModal(props: ChordModalProps) {
 						onVisibilityChange={setStripVisibility}
 						onHoverChange={setStripHoverPosition}
 					/>
-					{currentChord && getKnownNotations(currentChord).length > 0 && (
-						<span className="alt-notations">{getKnownNotations(currentChord).join(" / ")}</span>
-					)}
+					<span className="alt-notations">{altNotations || "\u00A0"}</span>
 					<Tabs<EditMode>
 						mode={tab}
 						onSwitch={setTab}

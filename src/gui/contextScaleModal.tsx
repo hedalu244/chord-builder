@@ -36,7 +36,7 @@ export function ContextScaleModal(props: ContextScaleModalProps) {
 
 	// ホバー中の最寄り頂点のピッチクラス値。クリックでkeyになる位置のプレビュー(薄表示)に使う
 	const [hoverKeyValue, setHoverKeyValue] = useState<number | null>(null);
-	const [stripHoverPosition, setStripHoverPosition] = useState<ContextPosition | undefined>(undefined);
+	const [stripHoverPosition, setStripHoverPosition] = useState<ContextPosition | "current" | undefined>(undefined);
 
 	const setKey = (key: PitchClass): void => setCurrent(new ScaleInfo(key, current.parentScale, 0));
 	const setName = (name: ParentScaleID): void => setCurrent(new ScaleInfo(current.key, name, 0));
