@@ -2,7 +2,7 @@ import { useState } from "react";
 import { allTriads, Triad } from "../basics/triad";
 import { Chord } from "../basics/chord";
 import { ScaleInfo } from "../basics/scaleInfo";
-import { findQualityMatch, knownQualities, qualityLabel, qualityTones, qualityTriad } from "../basics/knownQuality";
+import { findQualityMatch, KnownQualityId, knownQualities, qualityById, qualityToChord, getKnownNotations } from "../basics/knownQuality";
 import { PitchClass } from "../basics/pitch";
 import { nearestTriad } from "../basics/tonnetz";
 import { ChordContextStrip, ContextPosition, ContextVisibility } from "./parts/contextStrip";
@@ -16,22 +16,50 @@ import { chordLayer, scaleBackdropLayer, TonnetzLayer } from "./parts/tonnetzLay
 const TONE_ROW_ROOT = new PitchClass(0);
 
 type EditMode = "quick" | "direct";
+type QuickQuality = "triad" | KnownQualityId;
 
-// quickタブのプルダウン選択。rootとqualityの両方が揃ったときだけコードとして確定できる
-type QuickSelection = {
-	readonly rootValue: number | null;
-	readonly qualityIndex: number | null;
-};
+// quickタブのクオリティ選択肢。プルダウンにはmajor/minorの個別項目は並べず、代わりに
+// 「Triad」(上向き/下向きどちらの三角もクリック可能)をまとめて置く
+const QUICK_QUALITY_OPTIONS: readonly { readonly value: QuickQuality; readonly label: string; }[] = [
+	{ value: "triad", label: "Triad" },
+	...knownQualities
+		.filter(quality => quality.id !== "M" && quality.id !== "m")
+		.map(quality => ({ value: quality.id, label: quality.notation })),
+];
 
-// コードをquickタブの選択として解釈し直す。一致する既知クオリティがなければ未選択
-function quickSelectionFor(chord: Chord | null): QuickSelection {
+// コードをquickタブの選択として解釈し直す。一致する既知クオリティがなければ未選択(null)。
+// 素のメジャー/マイナートライアドに一致した場合はTriadとして扱う
+function quickSelectionFor(chord: Chord | null): QuickQuality | null {
 	const match = chord !== null ? findQualityMatch(chord.triad, chord.chordTones) : undefined;
-	return { rootValue: match?.root.value ?? null, qualityIndex: match?.qualityIndex ?? null };
+	if (match === undefined) return null;
+	return match.qualityId === "M" || match.qualityId === "m" ? "triad" : match.qualityId;
 }
 
-function chordEquals(a: Chord | null, b: Chord | null): boolean {
-	if (a === null || b === null) return a === b;
-	return a.equals(b);
+// トネッツ図上の位置をクリック/ホバーした結果できるコード。Triad、あるいはクオリティ無選択時は
+// クリックされた三角形をそのまま採用する(上向き/下向きどちらでも良い)。既知クオリティが選択されて
+// いる場合は、そのクオリティのtriadModeに一致する最寄りの三角形を土台にルートを逆算する
+function quickChordAt(target: TonnetzTarget, quality: QuickQuality | null): Chord {
+	if (quality === "triad" || quality === null) return Chord.bareTriad(target.triad);
+	const knownQuality = qualityById(quality);
+	const root = nearestTriad(target.world, knownQuality.triadMode).root;
+	return qualityToChord(root, knownQuality);
+}
+
+function directChordAt(target: TonnetzTarget, currentChord: Chord | null): Chord {
+	// 初回選択時はnodeを無視してトライアドだけ判定。トライアドの構成音をそのまま採用
+	if (currentChord === null) {
+		return Chord.bareTriad(target.triad);
+	}
+	// nodeをクリックしたら構成音をトグル
+	if (target.onNode) {
+		const tapped = target.node.pitchClass;
+		const nextTones = currentChord.chordTones.some(tone => tone.equals(tapped))
+			? currentChord.chordTones.filter(tone => !tone.equals(tapped))
+			: [...currentChord.chordTones, tapped];
+		return new Chord(currentChord.triad, nextTones);
+	}
+	// トライアドを切り替え。構成音はそのまま引き継ぐ
+	return new Chord(target.triad, currentChord.chordTones);
 }
 
 function optionButtonClassName(selected: boolean): string {
@@ -56,10 +84,9 @@ export function ChordModal(props: ChordModalProps) {
 	const [currentChord, setCurrentChord] = useState<Chord | null>(initialChord);
 
 	const [tab, setTab] = useState<EditMode>(
-		() => initialChord === null || quickSelectionFor(initialChord).qualityIndex !== null ? "quick" : "direct"
+		() => initialChord === null || quickSelectionFor(initialChord) !== null ? "quick" : "direct"
 	);
-	// quickは既知クオリティのみを表現できる片方向互換のため、未選択のままでもコードには触れない
-	const [quickSelection, setQuickSelection] = useState<QuickSelection>(() => quickSelectionFor(initialChord));
+	const quickQuality = quickSelectionFor(currentChord);
 
 	const [stripVisibility, setStripVisibility] = useState<ContextVisibility>({
 		"former-scale": true,
@@ -75,12 +102,6 @@ export function ChordModal(props: ChordModalProps) {
 	// 新規設定(initialChordなし)か既存コードの変更かで、タイトルと確定ボタンの表示を分ける
 	const isNewChord = initialChord === null;
 
-	const handleSwitchTab = (next: EditMode): void => {
-		// direct→quick: 現在のコードを選択として解釈し直す(コードには触れない)
-		if (next === "quick") setQuickSelection(quickSelectionFor(currentChord));
-		setTab(next);
-	};
-
 	// --- directモードの操作 ---
 
 	// トライアドの選び直しでは構成音の選択に触れない(有名和音の一括入力はquickモードが担う)。
@@ -91,68 +112,33 @@ export function ChordModal(props: ChordModalProps) {
 
 	// --- quickモードの操作 ---
 
-	// ルートとクオリティが揃ったら、トライアドと構成音をまとめて上書きする
-	const applyQuick = (rootValue: number, qualityIndex: number): void => {
-		const quality = knownQualities[qualityIndex];
-		const root = new PitchClass(rootValue);
-		setCurrentChord(new Chord(qualityTriad(root, quality), qualityTones(root, quality)));
-		setQuickSelection({ rootValue, qualityIndex });
-	};
-
-	const handleQuickRootChange = (rootValue: number | null): void => {
-		setQuickSelection({ ...quickSelection, rootValue });
-		if (rootValue !== null && quickSelection.qualityIndex !== null) applyQuick(rootValue, quickSelection.qualityIndex);
-	};
-
-	const handleQuickQualityChange = (qualityIndex: number | null): void => {
-		setQuickSelection({ ...quickSelection, qualityIndex });
-		if (qualityIndex !== null && quickSelection.rootValue !== null) applyQuick(quickSelection.rootValue, qualityIndex);
+	// クオリティの選び直し。すでにコードがあれば、その時点でのルート解釈を引き継いで即座に反映する
+	// (rootはトネッツのクリックでのみ決まるため、現在のtriadのルート/modeを引き継ぐ)
+	const handleQuickQualityChange = (quality: QuickQuality): void => {
+		if (currentChord === null) return;
+		if (quality === "triad") {
+			setCurrentChord(Chord.bareTriad(currentChord.triad));
+			return;
+		}
+		setCurrentChord(qualityToChord(currentChord.triad.root, qualityById(quality)));
 	};
 
 	// --- トネッツ図の操作 ---
 
-	// quick: 三角形の内外ではなく「クオリティのモードと一致する最寄りの三角形(内心距離)」を土台に、
-	// そこへクオリティ一式を当てはめたコード。rootはプルダウンのRoot選択にも反映される
-	const quickChordAt = (target: TonnetzTarget, qualityIndex: number): { root: PitchClass; chord: Chord } => {
-		const quality = knownQualities[qualityIndex];
-		const baseTriad = nearestTriad(target.world, quality.triadMode);
-		const root = baseTriad.root.sub(quality.triadOffset);
-		return { root, chord: new Chord(baseTriad, qualityTones(root, quality)) };
-	};
-
-	// その位置でクリックしたときにできるであろうコード。クリックできない位置(quickでクオリティ未選択、
-	// directでトライアド未選択のままノードをクリック)はnull。
+	// その位置でクリックしたときにできるであろうコード。directでトライアド未選択のままノードを
+	// クリックした場合のみnull。quickは常にコードが定まる(無選択時はTriad扱い)。
 	// ホバー時の薄表示とクリック時の確定の両方がこれを参照し、プレビューと実挙動がずれないようにする
-	const chordAt = (target: TonnetzTarget): Chord | null => {
-		if (tab === "quick") {
-			return quickSelection.qualityIndex === null ? null : quickChordAt(target, quickSelection.qualityIndex).chord;
-		}
-		if (target.onNode) {
-			if (currentChord === null) return null;
-			const tapped = target.node.pitchClass;
-			const nextTones = currentChord.chordTones.some(tone => tone.equals(tapped))
-				? currentChord.chordTones.filter(tone => !tone.equals(tapped))
-				: [...currentChord.chordTones, tapped];
-			return new Chord(currentChord.triad, nextTones);
-		}
-		return new Chord(target.triad, currentChord === null ? target.triad.getChordTones() : currentChord.chordTones);
+	const chordAt = (target: TonnetzTarget): Chord => {
+		if (tab === "quick") return quickChordAt(target, quickQuality);
+		return directChordAt(target, currentChord);
 	};
 
 	const handleTonnetzHover = (target: TonnetzTarget | null): void => {
 		const next = target === null ? null : chordAt(target);
-		setHoverChord(prev => (chordEquals(prev, next) ? prev : next));
+		setHoverChord(prev => (prev !== null && next !== null && prev.equals(next) ? prev : next));
 	};
 
-	const handleTonnetzTap = (target: TonnetzTarget): void => {
-		if (tab === "quick") {
-			// quickはクオリティのルート選択も兼ねるためapplyQuick経由で確定する
-			if (quickSelection.qualityIndex === null) return;
-			applyQuick(quickChordAt(target, quickSelection.qualityIndex).root.value, quickSelection.qualityIndex);
-			return;
-		}
-		const next = chordAt(target);
-		if (next !== null) setCurrentChord(next);
-	};
+	const handleTonnetzTap = (target: TonnetzTarget): void => setCurrentChord(chordAt(target));
 
 	// --- トネッツ図のレイヤ構築 ---
 
@@ -201,12 +187,12 @@ export function ChordModal(props: ChordModalProps) {
 						onVisibilityChange={setStripVisibility}
 						onHoverChange={setStripHoverPosition}
 					/>
-					{currentChord && currentChord.getKnownNotations().length > 0 && (
-						<span className="alt-notations">{currentChord.getKnownNotations().join(" / ")}</span>
+					{currentChord && getKnownNotations(currentChord).length > 0 && (
+						<span className="alt-notations">{getKnownNotations(currentChord).join(" / ")}</span>
 					)}
 					<Tabs<EditMode>
 						mode={tab}
-						onSwitch={handleSwitchTab}
+						onSwitch={setTab}
 						tabs={[
 							{
 								label: "Quick",
@@ -214,35 +200,21 @@ export function ChordModal(props: ChordModalProps) {
 								content: (
 									<div className="chord-modal__quick">
 										<div className="chord-modal__quick-controls">
-											<label>
-												Root
-												<select
-													value={quickSelection.rootValue === null ? "" : String(quickSelection.rootValue)}
-													onChange={event => handleQuickRootChange(event.target.value === "" ? null : Number(event.target.value))}
+											{QUICK_QUALITY_OPTIONS.map(option => (
+												<button
+													type="button"
+													key={option.value}
+													className={optionButtonClassName((quickQuality ?? "triad") === option.value)}
+													onClick={() => handleQuickQualityChange(option.value)}
 												>
-													<option value="">–</option>
-													{PitchClass.all.map(pc => (
-														<option key={pc.value} value={pc.value}>{pc.toString()}</option>
-													))}
-												</select>
-											</label>
-											<label>
-												Quality
-												<select
-													value={quickSelection.qualityIndex === null ? "" : String(quickSelection.qualityIndex)}
-													onChange={event => handleQuickQualityChange(event.target.value === "" ? null : Number(event.target.value))}
-												>
-													<option value="">–</option>
-													{knownQualities.map((quality, index) => (
-														<option key={index} value={index}>{qualityLabel(quality)}</option>
-													))}
-												</select>
-											</label>
+													{option.label}
+												</button>
+											))}
 										</div>
 										<p className="modal-split__hint">
-											{quickSelection.qualityIndex === null
-												? "Select a quality to enable one-click input on the Tonnetz."
-												: `Click a ${knownQualities[quickSelection.qualityIndex].triadMode === "M" ? "major" : "minor"} triad on the Tonnetz to enter the chord there.`}
+											{quickQuality === "triad" || quickQuality === null
+												? "Click a triad on the Tonnetz to enter the chord there."
+												: `Click a ${qualityById(quickQuality).triadMode === "M" ? "major" : "minor"} triad on the Tonnetz to enter the chord there.`}
 										</p>
 									</div>
 								),

@@ -1,6 +1,6 @@
 import { Interval, PitchClass } from "./pitch";
 import { allTriads, ModeToNotation, Triad } from "./triad";
-import { knownQualities, qualityTones } from "./knownQuality";
+import { knownQualities, qualityToChord } from "./knownQuality";
 import { getOmittedDegreeNames, getTensionNames } from "./tensions";
 
 export class Chord {
@@ -11,6 +11,12 @@ export class Chord {
         const uniqueValues = Array.from(new Set(chordTones.map(tone => tone.value))).sort((a, b) => a - b);
         this.chordTones = PitchClass.map(uniqueValues);
     }
+
+    // 素のトライアド(テンション等を持たない)のコードを生成
+    static bareTriad(triad: Triad): Chord {
+        return new Chord(triad, triad.getChordTones());
+    }
+
     equals(other: Chord): boolean {
         if (this.chordTones.length !== other.chordTones.length) return false;
         if (!this.triad.equals(other.triad)) return false;
@@ -20,7 +26,8 @@ export class Chord {
         return true;
     }
 
-    private hasSameTones(tones: readonly PitchClass[]): boolean {
+    // ルート、トライアド違いを無視して構成音だけを比較
+    hasSameTones(tones: readonly PitchClass[]): boolean {
         if (this.chordTones.length !== tones.length) return false;
         return tones.every(tone => this.chordTones.some(chordTone => chordTone.equals(tone)));
     }
@@ -69,24 +76,5 @@ export class Chord {
     getSyntheticNotation(): string {
         const parts = this.getSyntheticNotationParts();
         return `${parts.base}${parts.tension}${parts.omit}`;
-    }
-
-    // ルートを変えてでも、選ばれた構成音とちょうど一致する既知の形(トライアド/knownQuality)の候補を挙げる。
-    // 合成表記(getSyntheticNotation)と同じ結果になるものは、異名として挙げる意味がないため除外する
-    getKnownNotations(): string[] {
-        const synthetic = this.getSyntheticNotation();
-
-        const triadNotations = allTriads()
-            .filter(candidate => this.hasSameTones(candidate.getChordTones()))
-            .map(candidate => candidate.toString());
-
-        const qualityNotations = PitchClass.all.flatMap(root =>
-            knownQualities
-                .filter(quality => this.hasSameTones(qualityTones(root, quality)))
-                .map(quality => `${root.toString()}${quality.notation}`)
-        );
-
-        const candidates = Array.from(new Set([...triadNotations, ...qualityNotations]));
-        return candidates.filter(notation => notation !== synthetic);
     }
 }

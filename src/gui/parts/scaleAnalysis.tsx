@@ -4,6 +4,7 @@ import { findScaleInfo } from "../../basics/scaleDictionary";
 import { PitchClass } from "../../basics/pitch";
 import { Scale } from "../../basics/scale";
 import { getExtraTensionNames } from "../../basics/tensions";
+import { getKnownNotations } from "../../basics/knownQuality";
 
 type ScaleAnalysisProps = {
 	readonly chord: Chord;
@@ -16,7 +17,7 @@ export function ScaleAnalysis(props: ScaleAnalysisProps) {
 	const { chord, root, scale } = props;
 	const known = findScaleInfo(root, scale);
 	const tensionNames = getExtraTensionNames(scale, chord.getChordToneIntervals());
-	const knownNotations = chord.getKnownNotations();
+	const knownNotations = getKnownNotations(chord);
 
 	return (
 		<div className="scale-analysis">
