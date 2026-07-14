@@ -202,6 +202,7 @@ h4 sup,
 .app__title {
 	margin: 0;
 	font-size: 24px;
+	color: var(--color-muted);
 }
 
 .color-scheme-select {
@@ -1007,10 +1008,10 @@ h4 sup,
 }
 
 /* ノードの既定の見た目と強調時の見た目。
-   未選択のノードもカラースキームに従った色で薄く塗る */
+   未選択のノードは白地に有彩色のstrokeのみで示す */
 .tonnetz__node circle {
-	fill: var(--pc-light);
-	stroke: var(--color-border);
+	fill: var(--color-surface);
+	stroke: var(--pc-basic);
 	stroke-width: 1.5;
 }
 
@@ -1026,9 +1027,7 @@ h4 sup,
 /* --- コード/スケールの表示(トライアドの塗り・構成音ノード・構成音同士を結ぶ辺の一式) ---
    強調優先度は faint(薄く: 前後のコード・ホバープレビュー) / normal(通常: 編集対象) の2段階。
    faintはデフォルトの格子線・ノードより濃く、normalより薄い。
-   同じ要素が両方の強度に該当したときにnormalが勝つよう、faint→normalの順に定義する。
-   ノードの下には格子線・強調線が通るため、faintのノードを半透明にすると線が透けて
-   視認性が落ちる。半透明ではなく不透明色の明度(色の混合)で薄さを表す */
+   同じ要素が両方の強度に該当したときにnormalが勝つよう、faint→normalの順に定義する */
 
 .tonnetz__triangle-highlight--faint {
 	fill: var(--pc-basic);
@@ -1041,10 +1040,9 @@ h4 sup,
 	stroke-linecap: round;
 }
 
+/* strokeはデフォルトの見た目から変えず、fillのみ淡く塗る */
 .tonnetz__node--faint circle {
-	fill: color-mix(in oklab, var(--pc-basic) 50%, var(--color-surface));
-	stroke: var(--pc-basic);
-	stroke-width: 1.5;
+	fill: var(--pc-light);
 }
 
 .tonnetz__triangle-highlight--normal {
@@ -1060,8 +1058,7 @@ h4 sup,
 
 .tonnetz__node--normal circle {
 	fill: var(--pc-basic);
-	stroke: var(--pc-dark);
-	stroke-width: 1.5;
+	stroke: none;
 }
 
 .tonnetz__node--normal text {
@@ -1069,21 +1066,9 @@ h4 sup,
 }
 
 /* --- スケールの主音の強調(二重ボーダー) ---
-   色ではなく、ストロークだけの円をノードの内側に重ねて表す。強度・レイヤごとに線色を合わせる */
-.tonnetz__node-ring {
-	fill: none;
+   色ではなく、ストロークだけの円をノードの外側に重ねて表す。強度・レイヤごとに線色を合わせる */
+circle.tonnetz__node-ring {
+	stroke: var(--pc-basic);
 	stroke-width: 1.5;
 	pointer-events: none;
-}
-
-.tonnetz__node-ring--backdrop {
-	stroke: var(--color-faint);
-}
-
-.tonnetz__node-ring--faint {
-	stroke: var(--pc-basic);
-}
-
-.tonnetz__node-ring--normal {
-	stroke: var(--pc-dark);
 }

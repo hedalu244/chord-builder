@@ -10,7 +10,7 @@ import { Modal } from "./parts/modal";
 import { Tabs } from "./parts/tabs";
 import { EditableToneRow } from "./parts/toneRow";
 import { Tonnetz, TonnetzTarget } from "./parts/tonnetz";
-import { chordLayer, scaleBackdropLayer, TonnetzLayer } from "./parts/tonnetzLayer";
+import { chordLayer, contextEmphasis, currentEmphasis, scaleLayer, TonnetzLayer } from "./parts/tonnetzLayer";
 
 // 構成音チェックボックスの並びはCに固定し、トライアドを切り替えても位置が動かないようにする
 const TONE_ROW_ROOT = new PitchClass(0);
@@ -27,17 +27,14 @@ const QUICK_QUALITY_OPTIONS: readonly { readonly value: QuickQuality; readonly l
 		.map(quality => ({ value: quality.id, label: quality.notation })),
 ];
 
-// コードをquickタブの選択として解釈し直す。一致する既知クオリティがなければ未選択(null)。
-// 素のメジャー/マイナートライアドに一致した場合はTriadとして扱う
+// コードをquickタブの選択として解釈し直す。
 function quickSelectionFor(chord: Chord | null): QuickQuality | null {
 	const match = chord !== null ? findQualityMatch(chord.triad, chord.chordTones) : undefined;
 	if (match === undefined) return null;
 	return match.qualityId === "M" || match.qualityId === "m" ? "triad" : match.qualityId;
 }
 
-// トネッツ図上の位置をクリック/ホバーした結果できるコード。Triad、あるいはクオリティ無選択時は
-// クリックされた三角形をそのまま採用する(上向き/下向きどちらでも良い)。既知クオリティが選択されて
-// いる場合は、そのクオリティのtriadModeに一致する最寄りの三角形を土台にルートを逆算する
+// quickModeでトネッツ図上の位置をクリック/ホバーした結果できるコード。
 function quickChordAt(target: TonnetzTarget, quality: QuickQuality | null): Chord {
 	if (quality === "triad" || quality === null) return Chord.bareTriad(target.triad);
 	const knownQuality = qualityById(quality);
@@ -62,6 +59,13 @@ function directChordAt(target: TonnetzTarget, currentChord: Chord | null): Chord
 	return new Chord(target.triad, currentChord.chordTones);
 }
 
+// その位置でクリックしたときにできるであろうコード。
+// ホバー時の薄表示とクリック時の確定の両方がこれを参照し、プレビューと実挙動がずれないようにする
+const chordAt = (target: TonnetzTarget, tab: EditMode, quickQuality: QuickQuality | null, currentChord: Chord | null): Chord => {
+	if (tab === "quick") return quickChordAt(target, quickQuality);
+	return directChordAt(target, currentChord);
+};
+
 function optionButtonClassName(selected: boolean): string {
 	return selected ? "option-button option-button--selected" : "option-button";
 }
@@ -83,7 +87,7 @@ export function ChordModal(props: ChordModalProps) {
 	// 編集中のコード。nullは「トライアド未選択」の初期状態
 	const [currentChord, setCurrentChord] = useState<Chord | null>(initialChord);
 
-	const [tab, setTab] = useState<EditMode>(
+	const [editMode, setEditMode] = useState<EditMode>(
 		() => initialChord === null || quickSelectionFor(initialChord) !== null ? "quick" : "direct"
 	);
 	const quickQuality = quickSelectionFor(currentChord);
@@ -94,6 +98,7 @@ export function ChordModal(props: ChordModalProps) {
 		"latter-scale": false,
 		"former-chord": false,
 		"latter-chord": false,
+		"current": true,
 	});
 
 	// トネッツ図のホバー位置でクリックしたときにできるであろうコードのプレビュー
@@ -103,15 +108,11 @@ export function ChordModal(props: ChordModalProps) {
 	// 新規設定(initialChordなし)か既存コードの変更かで、タイトルと確定ボタンの表示を分ける
 	const isNewChord = initialChord === null;
 
-	// --- directモードの操作 ---
-
 	// トライアドの選び直しでは構成音の選択に触れない(有名和音の一括入力はquickモードが担う)。
 	// ただし未選択状態からの初回選択時のみ、空のコードにならないようトライアドの構成音を設定する
 	const handleSelectTriad = (candidate: Triad): void => {
 		setCurrentChord(prev => new Chord(candidate, prev === null ? candidate.getChordTones() : prev.chordTones));
 	};
-
-	// --- quickモードの操作 ---
 
 	// クオリティの選び直し。すでにコードがあれば、その時点でのルート解釈を引き継いで即座に反映する
 	// (rootはトネッツのクリックでのみ決まるため、現在のtriadのルート/modeを引き継ぐ)
@@ -125,38 +126,34 @@ export function ChordModal(props: ChordModalProps) {
 	};
 
 	// --- トネッツ図の操作 ---
-
-	// その位置でクリックしたときにできるであろうコード。directでトライアド未選択のままノードを
-	// クリックした場合のみnull。quickは常にコードが定まる(無選択時はTriad扱い)。
-	// ホバー時の薄表示とクリック時の確定の両方がこれを参照し、プレビューと実挙動がずれないようにする
-	const chordAt = (target: TonnetzTarget): Chord => {
-		if (tab === "quick") return quickChordAt(target, quickQuality);
-		return directChordAt(target, currentChord);
-	};
-
 	const handleTonnetzHover = (target: TonnetzTarget | null): void => {
-		const next = target === null ? null : chordAt(target);
+		const next = target === null ? null : chordAt(target, editMode, quickQuality, currentChord);
 		setHoverChord(prev => (prev !== null && next !== null && prev.equals(next) ? prev : next));
 	};
 
-	const handleTonnetzTap = (target: TonnetzTarget): void => setCurrentChord(chordAt(target));
+	const handleTonnetzTap = (target: TonnetzTarget): void => setCurrentChord(chordAt(target, editMode, quickQuality, currentChord));
 
 	// --- トネッツ図のレイヤ構築 ---
-
-	// 前後のcontextScaleはあくまで背景: 半透明の線と塗りで表し、両方のスケールに含まれる箇所は
-	// 重なって自然に濃くなる。コードの表示(下記)が常に上に乗る。
-	// コードの表示は「薄く(前後のコード・ホバープレビュー) < 通常(編集中のコード)」の2段階。
-	// 濃い表示ほど後(上)に描く。コンテキスト帯で前後コードをホバーしている間は主役を入れ替え、
-	// 編集中コードを薄く落としてホバーされたコードを通常表示する
+	// Emphasisのルール:
+	// - former/latterのchord・scaleはvisibleならfaint(scaleはbackdrop)。contextStrip上で
+	//   hoverされている間はnormal。visibleでなければhidden
+	// - 編集中のcurrentChordは既定でnormal。current以外がhoverされている間はfaintに退く
+	// - hoverChord(トネッツ上のクリック結果のプレビュー)はfaintで、currentChordはnormalのまま
+	const formerScaleEmphasis = contextEmphasis("former-scale", stripHoverPosition, stripVisibility, "faint");
+	const latterScaleEmphasis = contextEmphasis("latter-scale", stripHoverPosition, stripVisibility, "faint");
+	const formerChordEmphasis = contextEmphasis("former-chord", stripHoverPosition, stripVisibility, "faint");
+	const latterChordEmphasis = contextEmphasis("latter-chord", stripHoverPosition, stripVisibility, "faint");
 	const layers: TonnetzLayer[] = [
-		...(stripVisibility["former-scale"] && formerScale ? [scaleBackdropLayer(formerScale)] : []),
-		...(stripVisibility["latter-scale"] && latterScale ? [scaleBackdropLayer(latterScale)] : []),
-		...(formerChord && stripVisibility["former-chord"] && stripHoverPosition !== "former-chord" ? [chordLayer(formerChord, "faint")] : []),
-		...(latterChord && stripVisibility["latter-chord"] && stripHoverPosition !== "latter-chord" ? [chordLayer(latterChord, "faint")] : []),
-		...(hoverChord ? [chordLayer(hoverChord, "faint")] : []),
-		...(currentChord ? [chordLayer(currentChord, stripHoverPosition === undefined ? "normal" : "faint")] : []),
-		...(formerChord && stripHoverPosition === "former-chord" ? [chordLayer(formerChord, "normal")] : []),
-		...(latterChord && stripHoverPosition === "latter-chord" ? [chordLayer(latterChord, "normal")] : []),
+		scaleLayer(formerScale, formerScaleEmphasis === "faint" ? "backdrop" : "hidden"),
+		scaleLayer(latterScale, latterScaleEmphasis === "faint" ? "backdrop" : "hidden"),
+		chordLayer(formerChord, formerChordEmphasis === "faint" ? "faint" : "hidden"),
+		chordLayer(latterChord, latterChordEmphasis === "faint" ? "faint" : "hidden"),
+		chordLayer(hoverChord, "faint"),
+		chordLayer(currentChord, currentEmphasis(stripHoverPosition, "normal")),
+		scaleLayer(formerScale, formerScaleEmphasis === "normal" ? "normal" : "hidden"),
+		scaleLayer(latterScale, latterScaleEmphasis === "normal" ? "normal" : "hidden"),
+		chordLayer(formerChord, formerChordEmphasis === "normal" ? "normal" : "hidden"),
+		chordLayer(latterChord, latterChordEmphasis === "normal" ? "normal" : "hidden"),
 	];
 
 	return (
@@ -190,8 +187,8 @@ export function ChordModal(props: ChordModalProps) {
 					/>
 					<span className="alt-notations">{altNotations || "\u00A0"}</span>
 					<Tabs<EditMode>
-						mode={tab}
-						onSwitch={setTab}
+						mode={editMode}
+						onSwitch={setEditMode}
 						tabs={[
 							{
 								label: "Quick",

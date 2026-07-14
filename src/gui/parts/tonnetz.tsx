@@ -89,13 +89,14 @@ export function Tonnetz(props: TonnetzProps) {
 	}, VIEW_MARGIN);
 	const { nodes, edges, triangles } = tonnetzView(viewRect);
 
-	// レイヤごとの照合用集合を先に作っておく
-	const layerData = layers.map(layer => ({
-		layer,
-		pcValues: new Set((layer.pitchClasses ?? []).map(pc => pc.value)),
-		triadKeys: new Set((layer.triads ?? []).map(triad => triad.toString())),
-		ringValues: new Set((layer.rings ?? []).map(pc => pc.value)),
-	}));
+	const layerData = layers
+		.filter(layer => layer.className !== "hidden")
+		.map(layer => ({
+			layer,
+			pcValues: new Set((layer.pitchClasses ?? []).map(pc => pc.value)),
+			triadKeys: new Set((layer.triads ?? []).map(triad => triad.toString())),
+			ringValues: new Set((layer.rings ?? []).map(pc => pc.value)),
+		}));
 
 	const isConnectedEdge = (pcValues: ReadonlySet<number>, edge: TonnetzEdge): boolean =>
 		pcValues.has(edge.from.pitchClass.value) && pcValues.has(edge.to.pitchClass.value);
@@ -107,14 +108,9 @@ export function Tonnetz(props: TonnetzProps) {
 			.flatMap(({ pcValues }) => edges.filter(edge => isConnectedEdge(pcValues, edge)).map(edge => edge.key))
 	);
 
-	// レイヤが塗る三角形: 明示指定(triads)と、fillContained時の「3頂点すべてが強調ノード」の三角形
 	const highlightTriangles = (data: (typeof layerData)[number]): TonnetzTriangle[] => {
-		const { layer, pcValues, triadKeys } = data;
-		return triangles.filter(tri =>
-			triadKeys.has(tri.triad.toString()) ||
-			(layer.fillContained === true &&
-				tri.vertices.every(vertex => pcValues.has(vertex.pitchClass.value)))
-		);
+		const { triadKeys } = data;
+		return triangles.filter(tri => triadKeys.has(tri.triad.toString()));
 	};
 
 	return (
@@ -194,8 +190,7 @@ export function Tonnetz(props: TonnetzProps) {
 				];
 				return (
 					<g key={node.key} className={classNames.join(" ")} style={pitchClassColorVars(node.pitchClass.value)}>
-						<circle cx={pos.x} cy={pos.y} r={NODE_RADIUS} />
-						{/* 二重ボーダー(スケールの主音など): ストロークだけの円を内側に重ねる */}
+						{/* 二重ボーダー(スケールの主音など): ストロークだけの円を外側に重ねる */}
 						{layerData
 							.map((data, layerIndex) => ({ data, layerIndex }))
 							.filter(({ data }) => data.ringValues.has(node.pitchClass.value))
@@ -203,9 +198,10 @@ export function Tonnetz(props: TonnetzProps) {
 								<circle
 									key={layerIndex}
 									className={`tonnetz__node-ring tonnetz__node-ring--${data.layer.className}`}
-									cx={pos.x} cy={pos.y} r={NODE_RADIUS - 3.5}
+									cx={pos.x} cy={pos.y} r={NODE_RADIUS + 3.5}
 								/>
 							))}
+						<circle cx={pos.x} cy={pos.y} r={NODE_RADIUS} />
 						<text x={pos.x} y={pos.y}>{node.pitchClass.toString()}</text>
 					</g>
 				);

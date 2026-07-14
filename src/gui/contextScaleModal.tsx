@@ -6,7 +6,7 @@ import { PitchClass } from "../basics/pitch";
 import { ScaleContextStrip, ContextPosition, ContextVisibility } from "./parts/contextStrip";
 import { Modal } from "./parts/modal";
 import { Tonnetz, TonnetzTarget } from "./parts/tonnetz";
-import { chordLayer, scaleBackdropLayer, scaleLayer, TonnetzLayer } from "./parts/tonnetzLayer";
+import { chordLayer, contextEmphasis, currentEmphasis, scaleLayer, TonnetzLayer } from "./parts/tonnetzLayer";
 
 type ContextScaleModalProps = {
 	readonly value: ScaleInfo;
@@ -32,6 +32,7 @@ export function ContextScaleModal(props: ContextScaleModalProps) {
 		"latter-scale": false,
 		"former-chord": true,
 		"latter-chord": true,
+		"current": true,
 	});
 
 	// ホバー中の最寄り頂点のピッチクラス値。クリックでkeyになる位置のプレビュー(薄表示)に使う
@@ -40,22 +41,29 @@ export function ContextScaleModal(props: ContextScaleModalProps) {
 
 	const setKey = (key: PitchClass): void => setCurrent(new ScaleInfo(key, current.parentScale, 0));
 	const setName = (name: ParentScaleID): void => setCurrent(new ScaleInfo(current.key, name, 0));
+	const hoverScale =
+		hoverKeyValue !== null && hoverKeyValue !== current.key.value
+			? new ScaleInfo(new PitchClass(hoverKeyValue), current.parentScale, 0)
+			: undefined;
 
-	// 前後のcontextScaleは背景として、前後のコードは薄いコード表示として敷き、編集中のスケール(normal)が
-	// 常に主役として上に乗る。ただしコンテキスト帯で前後スケールをホバーしている間は主役を入れ替え、
-	// 編集中を薄く落としてホバーされたスケールを通常表示する
+	// Emphasisのルール:
+	// - former/latterのchordはvisibleならnormal(このモーダルではコードが参照の主役)、scaleはvisibleならfaint(backdrop)。
+	//   contextStrip上でhoverされている間はnormal。visibleでなければhidden
+	// - 編集中のcurrentScaleは常にfaint。hoverScale(トネッツ上のクリック結果のプレビュー)もfaintで、
+	//   両方ある間は重ねて表示する
+	const formerScaleEmphasis = contextEmphasis("former-scale", stripHoverPosition, stripVisibility, "faint");
+	const latterScaleEmphasis = contextEmphasis("latter-scale", stripHoverPosition, stripVisibility, "faint");
+	const formerChordEmphasis = contextEmphasis("former-chord", stripHoverPosition, stripVisibility, "normal");
+	const latterChordEmphasis = contextEmphasis("latter-chord", stripHoverPosition, stripVisibility, "normal");
 	const layers: TonnetzLayer[] = [
-		...(stripVisibility["former-scale"] && formerScale && stripHoverPosition !== "former-scale" ? [scaleBackdropLayer(formerScale)] : []),
-		...(stripVisibility["latter-scale"] && latterScale && stripHoverPosition !== "latter-scale" ? [scaleBackdropLayer(latterScale)] : []),
-		...(stripVisibility["former-chord"] && formerChord ? [chordLayer(formerChord, "faint")] : []),
-		...(stripVisibility["latter-chord"] && latterChord ? [chordLayer(latterChord, "faint")] : []),
-		// ホバー位置にスナップしたスケールの薄表示(クリック結果のプレビュー)
-		...(hoverKeyValue !== null && hoverKeyValue !== current.key.value
-			? [scaleLayer(new ScaleInfo(new PitchClass(hoverKeyValue), current.parentScale, 0), "faint")]
-			: []),
-		scaleLayer(current, stripHoverPosition === undefined ? "normal" : "faint"),
-		...(formerScale && stripHoverPosition === "former-scale" ? [scaleLayer(formerScale, "normal")] : []),
-		...(latterScale && stripHoverPosition === "latter-scale" ? [scaleLayer(latterScale, "normal")] : []),
+		scaleLayer(formerScale, formerScaleEmphasis === "faint" ? "backdrop" : "hidden"),
+		scaleLayer(latterScale, latterScaleEmphasis === "faint" ? "backdrop" : "hidden"),
+		scaleLayer(hoverScale, "faint"),
+		scaleLayer(current, currentEmphasis(stripHoverPosition, "faint")),
+		scaleLayer(formerScale, formerScaleEmphasis === "normal" ? "normal" : "hidden"),
+		scaleLayer(latterScale, latterScaleEmphasis === "normal" ? "normal" : "hidden"),
+		chordLayer(formerChord, formerChordEmphasis),
+		chordLayer(latterChord, latterChordEmphasis),
 	];
 
 	const handleHover = (target: TonnetzTarget | null): void => {

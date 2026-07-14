@@ -5,35 +5,35 @@ import { ScaleInfo } from "../../basics/scaleInfo";
 import { calcDegreeNexus, calcTriadDegree } from "../../basics/nexus";
 import { ChordNotation } from "./chordNotation";
 
-export type ContextPosition = "former-scale" | "latter-scale" | "former-chord" | "latter-chord";
+export type ContextPosition = "former-scale" | "latter-scale" | "former-chord" | "latter-chord" | "current";
 export type ContextVisibility = Record<ContextPosition, boolean>;
 const overlayLabels: Record<ContextPosition, string> = {
 	"former-scale": "former context scale",
 	"latter-scale": "latter context scale",
 	"former-chord": "former chord",
 	"latter-chord": "latter chord",
+	"current": "current chord",
 };
 
 type ContextStripCellProps = {
 	readonly content: ReactNode;
-	readonly position: ContextPosition | "current";
+	readonly position: ContextPosition;
 	readonly visible?: boolean;
 	readonly onToggle?: () => void;
-	readonly onHover?: (position: ContextPosition | "current" | undefined) => void;
+	readonly onHover?: (position: ContextPosition | undefined) => void;
 	readonly role?: "edge" | "current";
 };
 
 function ContextStripCell(props: ContextStripCellProps) {
 	const { content, position, visible, onToggle, onHover, role } = props;
 	const present = content != null;
-	const canHover = onHover !== undefined && present;
 	const roleClassName = role ? ` context-strip__cell--${role}` : "";
 	return (
 		<div className={`context-strip__cell${roleClassName}`}>
 			<div
 				className="context-strip__value"
-				onMouseEnter={canHover ? () => onHover(position) : undefined}
-				onMouseLeave={canHover ? () => onHover(undefined) : undefined}
+				onMouseEnter={onHover ? () => onHover(position) : undefined}
+				onMouseLeave={onHover ? () => onHover(undefined) : undefined}
 			>
 				{present ? content : "–"}
 			</div>
@@ -61,7 +61,7 @@ type ChordContextStripProps = {
 	readonly latterChord?: Chord;
 	readonly visibility: ContextVisibility;
 	readonly onVisibilityChange: (visibility: ContextVisibility) => void;
-	readonly onHoverChange?: (position: ContextPosition | "current" | undefined) => void;
+	readonly onHoverChange?: (position: ContextPosition | undefined) => void;
 };
 
 function scaleWithNexus(former: Chord | undefined, latter: Chord | undefined, scaleInfo: ScaleInfo | undefined): ReactNode {
@@ -78,8 +78,8 @@ export function ChordContextStrip(props: ChordContextStripProps) {
 	return (
 		<div className="context-strip">
 			<div className="context-strip__row context-strip__row--double">
-				<ContextStripCell content={scaleWithNexus(formerChord, currentChord, formerScale)} position="former-scale" visible={visibility["former-scale"]} onToggle={toggle("former-scale")} />
-				<ContextStripCell content={scaleWithNexus(currentChord, latterChord, latterScale)} position="latter-scale" visible={visibility["latter-scale"]} onToggle={toggle("latter-scale")} />
+				<ContextStripCell content={scaleWithNexus(formerChord, currentChord, formerScale)} position="former-scale" visible={visibility["former-scale"]} onToggle={toggle("former-scale")} onHover={onHoverChange} />
+				<ContextStripCell content={scaleWithNexus(currentChord, latterChord, latterScale)} position="latter-scale" visible={visibility["latter-scale"]} onToggle={toggle("latter-scale")} onHover={onHoverChange} />
 			</div>
 			<div className="context-strip__row context-strip__row--triple">
 				<ContextStripCell role="edge" content={notation(formerChord)} position="former-chord" visible={visibility["former-chord"]} onToggle={toggle("former-chord")} onHover={onHoverChange} />
@@ -98,7 +98,7 @@ type ScaleContextStripProps = {
 	readonly latterScale?: ScaleInfo;
 	readonly visibility: ContextVisibility;
 	readonly onVisibilityChange: (visibility: ContextVisibility) => void;
-	readonly onHoverChange?: (position: ContextPosition | "current" | undefined) => void;
+	readonly onHoverChange?: (position: ContextPosition | undefined) => void;
 }
 
 function chordWithDegree(chord: Chord | undefined, currentScale: ScaleInfo): ReactNode {
@@ -118,8 +118,8 @@ export function ScaleContextStrip(props: ScaleContextStripProps) {
 				<ContextStripCell role="edge" content={latterScale?.keyLabel()} position="latter-scale" visible={visibility["latter-scale"]} onToggle={toggle("latter-scale")} onHover={onHoverChange} />
 			</div>
 			<div className="context-strip__row context-strip__row--double">
-				<ContextStripCell content={chordWithDegree(formerChord, currentScale)} position="former-chord" visible={visibility["former-chord"]} onToggle={toggle("former-chord")} />
-				<ContextStripCell content={chordWithDegree(latterChord, currentScale)} position="latter-chord" visible={visibility["latter-chord"]} onToggle={toggle("latter-chord")} />
+				<ContextStripCell content={chordWithDegree(formerChord, currentScale)} position="former-chord" visible={visibility["former-chord"]} onToggle={toggle("former-chord")} onHover={onHoverChange} />
+				<ContextStripCell content={chordWithDegree(latterChord, currentScale)} position="latter-chord" visible={visibility["latter-chord"]} onToggle={toggle("latter-chord")} onHover={onHoverChange} />
 			</div>
 		</div>
 	);
