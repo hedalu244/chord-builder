@@ -516,14 +516,11 @@ h4 sup,
 	display: flex;
 	flex-wrap: wrap;
 	align-content: flex-start;
-	gap: 24px;
+	justify-content: center;
+	gap: 10px;
 	height: 100%;
-}
-
-/* chord-panelはcontrols(position: absoluteでカード左上に重なる)の下からはみ出さないよう、
-   controlsの高さぶんmargin-topで避ける */
-.chord-entry-panel > .chord-panel {
-	margin-top: 36px;
+	
+	padding-top: 48px;
 }
 
 /* カード内のセクション(Chord/Scale)は同じ縦積みレイアウト */
@@ -542,6 +539,14 @@ h4 sup,
 	font-weight: 600;
 	color: var(--color-muted);
 	text-align: center;
+}
+
+/* デバッグ用のボイシング表示 */
+.voicing-debug {
+	font-size: 11px;
+	color: var(--color-muted);
+	text-align: center;
+	width: 100%;
 }
 
 .add-chord-panel {

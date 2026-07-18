@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { allTriads, Triad } from "../basics/triad";
+import { generateVoicing } from "../basics/voicing";
+import { playVoicing, stopVoicing } from "../player/chordPlayer";
 import { Chord } from "../basics/chord";
 import { ScaleInfo } from "../basics/scaleInfo";
 import { findQualityMatch, KnownQualityId, knownQualities, qualityById, qualityToChord, getKnownNotations } from "../basics/knownQuality";
@@ -107,6 +109,19 @@ export function ChordModal(props: ChordModalProps) {
 
 	// 新規設定(initialChordなし)か既存コードの変更かで、タイトルと確定ボタンの表示を分ける
 	const isNewChord = initialChord === null;
+
+	// コードが変更されるたびに、自動生成したボイシングで試聴を鳴らす(再生中なら鳴らし直す)。
+	// モーダルを開いた直後の初期表示では鳴らさない
+	const isFirstRender = useRef(true);
+	useEffect(() => {
+		if (isFirstRender.current) {
+			isFirstRender.current = false;
+			return;
+		}
+		if (currentChord !== null) void playVoicing(generateVoicing(currentChord));
+	}, [currentChord]);
+	// モーダルを閉じたら鳴っている音を止める
+	useEffect(() => stopVoicing, []);
 
 	// トライアドの選び直しでは構成音の選択に触れない(有名和音の一括入力はquickモードが担う)。
 	// ただし未選択状態からの初回選択時のみ、空のコードにならないようトライアドの構成音を設定する

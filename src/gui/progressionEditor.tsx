@@ -9,6 +9,7 @@ import { ScaleInfo } from "../basics/scaleInfo";
 import { contextScaleNames } from "../basics/scaleDictionary";
 import { Interval, PitchClass } from "../basics/pitch";
 import { estimateScale, Progression, ProgressionValue } from "../editor/progression";
+import { generateVoicing } from "../basics/voicing";
 import { AddChordPanel } from "./layout/addChordPanel";
 import { ExitGhost, SlotRow } from "./slotRow";
 
@@ -111,8 +112,8 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		setPendingChordEdit({ index, initialChord: null });
 	};
 
-	const handleExtraChordScaleTonesChange = (index: number, chord: Chord, nextExtraChordScaleTones: readonly Interval[] | undefined): void => {
-		applyProgression(progression.setEntry(index, new ChordEntry(chord, nextExtraChordScaleTones), createId));
+	const handleExtraChordScaleTonesChange = (index: number, entry: ChordEntry, nextExtraChordScaleTones: readonly Interval[] | undefined): void => {
+		applyProgression(progression.setEntry(index, new ChordEntry(entry.chord, nextExtraChordScaleTones, entry.voicing), createId));
 		setInsertAnimationIndex(null);
 	};
 
@@ -123,7 +124,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		return entry !== undefined ? (
 			<ChordEntryPanel
 				entry={entry}
-				onChange={next => handleExtraChordScaleTonesChange(index, entry.chord, next)}
+				onChange={next => handleExtraChordScaleTonesChange(index, entry, next)}
 				onInsertBefore={() => handleInsert(index)}
 				onInsertAfter={() => handleInsert(index + 1)}
 				onChangeChord={() => handleChangeChord(index, entry.chord)}
@@ -194,7 +195,12 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 					formerScale={estimateScale(progression, pendingChordEdit.index - 1)}
 					latterScale={estimateScale(progression, pendingChordEdit.index)}
 					onConfirm={chord => {
-						applyProgression(progression.setEntry(pendingChordEdit.index, new ChordEntry(chord, undefined), createId));
+						// コードが変わっていなければ保存済みのボイシングを保持し、変わっていれば自動生成で初期化する
+						const prevEntry = progression.entries.array[pendingChordEdit.index]?.value;
+						const voicing = prevEntry !== undefined && prevEntry.chord.equals(chord)
+							? prevEntry.voicing
+							: generateVoicing(chord);
+						applyProgression(progression.setEntry(pendingChordEdit.index, new ChordEntry(chord, undefined, voicing), createId));
 						setPendingChordEdit(null);
 					}}
 					onCancel={() => setPendingChordEdit(null)}

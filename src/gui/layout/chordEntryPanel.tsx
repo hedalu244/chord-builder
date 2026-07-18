@@ -3,6 +3,8 @@ import { Interval } from "../../basics/pitch";
 import { ChordPanel } from "./chordPanel";
 import { IconButton } from "../parts/iconButton";
 import { ChordScalePanel } from "./chordScalePanel";
+import { noteName } from "../../basics/voicing";
+import { playVoicing } from "../../player/chordPlayer";
 
 type ChordEntryPanelProps = {
 	readonly entry: ChordEntry;
@@ -23,8 +25,11 @@ export function ChordEntryPanel(props: ChordEntryPanelProps) {
 				<IconButton icon="icons/delete.svg" label="Delete" className="icon-button--delete" onClick={onDelete} />
 				<IconButton icon="icons/insert-after.svg" label="Insert after" onClick={onInsertAfter} />
 			</div>
+			<IconButton icon="icons/speaker.svg" label="Play" onClick={() => { void playVoicing(entry.voicing); }} />
 			<ChordPanel value={entry.chord} onChangeChord={onChangeChord} />
 			<ChordScalePanel entry={entry} onChange={onChange} />
+			{/* デバッグ用のボイシング表示。編集UIができたら置き換える */}
+			<div className="voicing-debug">{entry.voicing.map(noteName).join(" ")}</div>
 		</div>
 	);
 }

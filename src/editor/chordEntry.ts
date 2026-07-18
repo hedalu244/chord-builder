@@ -1,20 +1,25 @@
 import { Chord } from "../basics/chord";
 import { Interval } from "../basics/pitch";
 import { Scale } from "../basics/scale";
+import { Voicing, voicingEquals } from "../basics/voicing";
 
 // Progressionの外部表現(1コード分)。編集セッション中のみ意味を持つid/contextScaleは含まない
 export class ChordEntry {
     readonly chord: Chord;
     // undefined(または空配列) = デフォルトスケール(コード構成音のみ)。それ以外はコード構成音に追加する音(スケールルートからの半音値)
     readonly extraChordScaleTones: readonly Interval[] | undefined;
+    // コードが変更されたときは自動生成された値で初期化され、以降は手動調整も保持される
+    readonly voicing: Voicing;
 
-    constructor(chord: Chord, extraChordScaleTones: readonly Interval[] | undefined) {
+    constructor(chord: Chord, extraChordScaleTones: readonly Interval[] | undefined, voicing: Voicing) {
         this.chord = chord;
         this.extraChordScaleTones = extraChordScaleTones;
+        this.voicing = voicing;
     }
 
     equals(other: ChordEntry): boolean {
         if (!this.chord.equals(other.chord)) return false;
+        if (!voicingEquals(this.voicing, other.voicing)) return false;
         const tones = this.extraChordScaleTones ?? [];
         const otherTones = other.extraChordScaleTones ?? [];
         if (tones.length !== otherTones.length) return false;
