@@ -523,9 +523,10 @@ h4 sup,
 	padding-top: 48px;
 }
 
-/* カード内のセクション(Chord/Scale)は同じ縦積みレイアウト */
+/* カード内のセクション(Chord/Scale/Voicing)は同じ縦積みレイアウト */
 .chord-panel,
-.chord-scale-panel {
+.chord-scale-panel,
+.voicing-panel {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -533,20 +534,83 @@ h4 sup,
 	flex-basis: 100%;
 }
 
+/* Chord/Scaleセクションはカードごとの内容量(別表記の行数など)で高さが揺れるため固定し、
+   後続のVoicingセクション(ピアノロール)が左右のカード間で同じ高さに揃うようにする */
+.chord-panel {
+	height: 150px;
+}
+
+.chord-scale-panel {
+	height: 180px;
+}
+
 .chord-panel__label,
-.chord-scale-panel__label {
+.chord-scale-panel__label,
+.voicing-panel__label {
 	font-size: 12px;
 	font-weight: 600;
 	color: var(--color-muted);
 	text-align: center;
 }
 
-/* デバッグ用のボイシング表示 */
-.voicing-debug {
-	font-size: 11px;
-	color: var(--color-muted);
-	text-align: center;
+/* --- ボイシング編集(縦型ピアノロール) --- */
+
+/* 行の高さ・ノートブロックの配置(top/left/height)はROW_HEIGHT等の定数から
+   voicingPanel.tsx側でインラインstyleとして設定される。
+   flex-shrink: 0で、カードの高さに合わせてロールが押しつぶされないようにする */
+.voicing-panel__roll {
+	position: relative;
 	width: 100%;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+.voicing-panel__row--black {
+	background: rgba(var(--color-ink-rgb), 0.05);
+}
+
+/* オクターブ境界(Cの行の下端)の線 */
+.voicing-panel__row--octave {
+	border-bottom: 1px solid var(--color-border);
+}
+
+.voicing-panel__octave-label {
+	position: absolute;
+	left: 0;
+	font-size: 9px;
+	line-height: 1;
+	color: var(--color-faint);
+}
+
+/* 非アクティブ(候補)のノートはfaintに表示し、クリックで追加できる。
+   背景色はPitchClassごとにJS側でインラインstyleとして設定される */
+.voicing-panel__note {
+	position: absolute;
+	right: 4px;
+	padding: 0;
+	border: none;
+	border-radius: 2px;
+	opacity: 0.4;
+	cursor: pointer;
+	touch-action: none;
+	transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+.voicing-panel__note:hover {
+	opacity: 0.75;
+}
+
+.voicing-panel__note--active,
+.voicing-panel__note--active:hover {
+	opacity: 1;
+	cursor: grab;
+	z-index: 1;
+}
+
+.voicing-panel__note--dragging {
+	cursor: grabbing;
+	z-index: 2;
+	box-shadow: 0 1px 4px rgba(var(--color-ink-rgb), 0.4);
 }
 
 .add-chord-panel {

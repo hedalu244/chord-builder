@@ -9,7 +9,7 @@ import { ScaleInfo } from "../basics/scaleInfo";
 import { contextScaleNames } from "../basics/scaleDictionary";
 import { Interval, PitchClass } from "../basics/pitch";
 import { estimateScale, Progression, ProgressionValue } from "../editor/progression";
-import { generateVoicing } from "../basics/voicing";
+import { generateVoicing, Voicing } from "../basics/voicing";
 import { AddChordPanel } from "./layout/addChordPanel";
 import { ExitGhost, SlotRow } from "./slotRow";
 
@@ -117,6 +117,10 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 		setInsertAnimationIndex(null);
 	};
 
+	const handleVoicingChange = (index: number, entry: ChordEntry, nextVoicing: Voicing): void => {
+		applyProgression(progression.setEntry(index, new ChordEntry(entry.chord, entry.extraChordScaleTones, nextVoicing), createId));
+	};
+
 	// カードとプレースホルダーどちらの中身を表示するかは、chord行の描画と(shift時の)ExitGhostの
 	// スナップショット取得の両方で使うため、共通の関数として切り出す
 	const renderChordContent = (index: number): ReactNode => {
@@ -125,6 +129,7 @@ export function ProgressionEditor(props: ProgressionEditorProps) {
 			<ChordEntryPanel
 				entry={entry}
 				onChange={next => handleExtraChordScaleTonesChange(index, entry, next)}
+				onVoicingChange={next => handleVoicingChange(index, entry, next)}
 				onInsertBefore={() => handleInsert(index)}
 				onInsertAfter={() => handleInsert(index + 1)}
 				onChangeChord={() => handleChangeChord(index, entry.chord)}
